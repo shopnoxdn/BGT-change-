@@ -26,11 +26,11 @@
         ]
     },
     "7368378269": {
-        "main_balance_usdt": 1.4900000000000007,
+        "main_balance_usdt": 2.0900000000000007,
         "hold_balance_usdt": 2.04,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 10,
+        "accounts_sold": 11,
         "sold_numbers": [
             "2754664616",
             "2580258025",
@@ -41,7 +41,8 @@
             "2876886465",
             "2222222222",
             "2876882454",
-            "242458858585"
+            "242458858585",
+            "2876882536"
         ],
         "referrer_id": null,
         "referrals": [
@@ -49,7 +50,7 @@
         ],
         "referral_earnings": 0.04,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-15T11:08:30.649449",
+        "last_activity": "2026-02-15T11:17:57.343366",
         "withdrawal_processing_balance": 46.0,
         "processing_details": [
             {
@@ -79,6 +80,13 @@
                 "status": "Processing",
                 "timestamp": "2026-02-15T11:08:35.941711",
                 "country": "El Salvador \ud83c\uddf8\ud83c\uddfb"
+            },
+            {
+                "number": "2876882536",
+                "price": 0.6,
+                "status": "Successful",
+                "timestamp": "2026-02-15T11:17:37.849419",
+                "country": "Belarus \ud83c\udde7\ud83c\uddfe"
             }
         ]
     },

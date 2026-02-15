@@ -7,15 +7,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0b0e14;
+            --bg: #0d1117;
             --surface: #161b22;
+            --surface-hover: #1c2128;
             --primary: #58a6ff;
+            --primary-glow: rgba(88, 166, 255, 0.15);
             --success: #3fb950;
             --warning: #d29922;
             --danger: #f85149;
-            --text: #c9d1d9;
+            --text: #8b949e;
             --text-bold: #f0f6fc;
             --border: #30363d;
+            --card-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
         * { box-sizing: border-box; }
         body {
@@ -23,108 +26,175 @@
             background: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 15px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
+            overflow-x: hidden;
         }
         .container {
             width: 100%;
             max-width: 450px;
+            animation: fadeIn 0.6s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px 16px;
+            padding: 16px 20px;
             background: var(--surface);
-            border-radius: 12px;
+            border-radius: 16px;
             border: 1px solid var(--border);
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            box-shadow: var(--card-shadow);
         }
         .logo {
-            font-weight: 700;
-            font-size: 1.1rem;
+            font-weight: 800;
+            font-size: 1.2rem;
             color: var(--text-bold);
+            letter-spacing: -0.5px;
+            background: linear-gradient(45deg, #58a6ff, #bc8cff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         .logout {
             color: var(--danger);
             text-decoration: none;
             font-size: 0.85rem;
             font-weight: 600;
-            padding: 6px 12px;
+            padding: 8px 16px;
             border: 1px solid rgba(248, 81, 73, 0.2);
-            border-radius: 6px;
+            border-radius: 10px;
+            transition: 0.3s;
+        }
+        .logout:hover {
+            background: rgba(248, 81, 73, 0.1);
+            border-color: var(--danger);
         }
         .tabs {
             display: flex;
-            gap: 8px;
-            margin-bottom: 20px;
+            gap: 10px;
+            margin-bottom: 24px;
+            background: rgba(22, 27, 34, 0.5);
+            padding: 4px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
         }
         .tab {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             text-align: center;
-            background: var(--surface);
-            border: 1px solid var(--border);
+            background: transparent;
+            border: none;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.85rem;
-            font-weight: 500;
-            transition: 0.2s;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text);
         }
         .tab.active {
             background: var(--primary);
             color: #fff;
-            border-color: var(--primary);
+            box-shadow: 0 4px 12px var(--primary-glow);
+            transform: translateY(-1px);
         }
         .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .tab-content.active { 
+            display: block;
+            animation: slideUp 0.4s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
         .card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
             position: relative;
+            transition: all 0.3s;
+            box-shadow: var(--card-shadow);
+        }
+        .card:hover {
+            border-color: var(--primary);
+            background: var(--surface-hover);
+            transform: scale(1.02);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        .number-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 4px;
         }
         .number {
-            font-size: 1.1rem;
+            font-size: 1.25rem;
             font-weight: 700;
             color: var(--text-bold);
-            margin-bottom: 8px;
             display: block;
+            letter-spacing: -0.5px;
         }
         .row {
             display: flex;
             justify-content: space-between;
-            font-size: 0.8rem;
-            margin-top: 4px;
+            padding: 8px 0;
+            font-size: 0.85rem;
+            border-bottom: 1px solid rgba(48, 54, 61, 0.5);
         }
-        .label { color: #8b949e; }
-        .val { color: var(--text); font-weight: 500; }
-        .price { color: var(--success); font-weight: 700; }
-        .badge {
-            font-size: 0.65rem;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .badge-proc { background: rgba(210, 153, 34, 0.1); color: var(--warning); border: 1px solid var(--warning); }
-        .badge-succ { background: rgba(63, 185, 80, 0.1); color: var(--success); border: 1px solid var(--success); }
-        .badge-rej { background: rgba(248, 81, 73, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .row:last-of-type { border-bottom: none; }
+        .label { color: #8b949e; font-weight: 500; }
+        .val { color: var(--text-bold); font-weight: 600; }
+        .price { color: var(--success); font-weight: 800; font-size: 1rem; }
         .timer-row {
-            margin-top: 12px;
-            padding-top: 8px;
-            border-top: 1px solid var(--border);
+            margin-top: 15px;
+            padding: 12px 16px;
+            background: rgba(210, 153, 34, 0.05);
+            border-radius: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border: 1px solid rgba(210, 153, 34, 0.15);
         }
-        .timer { font-weight: 700; color: var(--warning); font-size: 0.9rem; }
-        .empty { text-align: center; padding: 40px 20px; color: #8b949e; font-size: 0.9rem; }
+        .timer { 
+            font-weight: 700; 
+            color: var(--warning); 
+            font-size: 1rem;
+            font-variant-numeric: tabular-nums;
+        }
+        .badge {
+            font-size: 0.7rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-succ { background: rgba(63, 185, 80, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .badge-rej { background: rgba(248, 81, 73, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .empty { 
+            text-align: center; 
+            padding: 60px 20px; 
+            color: #8b949e; 
+            font-size: 0.95rem;
+            background: var(--surface);
+            border-radius: 16px;
+            border: 1px dashed var(--border);
+        }
     </style>
 </head>
 <body>
@@ -145,11 +215,16 @@
             {% for item in numbers if item.status == 'Processing' %}
                 {% set proc_found = true %}
                 <div class="card">
-                    <span class="number">{{ item.number }}</span>
+                    <div class="card-header">
+                        <div>
+                            <span class="number-label">Number</span>
+                            <span class="number">{{ item.number }}</span>
+                        </div>
+                    </div>
                     <div class="row"><span class="label">Country</span><span class="val">{{ item.country }}</span></div>
                     <div class="row"><span class="label">Payout</span><span class="price">{{ item.price }}</span></div>
                     <div class="timer-row">
-                        <span class="label" style="font-size: 0.7rem;">HOLD TIME</span>
+                        <span class="label" style="font-size: 0.75rem; color: var(--warning);">HOLD TIME</span>
                         <span class="timer" data-timestamp="{{ item.raw_timestamp }}">--:--:--</span>
                     </div>
                 </div>
@@ -162,10 +237,15 @@
             {% for item in numbers if item.status == 'Successful' %}
                 {% set succ_found = true %}
                 <div class="card">
-                    <span class="number">{{ item.number }}</span>
+                    <div class="card-header">
+                        <div>
+                            <span class="number-label">Number</span>
+                            <span class="number">{{ item.number }}</span>
+                        </div>
+                        <span class="badge badge-succ">Successful</span>
+                    </div>
                     <div class="row"><span class="label">Country</span><span class="val">{{ item.country }}</span></div>
-                    <div class="row"><span class="label">Amount</span><span class="price">{{ item.price }}</span></div>
-                    <div class="row" style="margin-top: 10px;"><span class="badge badge-succ">Successful</span></div>
+                    <div class="row"><span class="label">Amount Earned</span><span class="price">{{ item.price }}</span></div>
                 </div>
             {% endfor %}
             {% if not succ_found %}<div class="empty">No successful transfers.</div>{% endif %}
@@ -176,10 +256,15 @@
             {% for item in numbers if item.status == 'Reject' %}
                 {% set rej_found = true %}
                 <div class="card">
-                    <span class="number">{{ item.number }}</span>
+                    <div class="card-header">
+                        <div>
+                            <span class="number-label">Number</span>
+                            <span class="number">{{ item.number }}</span>
+                        </div>
+                        <span class="badge badge-rej">Rejected</span>
+                    </div>
                     <div class="row"><span class="label">Country</span><span class="val">{{ item.country }}</span></div>
                     <div class="row"><span class="label">Amount</span><span class="price">{{ item.price }}</span></div>
-                    <div class="row" style="margin-top: 10px;"><span class="badge badge-rej">Rejected</span></div>
                 </div>
             {% endfor %}
             {% if not rej_found %}<div class="empty">No rejected requests.</div>{% endif %}
