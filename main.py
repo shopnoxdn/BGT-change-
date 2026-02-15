@@ -4801,7 +4801,7 @@ def main() -> None:
     """Start the bot"""
     # Load all persistent data
     # Bot token - hardcoded for portability
-    token = "7587399380:AAEWcMqRv6GyooorTH6-1xoOtUXLfbk-nWY"
+    token = "8198086071:AAFi4JAb8t8dLN9fxn0Jidh_KlwV2jyYhA8"
 
     # Load data at startup
     load_user_data()
