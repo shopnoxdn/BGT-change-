@@ -1,42 +1,267 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Number Dashboard</title>
+    <meta charset="UTF-8">
+    <title>Your Account Details - TG-Lion</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <style>
-        body { font-family: sans-serif; background: #000; color: #fff; margin: 0; padding: 10px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-        .tabs { display: flex; gap: 20px; color: #888; margin-bottom: 20px; font-weight: bold; }
-        .tabs .active { color: #0088cc; border-bottom: 2px solid #0088cc; padding-bottom: 5px; }
-        .item { background: #111; padding: 15px; margin-bottom: 10px; border-radius: 5px; position: relative; }
-        .number { font-size: 1.1em; font-weight: bold; margin-bottom: 5px; }
-        .details { color: #888; font-size: 0.9em; }
-        .status { position: absolute; top: 15px; right: 15px; padding: 4px 10px; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
-        .status.Successful { background: rgba(0, 255, 0, 0.1); color: #00ff00; border: 1px solid #00ff00; }
-        .status.Reject { background: rgba(255, 0, 0, 0.1); color: #ff0000; border: 1px solid #ff0000; }
-        .status.Processing { background: rgba(255, 165, 0, 0.1); color: #ffa500; border: 1px solid #ffa500; }
-        .logout { color: #ff4444; text-decoration: none; font-size: 0.9em; }
+        :root {
+            --primary: #00d2ff;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --bg: #0f172a;
+            --card-bg: #1e293b;
+            --text: #f8fafc;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .logout {
+            color: var(--danger);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border: 1px solid var(--danger);
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .logout:hover {
+            background: var(--danger);
+            color: white;
+        }
+        h1 {
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            color: #94a3b8;
+        }
+        .tabs {
+            display: flex;
+            background: var(--card-bg);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+            color: #94a3b8;
+        }
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .number {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+        .details {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        .price {
+            color: var(--success);
+            font-weight: 700;
+        }
+        .status-badge {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-Successful { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .status-Reject { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .status-Processing { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid var(--warning); }
+        
+        .timer-container {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--warning);
+        }
+        .timer {
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #64748b;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div style="font-size: 1.2em; font-weight: bold;">• TG-Lion | API •</div>
-        <a href="/logout" class="logout">Logout</a>
+    <div class="container">
+        <div class="header animate__animated animate__fadeIn">
+            <div class="logo">TG-Lion | API</div>
+            <a href="/logout" class="logout">Logout</a>
+        </div>
+
+        <h1 class="animate__animated animate__fadeIn">Your Account Details</h1>
+
+        <div class="tabs animate__animated animate__fadeIn">
+            <div class="tab active" onclick="showTab('processing')">Processing</div>
+            <div class="tab" onclick="showTab('successful')">Successful</div>
+            <div class="tab" onclick="showTab('reject')">Reject</div>
+        </div>
+
+        <div id="processing" class="tab-content active">
+            {% set count = [] %}
+            {% for item in numbers if item.status == 'Processing' %}
+                {% if count.append(1) %}{% endif %}
+                <div class="card animate__animated animate__fadeInUp">
+                    <div class="number">{{ item.number }}</div>
+                    <div class="details">
+                        <span>Price: <span class="price">{{ item.price }}</span></span>
+                        <span>Date: {{ item.date }}</span>
+                    </div>
+                    <div class="status-badge status-Processing">Processing</div>
+                    <div class="timer-container">
+                        <span>Time Left:</span>
+                        <span class="timer" data-timestamp="{{ item.raw_timestamp }}">--:--:--</span>
+                    </div>
+                </div>
+            {% endfor %}
+            {% if not count %}
+                <div class="empty-state">No processing transactions.</div>
+            {% endif %}
+        </div>
+
+        <div id="successful" class="tab-content">
+            {% set count = [] %}
+            {% for item in numbers if item.status == 'Successful' %}
+                {% if count.append(1) %}{% endif %}
+                <div class="card animate__animated animate__fadeInUp">
+                    <div class="number">{{ item.number }}</div>
+                    <div class="details">
+                        <span>Price: <span class="price">{{ item.price }}</span></span>
+                        <span>Date: {{ item.date }}</span>
+                    </div>
+                    <div class="status-badge status-Successful">Successful</div>
+                </div>
+            {% endfor %}
+            {% if not count %}
+                <div class="empty-state">No successful transactions yet.</div>
+            {% endif %}
+        </div>
+
+        <div id="reject" class="tab-content">
+            {% set count = [] %}
+            {% for item in numbers if item.status == 'Reject' %}
+                {% if count.append(1) %}{% endif %}
+                <div class="card animate__animated animate__fadeInUp">
+                    <div class="number">{{ item.number }}</div>
+                    <div class="details">
+                        <span>Price: <span class="price">{{ item.price }}</span></span>
+                        <span>Date: {{ item.date }}</span>
+                    </div>
+                    <div class="status-badge status-Reject">Rejected</div>
+                </div>
+            {% endfor %}
+            {% if not count %}
+                <div class="empty-state">No rejected transactions.</div>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="tabs">
-        <div>Number</div>
-    </div>
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
 
-    {% for item in numbers %}
-    <div class="item">
-        <div class="number">{{ item.number }}</div>
-        <div class="details">Price: {{ item.price }}</div>
-        <div class="details">Date: {{ item.date }}</div>
-        <div class="status {{ item.status }}">{{ item.status }}</div>
-    </div>
-    {% else %}
-    <p style="text-align: center; color: #888;">No numbers found.</p>
-    {% endfor %}
+        function updateTimers() {
+            const now = new Date().getTime();
+            document.querySelectorAll('.timer').forEach(timer => {
+                const startTime = new Date(timer.dataset.timestamp).getTime();
+                const endTime = startTime + (24 * 60 * 60 * 1000); // 24 hours later
+                const distance = endTime - now;
+
+                if (distance < 0) {
+                    timer.innerHTML = "00:00:00";
+                    return;
+                }
+
+                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                timer.innerHTML = 
+                    (hours < 10 ? "0" + hours : hours) + ":" + 
+                    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
+                    (seconds < 10 ? "0" + seconds : seconds);
+            });
+        }
+
+        setInterval(updateTimers, 1000);
+        updateTimers();
+    </script>
 </body>
 </html>

@@ -43,11 +43,13 @@ def dashboard():
     for item in numbers:
         if isinstance(item, dict):
             # If item is already a dict, use it but ensure fields exist
+            status = item.get('status', 'Processing')
             processed_numbers.append({
                 'number': item.get('number', 'N/A'),
-                'status': item.get('status', 'Processing'),
+                'status': status,
                 'price': f"{item.get('price', 0.20):.2f} USD",
-                'date': item.get('timestamp', 'N/A')
+                'date': item.get('timestamp', 'N/A').split('T')[0] if 'T' in item.get('timestamp', '') else item.get('timestamp', 'N/A'),
+                'raw_timestamp': item.get('timestamp', '')
             })
         elif isinstance(item, str):
             # If item is just a number string
@@ -55,7 +57,8 @@ def dashboard():
                 'number': item,
                 'status': 'Successful',
                 'price': '0.20 USD',
-                'date': '2026-02-15'
+                'date': '2026-02-15',
+                'raw_timestamp': ''
             })
             
     return render_template('dashboard.html', numbers=processed_numbers)
