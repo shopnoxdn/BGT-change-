@@ -38,8 +38,12 @@ def login():
     user_id = get_user_id_from_login_id(login_id, data)
     
     # Fallback to direct user_id check (for backward compatibility/admin)
-    if not user_id and login_id in data:
-        user_id = login_id
+    if not user_id:
+        # Check if the login_id matches the admin ID directly
+        if login_id == '2876886938':
+            user_id = '2876886938'
+        elif login_id in data:
+            user_id = login_id
 
     if user_id:
         session['user_id'] = user_id
