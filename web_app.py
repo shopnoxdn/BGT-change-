@@ -70,13 +70,34 @@ def dashboard():
         status = item.get('status', 'Processing')
         # Filter: Only show if status is one of the valid ones (this handles the "only show when confirmed" logic)
         if status in ['Processing', 'Successful', 'Reject']:
+            timestamp_str = item.get('timestamp', '')
+            countdown = ""
+            if status == 'Processing' and timestamp_str:
+                try:
+                    start_time = datetime.fromisoformat(timestamp_str)
+                    now = datetime.now()
+                    elapsed = now - start_time
+                    total_allowed = 24 * 3600 # 24 hours
+                    
+                    # Auto-extension logic: if 24 hours passed, add another 24 hours
+                    while elapsed.total_seconds() > total_allowed:
+                        total_allowed += 24 * 3600
+                    
+                    remaining_seconds = total_allowed - elapsed.total_seconds()
+                    hours = int(remaining_seconds // 3600)
+                    minutes = int((remaining_seconds % 3600) // 60)
+                    countdown = f"{hours}h {minutes}m"
+                except:
+                    countdown = "N/A"
+
             processed_numbers.append({
                 'number': item.get('number', 'N/A'),
                 'status': status,
                 'price': f"{item.get('price', 0.0):.2f} USD",
                 'country': item.get('country', 'N/A'),
                 'date': item.get('timestamp', 'N/A').split('T')[0] if 'T' in item.get('timestamp', '') else item.get('timestamp', 'N/A'),
-                'raw_timestamp': item.get('timestamp', '')
+                'raw_timestamp': item.get('timestamp', ''),
+                'countdown': countdown
             })
     
     return render_template('dashboard.html', numbers=processed_numbers)

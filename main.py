@@ -601,7 +601,6 @@ async def my_history_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 This is your unique 15-character identifier for the web dashboard.
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-🔗 **Dashboard Link:** {dashboard_link}
 """
     keyboard = [
         [InlineKeyboardButton("🌐 Open Dashboard", url=dashboard_link)] if dashboard_link != "No link set" else [],

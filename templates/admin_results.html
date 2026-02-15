@@ -44,6 +44,9 @@
                     <div><strong>Country:</strong> {{ item.country }}</div>
                     <div><strong>Price:</strong> {{ item.price }}</div>
                     <div class="status status-{{ item.status|lower }}"><strong>Status:</strong> {{ item.status }}</div>
+                    {% if item.status == 'Processing' and item.countdown %}
+                        <div style="color: #d29922; font-weight: bold; margin-top: 5px;">⏳ Remaining: {{ item.countdown }}</div>
+                    {% endif %}
                     <div style="font-size: 0.8rem; color: #8b949e;">{{ item.date }}</div>
                 </div>
             {% endfor %}
