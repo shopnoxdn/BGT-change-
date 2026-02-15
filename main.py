@@ -2312,20 +2312,7 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 'last_activity': datetime.now().isoformat()
             }
         
-        # Add to processing_details for web tracking
-        if 'processing_details' not in user_data[user_id]:
-            user_data[user_id]['processing_details'] = []
-            
-        new_entry = {
-            'number': user_number,
-            'price': price,
-            'status': 'Processing',
-            'timestamp': datetime.now().isoformat(),
-            'country': 'N/A' # We should ideally pass country here
-        }
-        # user_data[user_id]['processing_details'].append(new_entry) # Moved to OTP confirmation
-
-        # Pattern: When admin confirms OTP, it goes to "Processing"
+        # Add to processing_details for web tracking ONLY NOW when confirmed & added to hold
         if 'processing_details' not in user_data[user_id]:
             user_data[user_id]['processing_details'] = []
             
@@ -2350,7 +2337,7 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     # Notify user
     try:
         success_text = f"""
-✅ **Account Received completed - {user_number}**
+✅ **Confirm & Add to Hold completed - {user_number}**
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 
 📞 **Number:** {user_number}
@@ -2358,8 +2345,6 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 ⏰ **Country's wait time:** 24 hrs ✓
 
 🎉 **Submission successful!** ${price} USD has been added to your Hold Balance!
-
-⚠️ **Note:** Please **log out** from all devices to ensure the account is processed correctly.
 """
         keyboard = [
             [InlineKeyboardButton("💰 Check Balance", callback_data="balance")],
