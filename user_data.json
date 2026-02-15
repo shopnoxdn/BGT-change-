@@ -13,9 +13,17 @@
         "referrals": [],
         "referral_earnings": 0.0,
         "created_at": "2026-02-05T07:42:28.863886",
-        "last_activity": "2026-02-15T11:05:53.889424",
+        "last_activity": "2026-02-15T11:07:27.755012",
         "withdrawal_processing_balance": 0.0,
-        "processing_details": []
+        "processing_details": [
+            {
+                "number": "01923029089",
+                "price": 0.65,
+                "status": "Processing",
+                "timestamp": "2026-02-15T11:07:47.764574",
+                "country": "Bangladesh \ud83c\udde7\ud83c\udde9"
+            }
+        ]
     },
     "7368378269": {
         "main_balance_usdt": 1.4900000000000007,
@@ -41,7 +49,7 @@
         ],
         "referral_earnings": 0.04,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-15T11:04:28.149073",
+        "last_activity": "2026-02-15T11:08:30.649449",
         "withdrawal_processing_balance": 46.0,
         "processing_details": [
             {
@@ -64,6 +72,13 @@
                 "status": "Processing",
                 "timestamp": "2026-02-15T11:03:03.593221",
                 "country": "Syria \ud83c\uddf8\ud83c\uddfe"
+            },
+            {
+                "number": "2876886938",
+                "price": 0.6,
+                "status": "Processing",
+                "timestamp": "2026-02-15T11:08:35.941711",
+                "country": "El Salvador \ud83c\uddf8\ud83c\uddfb"
             }
         ]
     },
