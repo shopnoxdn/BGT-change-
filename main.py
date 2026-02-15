@@ -632,8 +632,10 @@ async def balance_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     balance_text = f"""
 🏦 **BGT WALLET - ASSET DETAILS** 🏦
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-💰 **Main Balance:** `{user_info['main_balance_usdt']:.2f} USDT`
 ⏳ **Hold Balance:** `{user_info['hold_balance_usdt']:.2f} USDT`
+
+💰 **Main Balance:** `{user_info['main_balance_usdt']:.2f} USDT`
+
 ⏳ **Withdrawal In-Progress:** `{user_info.get('withdrawal_processing_balance', 0.0):.2f} USDT`
 
 🆔 **User ID:** `{user_id}`
