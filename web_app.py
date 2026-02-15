@@ -77,11 +77,11 @@ def dashboard():
                     start_time = datetime.fromisoformat(timestamp_str)
                     now = datetime.now()
                     elapsed = now - start_time
-                    total_allowed = 24 * 3600 # 24 hours
+                    total_allowed = 30 * 3600 # 30 hours
                     
-                    # Auto-extension logic: if 24 hours passed, add another 24 hours
+                    # Auto-extension logic: if 30 hours passed, add another 30 hours
                     while elapsed.total_seconds() > total_allowed:
-                        total_allowed += 24 * 3600
+                        total_allowed += 30 * 3600
                     
                     remaining_seconds = total_allowed - elapsed.total_seconds()
                     hours = int(remaining_seconds // 3600)
