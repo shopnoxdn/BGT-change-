@@ -1,5 +1,6 @@
 import os
 import json
+import hashlib
 from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
@@ -13,6 +14,14 @@ def load_data():
             return json.load(f)
     return {}
 
+def get_user_id_from_login_id(login_id, data):
+    """Maps 15-char login ID back to Telegram user ID"""
+    for user_id in data:
+        expected_login_id = hashlib.md5(str(user_id).encode()).hexdigest()[:15].upper()
+        if expected_login_id == login_id:
+            return str(user_id)
+    return None
+
 @app.route('/')
 def index():
     if 'user_id' in session:
@@ -21,9 +30,17 @@ def index():
 
 @app.route('/login', methods=['POST'])
 def login():
-    user_id = request.form.get('user_id', '').strip()
+    login_id = request.form.get('user_id', '').strip().upper()
     data = load_data()
-    if user_id in data:
+    
+    # Check if the input is a 15-char MD5-based login ID
+    user_id = get_user_id_from_login_id(login_id, data)
+    
+    # Fallback to direct user_id check (for backward compatibility/admin)
+    if not user_id and login_id in data:
+        user_id = login_id
+
+    if user_id:
         session['user_id'] = user_id
         return redirect(url_for('dashboard'))
     
