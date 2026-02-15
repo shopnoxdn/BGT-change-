@@ -488,6 +488,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user = update.effective_user
     user_id = str(user.id)
     
+    # Add broadcast pick up
+    if os.path.exists('broadcast_queue.json'):
+        try:
+            with open('broadcast_queue.json', 'r') as f:
+                broadcast = json.load(f)
+            
+            # Simple broadcast to all known users in user_data
+            message = broadcast.get('message')
+            if message:
+                count = 0
+                for uid in list(user_data.keys()):
+                    try:
+                        await context.bot.send_message(chat_id=int(uid), text=f"📢 **Notification**\n\n{message}", parse_mode='Markdown')
+                        count += 1
+                        await asyncio.sleep(0.05) # Small delay to avoid flood
+                    except Exception:
+                        pass
+                logger.info(f"Broadcasted message to {count} users")
+            
+            os.remove('broadcast_queue.json')
+        except Exception as e:
+            logger.error(f"Error in broadcast: {e}")
+    
     # Check for referral parameter
     referrer_id = None
     if update.message and update.message.text:
@@ -562,6 +585,15 @@ async def my_history_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     import hashlib
     login_id = hashlib.md5(user_id.encode()).hexdigest()[:15].upper()
     
+    # Load dashboard link from settings
+    dashboard_link = "No link set"
+    if os.path.exists('settings.json'):
+        try:
+            with open('settings.json', 'r') as f:
+                settings = json.load(f)
+                dashboard_link = settings.get('dashboard_link', "No link set")
+        except: pass
+
     history_text = f"""
 📜 **BGT WALLET - ACTIVITY LOG** 📜
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
@@ -569,8 +601,14 @@ async def my_history_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
 
 This is your unique 15-character identifier for the web dashboard.
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+🔗 **Dashboard Link:** {dashboard_link}
 """
-    keyboard = [[InlineKeyboardButton("🔙 Main Menu", callback_data="main_menu")]]
+    keyboard = [
+        [InlineKeyboardButton("🌐 Open Dashboard", url=dashboard_link)] if dashboard_link != "No link set" else [],
+        [InlineKeyboardButton("🔙 Main Menu", callback_data="main_menu")]
+    ]
+    # Remove empty sub-lists
+    keyboard = [r for r in keyboard if r]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     if update.callback_query:

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - BGT Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --primary: #58a6ff;
+            --text: #c9d1d9;
+            --border: #30363d;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .card { background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; max-width: 500px; margin-left: auto; margin-right: auto; }
+        h2 { color: #fff; margin-top: 0; }
+        input, textarea { width: 100%; padding: 12px; margin: 10px 0; background: #0d1117; border: 1px solid var(--border); color: #fff; border-radius: 8px; }
+        button { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>User Info Search</h2>
+        <form action="/admin/search" method="POST">
+            <input type="text" name="chat_id" placeholder="Enter User Chat ID" required>
+            <button type="submit">Search User Data</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Broadcast Notification</h2>
+        <form action="/admin/notify" method="POST">
+            <textarea name="message" placeholder="Enter message for all users" rows="4" required></textarea>
+            <button type="submit">Send Notification</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Set Dashboard Link</h2>
+        <form action="/admin/set_link" method="POST">
+            <input type="url" name="dashboard_link" placeholder="https://..." required>
+            <button type="submit">Save Link</button>
+        </form>
+    </div>
+</body>
+</html>

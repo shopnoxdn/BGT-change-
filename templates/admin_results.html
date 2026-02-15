@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Search Results - Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #0d1117; --surface: #161b22; --primary: #58a6ff; --text: #c9d1d9; --border: #30363d; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        .card { background: var(--surface); padding: 15px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 10px; }
+        .status { font-weight: bold; }
+        .status-processing { color: #d29922; }
+        .status-successful { color: #3fb950; }
+        .status-reject { color: #f85149; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Results for ID: {{ search_id }}</h2>
+        <a href="/admin" style="color: var(--primary); text-decoration: none; display: block; margin-bottom: 20px;">← Back to Admin</a>
+        
+        {% if numbers %}
+            {% for item in numbers %}
+                <div class="card">
+                    <div><strong>Number:</strong> {{ item.number }}</div>
+                    <div><strong>Country:</strong> {{ item.country }}</div>
+                    <div><strong>Price:</strong> {{ item.price }}</div>
+                    <div class="status status-{{ item.status|lower }}"><strong>Status:</strong> {{ item.status }}</div>
+                    <div style="font-size: 0.8rem; color: #8b949e;">{{ item.date }}</div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No records found for this user.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

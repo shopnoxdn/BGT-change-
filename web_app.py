@@ -1,6 +1,7 @@
 import os
 import json
 import hashlib
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
@@ -80,6 +81,66 @@ def dashboard():
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('index'))
+
+@app.route('/admin')
+def admin_panel():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    return render_template('admin.html')
+
+@app.route('/admin/search', methods=['POST'])
+def admin_search():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    
+    search_id = request.form.get('chat_id', '').strip()
+    data = load_data()
+    user_info = data.get(search_id, {})
+    
+    processed_numbers = []
+    if user_info:
+        processing_details = user_info.get('processing_details', [])
+        for item in processing_details:
+            processed_numbers.append({
+                'number': item.get('number', 'N/A'),
+                'status': item.get('status', 'Processing'),
+                'price': f"{item.get('price', 0.0):.2f} USD",
+                'country': item.get('country', 'N/A'),
+                'date': item.get('timestamp', 'N/A').split('T')[0] if 'T' in item.get('timestamp', '') else item.get('timestamp', 'N/A')
+            })
+    
+    return render_template('admin_results.html', numbers=processed_numbers, search_id=search_id)
+
+@app.route('/admin/notify', methods=['POST'])
+def admin_notify():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    
+    message = request.form.get('message', '').strip()
+    if message:
+        # We can't easily call the bot from here without shared state or a signal
+        # For now, let's store it in a notifications.json for the bot to pick up or just log
+        with open('broadcast_queue.json', 'w') as f:
+            json.dump({'message': message, 'timestamp': datetime.now().isoformat()}, f)
+            
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/set_link', methods=['POST'])
+def admin_set_link():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    
+    link = request.form.get('dashboard_link', '').strip()
+    if link:
+        settings = {}
+        if os.path.exists('settings.json'):
+            with open('settings.json', 'r') as f:
+                settings = json.load(f)
+        settings['dashboard_link'] = link
+        with open('settings.json', 'w') as f:
+            json.dump(settings, f)
+            
+    return redirect(url_for('admin_panel'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
