@@ -425,7 +425,8 @@ def create_main_menu():
             InlineKeyboardButton("ℹ️ Safety & Terms", callback_data="terms")
         ],
         [
-            InlineKeyboardButton("👥 Refer & Earn", callback_data="refer")
+            InlineKeyboardButton("👥 Refer & Earn", callback_data="refer"),
+            InlineKeyboardButton("📜 My History", callback_data="my_history")
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -442,7 +443,8 @@ def create_reply_keyboard():
             KeyboardButton("ℹ️ Safety & Terms")
         ],
         [
-            KeyboardButton("👥 Refer & Earn")
+            KeyboardButton("👥 Refer & Earn"),
+            KeyboardButton("📜 My History")
         ]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
@@ -543,6 +545,33 @@ Choose your desired option from the buttons below:
         await update.callback_query.edit_message_text(welcome_text, reply_markup=inline_markup, parse_mode='Markdown')
         # Also send reply keyboard separately for callback queries
         await update.callback_query.message.reply_text("Choose an option:", reply_markup=reply_markup)
+
+async def my_history_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle My History button callback"""
+    if not await check_bot_status(update, context):
+        return
+        
+    user_id = str(update.effective_user.id)
+    # Use part of the user ID and a hash-like string to create a 15-char ID
+    import hashlib
+    login_id = hashlib.md5(user_id.encode()).hexdigest()[:15].upper()
+    
+    history_text = f"""
+📜 **My History**
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+🆔 **Login ID:** `{login_id}`
+
+This is your unique 15-character login identifier for your account history.
+"""
+    keyboard = [[InlineKeyboardButton("🔙 Main Menu", callback_data="main_menu")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    if update.callback_query:
+        await update.callback_query.answer()
+        await update.callback_query.edit_message_text(history_text, reply_markup=reply_markup, parse_mode='Markdown')
+    else:
+        await update.effective_message.reply_text(history_text, reply_markup=reply_markup, parse_mode='Markdown')
 
 async def balance_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle balance button callback"""
@@ -4316,6 +4345,8 @@ async def handle_reply_keyboard(update: Update, context: ContextTypes.DEFAULT_TY
         await terms_command(update, context)
     elif text == "👥 Refer & Earn":
         await refer_callback(fake_update, context)
+    elif text == "📜 My History":
+        await my_history_callback(fake_update, context)
 
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Main callback query handler"""
@@ -4362,6 +4393,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     handlers = {
         'balance': balance_callback,
+        'my_history': my_history_callback,
         'buy_account': buy_account_callback,
         'sell_account': sell_account_callback,
         'topup': topup_callback,
