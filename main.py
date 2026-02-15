@@ -104,14 +104,15 @@ def load_countries_data():
     try:
         if os.path.exists('countries_data.json'):
             with open('countries_data.json', 'r') as f:
-                COUNTRIES_DATA = json.load(f)
+                data = json.load(f)
+                if data:
+                    COUNTRIES_DATA.update(data)
             logger.info("Loaded country data from file")
         else:
-            COUNTRIES_DATA = {}
-            logger.info("Initialized country data in memory")
+            # COUNTRIES_DATA is already initialized with hardcoded values
+            logger.info("Using hardcoded country data")
     except Exception as e:
         logger.error(f"Error loading country data: {e}")
-        COUNTRIES_DATA = {}
 
 def save_countries_data():
     """Save country data to file"""
@@ -687,11 +688,20 @@ Select Country:
     # Telegram allows max 100 buttons per message. We use 90 to be safe.
     MAX_COUNTRIES = 90
     
+    # Ensure COUNTRIES_DATA is not empty and check for data
+    if not COUNTRIES_DATA:
+        # Emergency initialization if empty
+        load_countries_data()
+        all_countries = list(COUNTRIES_DATA.keys())
+        all_countries.sort(key=lambda x: COUNTRIES_DATA.get(x, {}).get('sell_price', 0), reverse=True)
+
     # Check if we should show the next page (pagination)
     page = context.user_data.get('sell_page', 0)
     start_idx = page * MAX_COUNTRIES
     end_idx = start_idx + MAX_COUNTRIES
     display_countries = all_countries[start_idx:end_idx]
+    
+    logger.info(f"Displaying {len(display_countries)} countries for sell flow. Total: {len(all_countries)}")
     
     for i in range(0, len(display_countries), 2):
         row = []
@@ -4522,12 +4532,19 @@ Return to main menu with /start.
 def main() -> None:
     """Start the bot"""
     # Load all persistent data
+    # Bot token - hardcoded for portability
+    token = "8347464948:AAG9Suacq7i2n_0FRO2jxjm09TouBczQuoI"
+
+    # Load data at startup
     load_user_data()
     load_withdrawal_settings()
     load_countries_data()
-
-    # Bot token - hardcoded for portability
-    token = "8347464948:AAG9Suacq7i2n_0FRO2jxjm09TouBczQuoI"
+    
+    # Verify countries data
+    if not COUNTRIES_DATA:
+        logger.error("COUNTRIES_DATA is empty at startup!")
+    else:
+        logger.info(f"COUNTRIES_DATA loaded with {len(COUNTRIES_DATA)} countries")
 
     # Create application
     application = Application.builder().token(token).build()
