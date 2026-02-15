@@ -13,8 +13,9 @@
         "referrals": [],
         "referral_earnings": 0.0,
         "created_at": "2026-02-05T07:42:28.863886",
-        "last_activity": "2026-02-15T06:02:35.752161",
-        "withdrawal_processing_balance": 0.0
+        "last_activity": "2026-02-15T11:05:53.889424",
+        "withdrawal_processing_balance": 0.0,
+        "processing_details": []
     },
     "7368378269": {
         "main_balance_usdt": 1.4900000000000007,
@@ -40,7 +41,7 @@
         ],
         "referral_earnings": 0.04,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-15T10:59:58.973666",
+        "last_activity": "2026-02-15T11:04:28.149073",
         "withdrawal_processing_balance": 46.0,
         "processing_details": [
             {
@@ -56,6 +57,13 @@
                 "status": "Processing",
                 "timestamp": "2026-02-15T10:52:57.364047",
                 "country": "N/A"
+            },
+            {
+                "number": "0000000000",
+                "price": 0.65,
+                "status": "Processing",
+                "timestamp": "2026-02-15T11:03:03.593221",
+                "country": "Syria \ud83c\uddf8\ud83c\uddfe"
             }
         ]
     },

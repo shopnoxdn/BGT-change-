@@ -3170,30 +3170,8 @@ async def approve_sell_callback(update: Update, context: ContextTypes.DEFAULT_TY
 
     # Notify user to continue with OTP
     try:
-        # Create a processing entry for web dashboard tracking
-        with user_data_lock:
-            if user_id not in user_data:
-                get_user_data(user_id) # ensure user exists
-            
-            if 'processing_details' not in user_data[user_id]:
-                user_data[user_id]['processing_details'] = []
-            
-            # Check if already exists to avoid duplicates
-            exists = False
-            for entry in user_data[user_id]['processing_details']:
-                if entry.get('number') == user_number:
-                    exists = True
-                    break
-            
-            if not exists:
-                user_data[user_id]['processing_details'].append({
-                    'number': user_number,
-                    'price': price,
-                    'status': 'Processing',
-                    'timestamp': datetime.now().isoformat(),
-                    'country': country_name
-                })
-        save_user_data()
+        # NOTE: We no longer create a processing entry here.
+        # It will be created ONLY when admin confirms the OTP.
 
         keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="cancel_sale_otp")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
