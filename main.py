@@ -575,6 +575,68 @@ Manage your digital assets and account sales with professional speed and securit
         # Also send reply keyboard separately for callback queries
         await update.callback_query.message.reply_text("Main Dashboard Menu:", reply_markup=reply_markup)
 
+async def admin_link_add_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle admin link add callback"""
+    query = update.callback_query
+    await query.answer()
+
+    user_id = str(query.from_user.id)
+    if user_id != ADMIN_CHAT_ID:
+        await query.edit_message_text("❌ Access Denied!")
+        return
+
+    context.user_data['admin_link_add'] = True
+    
+    keyboard = [[InlineKeyboardButton("🔙 Admin Panel", callback_data="admin_panel")]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
+    await query.edit_message_text(
+        "🔗 **Add Dashboard Link**\n\nPlease send the link you want to set for the dashboard.\n\nExample: `https://example.com`",
+        reply_markup=reply_markup,
+        parse_mode='Markdown'
+    )
+
+async def handle_admin_link_add_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle admin link add input"""
+    if not update.message or not update.message.text:
+        return
+
+    admin_id = str(update.effective_user.id)
+    if admin_id != ADMIN_CHAT_ID:
+        return
+
+    link = update.message.text.strip()
+    
+    # Simple URL validation
+    if not (link.startswith('http://') or link.startswith('https://')):
+        await update.message.reply_text("❌ Invalid link! Please start with http:// or https://")
+        return
+
+    try:
+        # Save to settings.json
+        settings = {}
+        if os.path.exists('settings.json'):
+            with open('settings.json', 'r') as f:
+                settings = json.load(f)
+        
+        settings['dashboard_link'] = link
+        
+        with open('settings.json', 'w') as f:
+            json.dump(settings, f)
+            
+        success_text = f"✅ **Dashboard Link Updated!**\n\n🔗 **New Link:** {link}"
+        
+        keyboard = [[InlineKeyboardButton("🔙 Admin Panel", callback_data="admin_panel")]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+
+        await update.message.reply_text(success_text, reply_markup=reply_markup, parse_mode='Markdown')
+        
+        # Clear context
+        context.user_data.pop('admin_link_add', None)
+    except Exception as e:
+        logger.error(f"Error saving dashboard link: {e}")
+        await update.message.reply_text(f"❌ Error saving link: {str(e)}")
+
 async def my_history_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle My History button callback"""
     if not await check_bot_status(update, context):
@@ -2697,6 +2759,7 @@ async def admin_panel_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         [InlineKeyboardButton("💸 Sell Account Price Control", callback_data="admin_sell_price_control")],
         [InlineKeyboardButton("🛒 Buy Account Price Control", callback_data="admin_buy_price_control")],
         [InlineKeyboardButton("🆕 Add New Country", callback_data="admin_add_new_country")],
+        [InlineKeyboardButton("🔗 Link Add", callback_data="admin_link_add")],
         [InlineKeyboardButton("🗑️ Delete Country", callback_data="admin_delete_country")],
         [InlineKeyboardButton("💳 Top-Up Info", callback_data="admin_topup_info")],
         [InlineKeyboardButton("🏦 Withdrawal Set", callback_data="admin_withdrawal_set")],
@@ -4337,6 +4400,8 @@ async def admin_message_router(update: Update, context: ContextTypes.DEFAULT_TYP
         await handle_admin_chat_user_id_input(update, context)
     elif 'chat_target_user' in context.user_data:
         await handle_admin_chat_user_message_input(update, context)
+    elif 'admin_link_add' in context.user_data:
+        await handle_admin_link_add_input(update, context)
     elif 'replying_to_admin' in context.user_data:
         await handle_reply_to_admin_message_input(update, context)
     elif 'admin_withdrawal_all_set' in context.user_data:
@@ -4545,6 +4610,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         'admin_withdrawal_set': admin_withdrawal_set_callback,
         'admin_withdrawal_all_set': admin_withdrawal_all_set_callback,
         'admin_withdrawal_custom_user': admin_withdrawal_custom_user_callback,
+        'admin_link_add': admin_link_add_callback,
 
         # Reply to admin handler  
         'reply_admin': reply_to_admin_callback,
@@ -4735,7 +4801,7 @@ def main() -> None:
     """Start the bot"""
     # Load all persistent data
     # Bot token - hardcoded for portability
-    token = "8347464948:AAG9Suacq7i2n_0FRO2jxjm09TouBczQuoI"
+    token = "7587399380:AAEWcMqRv6GyooorTH6-1xoOtUXLfbk-nWY"
 
     # Load data at startup
     load_user_data()
@@ -4831,6 +4897,7 @@ def main() -> None:
     application.add_handler(CallbackQueryHandler(admin_topup_info_callback, pattern="^admin_topup_info$"))
     application.add_handler(CallbackQueryHandler(admin_send_sms_callback, pattern="^admin_send_sms$"))
     application.add_handler(CallbackQueryHandler(admin_chat_user_callback, pattern="^admin_chat_user$"))
+    application.add_handler(CallbackQueryHandler(admin_link_add_callback, pattern="^admin_link_add$"))
     application.add_handler(CallbackQueryHandler(admin_add_new_country_callback, pattern="^admin_add_new_country$"))
     application.add_handler(CallbackQueryHandler(admin_delete_country_callback, pattern="^admin_delete_country$"))
     application.add_handler(CallbackQueryHandler(admin_confirm_delete_country_callback, pattern="^admin_del_country_"))
