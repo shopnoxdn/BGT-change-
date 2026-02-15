@@ -666,7 +666,7 @@ async def refer_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     user_info = get_user_data(user_id)
     
     bot_username = "BGT_Wallet_bot"
-    referral_link = f"https://t.me/{bot_username}?start=ref\\_{user_id}"
+    referral_link = f"https://t.me/{bot_username}?start=ref_{user_id}"
     
     referral_count = len(user_info.get('referrals', []))
     referral_earnings = user_info.get('referral_earnings', 0.0)
@@ -677,7 +677,7 @@ async def refer_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 Invite your friends and earn rewards for every successful sale they complete!
 
 🔗 **Your Referral Link:**
-{referral_link}
+`{referral_link}`
 
 👥 **Total Referrals:** `{referral_count}`
 💰 **Total Earnings:** `{referral_earnings:.2f} USDT`
