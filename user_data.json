@@ -18,16 +18,17 @@
     },
     "7368378269": {
         "main_balance_usdt": 0.6400000000000006,
-        "hold_balance_usdt": 0.84,
+        "hold_balance_usdt": 1.44,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 5,
+        "accounts_sold": 6,
         "sold_numbers": [
             "2754664616",
             "2580258025",
             "6845486864",
             "42453357675",
-            "2876882836"
+            "2876882836",
+            "68468684864"
         ],
         "referrer_id": null,
         "referrals": [
@@ -35,7 +36,7 @@
         ],
         "referral_earnings": 0.04,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-14T09:14:11.673480",
+        "last_activity": "2026-02-15T08:16:10.659887",
         "withdrawal_processing_balance": 46.0
     },
     "7440435385": {
