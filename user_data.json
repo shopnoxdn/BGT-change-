@@ -17,8 +17,8 @@
         "withdrawal_processing_balance": 0.0
     },
     "7368378269": {
-        "main_balance_usdt": 1.2400000000000007,
-        "hold_balance_usdt": 2.29,
+        "main_balance_usdt": 1.4900000000000007,
+        "hold_balance_usdt": 2.04,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
         "accounts_sold": 9,
@@ -39,7 +39,7 @@
         ],
         "referral_earnings": 0.04,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-15T10:40:10.084251",
+        "last_activity": "2026-02-15T10:42:37.035387",
         "withdrawal_processing_balance": 46.0
     },
     "7440435385": {

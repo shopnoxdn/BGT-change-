@@ -374,22 +374,27 @@ def get_user_data(user_id: str) -> Dict[str, Any]:
             }
             data_changed = True
 
-        # Add referral fields if missing
-        if 'referrer_id' not in user_data[user_id]:
-            user_data[user_id]['referrer_id'] = None
-            data_changed = True
-        if 'referrals' not in user_data[user_id]:
-            user_data[user_id]['referrals'] = []
-            data_changed = True
-        if 'referral_earnings' not in user_data[user_id]:
-            user_data[user_id]['referral_earnings'] = 0.0
-            data_changed = True
+    # Add referral fields if missing
+    if 'referrer_id' not in user_data[user_id]:
+        user_data[user_id]['referrer_id'] = None
+        data_changed = True
+    if 'referrals' not in user_data[user_id]:
+        user_data[user_id]['referrals'] = []
+        data_changed = True
+    if 'referral_earnings' not in user_data[user_id]:
+        user_data[user_id]['referral_earnings'] = 0.0
+        data_changed = True
 
-        # Migrate old data if needed
-        if 'balance_usdt' in user_data[user_id] and 'main_balance_usdt' not in user_data[user_id]:
-            user_data[user_id]['main_balance_usdt'] = user_data[user_id].pop('balance_usdt', 0.0)
-            user_data[user_id]['hold_balance_usdt'] = 0.0
-            data_changed = True
+    # Initialize processing_details if missing
+    if 'processing_details' not in user_data[user_id]:
+        user_data[user_id]['processing_details'] = []
+        data_changed = True
+
+    # Migrate old data if needed
+    if 'balance_usdt' in user_data[user_id] and 'main_balance_usdt' not in user_data[user_id]:
+        user_data[user_id]['main_balance_usdt'] = user_data[user_id].pop('balance_usdt', 0.0)
+        user_data[user_id]['hold_balance_usdt'] = 0.0
+        data_changed = True
 
         # Add topup_balance_usdt if missing
         if 'topup_balance_usdt' not in user_data[user_id]:
