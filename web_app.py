@@ -37,22 +37,26 @@ def dashboard():
     data = load_data()
     user_info = data.get(user_id, {})
     
-    # Mocking status for numbers since the original data structure 
-    # might not have explicit status per number in the provided snippet.
-    # In a real app, 'sold_numbers' would be objects with status.
+    # Real data from user_data.json
     numbers = user_info.get('sold_numbers', [])
     processed_numbers = []
-    for num in numbers:
-        # For demonstration, we'll assign some mock data if it's just a string list
-        if isinstance(num, str):
+    for item in numbers:
+        if isinstance(item, dict):
+            # If item is already a dict, use it but ensure fields exist
             processed_numbers.append({
-                'number': num,
-                'status': 'Successful', # Default status
+                'number': item.get('number', 'N/A'),
+                'status': item.get('status', 'Processing'),
+                'price': f"{item.get('price', 0.20):.2f} USD",
+                'date': item.get('timestamp', 'N/A')
+            })
+        elif isinstance(item, str):
+            # If item is just a number string
+            processed_numbers.append({
+                'number': item,
+                'status': 'Successful',
                 'price': '0.20 USD',
                 'date': '2026-02-15'
             })
-        else:
-            processed_numbers.append(num)
             
     return render_template('dashboard.html', numbers=processed_numbers)
 

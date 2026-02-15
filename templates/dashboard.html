@@ -31,8 +31,8 @@
     {% for item in numbers %}
     <div class="item">
         <div class="number">{{ item.number }}</div>
-        <div class="details">{{ item.price }}</div>
-        <div class="details">{{ item.date }}</div>
+        <div class="details">Price: {{ item.price }}</div>
+        <div class="details">Date: {{ item.date }}</div>
         <div class="status {{ item.status }}">{{ item.status }}</div>
     </div>
     {% else %}
