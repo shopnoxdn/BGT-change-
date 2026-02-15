@@ -91,6 +91,11 @@
         <h2>Welcome Back</h2>
         <p style="margin-bottom: 2rem; color: #94a3b8;">Login with your History ID</p>
         <form action="/login" method="post">
+            {% if error %}
+            <div style="color: var(--danger); margin-bottom: 1rem; font-size: 0.9rem; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 6px; border: 1px solid var(--danger);">
+                {{ error }}
+            </div>
+            {% endif %}
             <div class="input-group">
                 <input type="text" name="user_id" placeholder="Enter your History ID" required autocomplete="off">
             </div>

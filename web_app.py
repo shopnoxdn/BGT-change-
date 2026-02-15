@@ -21,12 +21,14 @@ def index():
 
 @app.route('/login', methods=['POST'])
 def login():
-    user_id = request.form.get('user_id')
+    user_id = request.form.get('user_id', '').strip()
     data = load_data()
     if user_id in data:
         session['user_id'] = user_id
         return redirect(url_for('dashboard'))
-    return "Invalid ID. Please check your 'My History' ID in the bot.", 401
+    
+    # Return a better looking error page or style the response
+    return render_template('login.html', error="Invalid ID. Please check your 'My History' ID in the bot."), 401
 
 @app.route('/dashboard')
 def dashboard():
