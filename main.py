@@ -563,12 +563,12 @@ async def my_history_callback(update: Update, context: ContextTypes.DEFAULT_TYPE
     login_id = hashlib.md5(user_id.encode()).hexdigest()[:15].upper()
     
     history_text = f"""
-📜 **My History**
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-
+📜 **BGT WALLET - ACTIVITY LOG** 📜
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 🆔 **Login ID:** `{login_id}`
 
-This is your unique 15-character login identifier for your account history.
+This is your unique 15-character identifier for the web dashboard.
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 """
     keyboard = [[InlineKeyboardButton("🔙 Main Menu", callback_data="main_menu")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -633,20 +633,16 @@ async def refer_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     referral_earnings = user_info.get('referral_earnings', 0.0)
     
     refer_text = f"""
-👥 **Refer & Earn Program**
+🤝 **BGT WALLET - REFERRAL PROGRAM** 🤝
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Invite your friends and earn rewards for every successful sale they complete!
 
 🔗 **Your Referral Link:**
-`{referral_link}`
+{referral_link}
 
-📊 **Your Stats:**
-👤 Total Referrals: {referral_count}
-💰 Referral Earnings: ${referral_earnings:.2f} USD
-
-💎 **Rewards:**
-• $0.04 for each new user who joins
-• 3% of your referral's income
-
-📢 Share your link and earn!
+👥 **Total Referrals:** `{referral_count}`
+💰 **Total Earnings:** `{referral_earnings:.2f} USDT`
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 """
     
     keyboard = [[InlineKeyboardButton("🔙 Main Menu", callback_data="main_menu")]]
@@ -660,9 +656,11 @@ async def buy_account_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     await query.answer()
 
     buy_text = """
-🛒 **Buy Telegram Account**
+🛒 **BGT WALLET - ASSET ACQUISITION** 🛒
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Select a country to browse available digital assets for purchase.
 
-Select Country:
+📍 **Select Country:**
 """
 
     # Get all countries sorted by buy price (descending for better visibility)
