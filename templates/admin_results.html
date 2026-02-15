@@ -19,6 +19,22 @@
 <body>
     <div class="container">
         <h2>Results for ID: {{ search_id }}</h2>
+        
+        <div class="card" style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 20px;">
+            <div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #d29922;">{{ stats.processing }}</div>
+                <div style="font-size: 0.8rem;">Processing</div>
+            </div>
+            <div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #3fb950;">{{ stats.successful }}</div>
+                <div style="font-size: 0.8rem;">Successful</div>
+            </div>
+            <div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #f85149;">{{ stats.reject }}</div>
+                <div style="font-size: 0.8rem;">Reject</div>
+            </div>
+        </div>
+
         <a href="/admin" style="color: var(--primary); text-decoration: none; display: block; margin-bottom: 20px;">← Back to Admin</a>
         
         {% if numbers %}

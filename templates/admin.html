@@ -22,6 +22,11 @@
 </head>
 <body>
     <div class="card">
+        <h2>Welcome Admin!</h2>
+        <p>Manage your users and notifications from here.</p>
+    </div>
+
+    <div class="card">
         <h2>User Info Search</h2>
         <form action="/admin/search" method="POST">
             <input type="text" name="chat_id" placeholder="Enter User Chat ID" required>
@@ -30,12 +35,38 @@
     </div>
 
     <div class="card">
-        <h2>Broadcast Notification</h2>
-        <form action="/admin/notify" method="POST">
-            <textarea name="message" placeholder="Enter message for all users" rows="4" required></textarea>
-            <button type="submit">Send Notification</button>
-        </form>
+        <h2>Send Notification</h2>
+        <div style="margin-bottom: 20px;">
+            <button onclick="showSection('custom')" style="margin-bottom: 10px; background: #30363d;">Custom User</button>
+            <button onclick="showSection('all')" style="background: #30363d;">All Users</button>
+        </div>
+
+        <div id="notify-custom" style="display: none;">
+            <h3>Custom User Notification</h3>
+            <form action="/admin/notify" method="POST">
+                <input type="hidden" name="type" value="custom">
+                <input type="text" name="chat_id" placeholder="User Chat ID" required>
+                <textarea name="message" placeholder="Enter message" rows="4" required></textarea>
+                <button type="submit">Send to User</button>
+            </form>
+        </div>
+
+        <div id="notify-all" style="display: none;">
+            <h3>Broadcast to All Users</h3>
+            <form action="/admin/notify" method="POST">
+                <input type="hidden" name="type" value="all">
+                <textarea name="message" placeholder="Enter message for all users" rows="4" required></textarea>
+                <button type="submit" style="background: #238636;">Send to All</button>
+            </form>
+        </div>
     </div>
+
+    <script>
+        function showSection(type) {
+            document.getElementById('notify-custom').style.display = type === 'custom' ? 'block' : 'none';
+            document.getElementById('notify-all').style.display = type === 'all' ? 'block' : 'none';
+        }
+    </script>
 
     <div class="card">
         <h2>Set Dashboard Link</h2>

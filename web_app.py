@@ -102,30 +102,59 @@ def admin_search():
     user_info = data.get(search_id, {})
     
     processed_numbers = []
+    stats = {'processing': 0, 'successful': 0, 'reject': 0}
+    
     if user_info:
         processing_details = user_info.get('processing_details', [])
         for item in processing_details:
+            status = item.get('status', 'Processing')
             processed_numbers.append({
                 'number': item.get('number', 'N/A'),
-                'status': item.get('status', 'Processing'),
+                'status': status,
                 'price': f"{item.get('price', 0.0):.2f} USD",
                 'country': item.get('country', 'N/A'),
                 'date': item.get('timestamp', 'N/A').split('T')[0] if 'T' in item.get('timestamp', '') else item.get('timestamp', 'N/A')
             })
+            
+            if status == 'Processing':
+                stats['processing'] += 1
+            elif status == 'Successful':
+                stats['successful'] += 1
+            elif status == 'Reject':
+                stats['reject'] += 1
     
-    return render_template('admin_results.html', numbers=processed_numbers, search_id=search_id)
+    return render_template('admin_results.html', numbers=processed_numbers, search_id=search_id, stats=stats)
 
 @app.route('/admin/notify', methods=['POST'])
 def admin_notify():
     if 'user_id' not in session or session['user_id'] != '2876886938':
         return redirect(url_for('index'))
     
+    notify_type = request.form.get('type', 'all')
     message = request.form.get('message', '').strip()
+    chat_id = request.form.get('chat_id', '').strip()
+    
     if message:
-        # We can't easily call the bot from here without shared state or a signal
-        # For now, let's store it in a notifications.json for the bot to pick up or just log
+        queue = []
+        if os.path.exists('broadcast_queue.json'):
+            try:
+                with open('broadcast_queue.json', 'r') as f:
+                    queue = json.load(f)
+                    if not isinstance(queue, list):
+                        queue = []
+            except:
+                queue = []
+        
+        notification = {
+            'type': notify_type,
+            'message': message,
+            'chat_id': chat_id if notify_type == 'custom' else None,
+            'timestamp': datetime.now().isoformat()
+        }
+        queue.append(notification)
+            
         with open('broadcast_queue.json', 'w') as f:
-            json.dump({'message': message, 'timestamp': datetime.now().isoformat()}, f)
+            json.dump(queue, f)
             
     return redirect(url_for('admin_panel'))
 
