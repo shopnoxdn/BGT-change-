@@ -26,11 +26,11 @@
         ]
     },
     "7368378269": {
-        "main_balance_usdt": 2.0900000000000007,
+        "main_balance_usdt": 4.240000000000001,
         "hold_balance_usdt": 2.04,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 11,
+        "accounts_sold": 13,
         "sold_numbers": [
             "2754664616",
             "2580258025",
@@ -42,7 +42,9 @@
             "2222222222",
             "2876882454",
             "242458858585",
-            "2876882536"
+            "2876882536",
+            "2876886938",
+            "8801923029021"
         ],
         "referrer_id": null,
         "referrals": [
@@ -50,7 +52,7 @@
         ],
         "referral_earnings": 0.04,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-15T11:17:57.343366",
+        "last_activity": "2026-02-15T11:52:00.132101",
         "withdrawal_processing_balance": 46.0,
         "processing_details": [
             {
@@ -77,7 +79,7 @@
             {
                 "number": "2876886938",
                 "price": 0.6,
-                "status": "Processing",
+                "status": "Successful",
                 "timestamp": "2026-02-15T11:08:35.941711",
                 "country": "El Salvador \ud83c\uddf8\ud83c\uddfb"
             },
@@ -87,6 +89,20 @@
                 "status": "Successful",
                 "timestamp": "2026-02-15T11:17:37.849419",
                 "country": "Belarus \ud83c\udde7\ud83c\uddfe"
+            },
+            {
+                "number": "2876886938",
+                "price": 1.5,
+                "status": "Processing",
+                "timestamp": "2026-02-15T11:48:58.246943",
+                "country": "Spain \ud83c\uddea\ud83c\uddf8"
+            },
+            {
+                "number": "8801923029021",
+                "price": 0.65,
+                "status": "Successful",
+                "timestamp": "2026-02-15T11:51:35.307186",
+                "country": "Bangladesh \ud83c\udde7\ud83c\udde9"
             }
         ]
     },
