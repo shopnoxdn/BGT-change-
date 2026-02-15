@@ -2204,7 +2204,7 @@ Everything will be processed within maximum 5 minutes. Please stay tuned.
 
     await update.message.reply_text(submission_text, parse_mode='Markdown')
 
-    # Send notification to admin for verification
+    # Notify user
     try:
         user_info = get_user_data(user_id)
         notification_text = f"""
@@ -2220,7 +2220,7 @@ Please verify the OTP and confirm if it's correct.
 """
 
         keyboard = [
-            [InlineKeyboardButton("✅ Confirm & Add to Hold", callback_data=f"confirm_otp_{user_id}_{country_data['sell_price']}_{user_number}")],
+            [InlineKeyboardButton("✅ Confirm & Add to Hold", callback_data=f"confirm_otp_{user_id}_{country_data['sell_price']}_{user_number}_{country_data['name']}")],
             [InlineKeyboardButton("❌ Wrong OTP", callback_data=f"wrong_otp_{user_id}_{user_number}")]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -2289,7 +2289,7 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     query = update.callback_query
     await query.answer()
 
-    # Pattern: confirm_otp_{user_id}_{price}_{number}
+    # Pattern: confirm_otp_{user_id}_{price}_{number}_{country}
     data = query.data.split('_')
     if len(data) < 5:
         return
@@ -2297,6 +2297,7 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     user_id = data[2]
     price = float(data[3])
     user_number = data[4]
+    country_name = data[5] if len(data) > 5 else 'N/A'
 
     with user_data_lock:
         if user_id not in user_data:
@@ -2321,7 +2322,7 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             'price': price,
             'status': 'Processing',
             'timestamp': datetime.now().isoformat(),
-            'country': 'N/A'
+            'country': country_name
         })
         save_user_data()
 
