@@ -18,7 +18,7 @@
     },
     "7368378269": {
         "main_balance_usdt": 1.4900000000000007,
-        "hold_balance_usdt": 2.69,
+        "hold_balance_usdt": 2.04,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
         "accounts_sold": 10,
@@ -40,13 +40,13 @@
         ],
         "referral_earnings": 0.04,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-15T10:52:57.364060",
+        "last_activity": "2026-02-15T10:59:58.973666",
         "withdrawal_processing_balance": 46.0,
         "processing_details": [
             {
                 "number": "242458858585",
                 "price": 0.65,
-                "status": "Processing",
+                "status": "Reject",
                 "timestamp": "2026-02-15T10:52:24.811353",
                 "country": "Bangladesh \ud83c\udde7\ud83c\udde9"
             },

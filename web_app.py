@@ -60,32 +60,20 @@ def dashboard():
     processing_details = user_info.get('processing_details', [])
     processed_numbers = []
     
-    # 1. Add from processing_details (the real source of truth now)
+    # Add from processing_details (the real source of truth now)
     for item in processing_details:
         status = item.get('status', 'Processing')
-        processed_numbers.append({
-            'number': item.get('number', 'N/A'),
-            'status': status,
-            'price': f"{item.get('price', 0.0):.2f} USD",
-            'country': item.get('country', 'N/A'),
-            'date': item.get('timestamp', 'N/A').split('T')[0] if 'T' in item.get('timestamp', '') else item.get('timestamp', 'N/A'),
-            'raw_timestamp': item.get('timestamp', '')
-        })
+        # Filter: Only show if status is one of the valid ones (this handles the "only show when confirmed" logic)
+        if status in ['Processing', 'Successful', 'Reject']:
+            processed_numbers.append({
+                'number': item.get('number', 'N/A'),
+                'status': status,
+                'price': f"{item.get('price', 0.0):.2f} USD",
+                'country': item.get('country', 'N/A'),
+                'date': item.get('timestamp', 'N/A').split('T')[0] if 'T' in item.get('timestamp', '') else item.get('timestamp', 'N/A'),
+                'raw_timestamp': item.get('timestamp', '')
+            })
     
-    # 2. Add from legacy sold_numbers if not already in processing_details
-    existing_nums = [n['number'] for n in processed_numbers]
-    if 'sold_numbers' in user_info:
-        for num in user_info['sold_numbers']:
-            if num not in existing_nums:
-                processed_numbers.append({
-                    'number': num,
-                    'status': 'Successful',
-                    'price': '0.50 USD',
-                    'country': 'Global',
-                    'date': user_info.get('created_at', 'N/A').split('T')[0] if 'T' in user_info.get('created_at', '') else 'N/A',
-                    'raw_timestamp': user_info.get('created_at', '')
-                })
-            
     return render_template('dashboard.html', numbers=processed_numbers)
 
 @app.route('/logout')

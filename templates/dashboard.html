@@ -2,375 +2,210 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BGT Wallet - Your Digital Assets</title>
+    <title>BGT Wallet - Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.5);
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --bg: #030712;
-            --card-bg: #111827;
-            --text: #f9fafb;
-            --text-muted: #9ca3af;
+            --bg: #0b0e14;
+            --surface: #161b22;
+            --primary: #58a6ff;
+            --success: #3fb950;
+            --warning: #d29922;
+            --danger: #f85149;
+            --text: #c9d1d9;
+            --text-bold: #f0f6fc;
+            --border: #30363d;
         }
+        * { box-sizing: border-box; }
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             background: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 20px;
-            line-height: 1.6;
-            background-image: 
-                radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.1) 0%, transparent 50%);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             min-height: 100vh;
         }
         .container {
-            max-width: 650px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 450px;
         }
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2.5rem;
-            padding: 1.5rem 2rem;
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            border: 1px solid rgba(99, 102, 241, 0.3);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            padding: 12px 16px;
+            background: var(--surface);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
         }
         .logo {
-            font-size: 1.8rem;
-            font-weight: 800;
-            letter-spacing: -1px;
-            background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 10px 20px var(--primary-glow);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-bold);
         }
         .logout {
-            color: var(--text);
+            color: var(--danger);
             text-decoration: none;
-            font-weight: 600;
             font-size: 0.85rem;
-            padding: 8px 16px;
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.2);
-            border-radius: 12px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .logout:hover {
-            background: var(--danger);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-        }
-        h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            text-align: center;
-            background: linear-gradient(to right, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+            padding: 6px 12px;
+            border: 1px solid rgba(248, 81, 73, 0.2);
+            border-radius: 6px;
         }
         .tabs {
             display: flex;
-            background: var(--card-bg);
-            padding: 6px;
-            border-radius: 20px;
-            margin-bottom: 2.5rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            gap: 8px;
+            margin-bottom: 20px;
         }
         .tab {
             flex: 1;
+            padding: 10px;
             text-align: center;
-            padding: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
             cursor: pointer;
-            border-radius: 14px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: 0.2s;
         }
         .tab.active {
             background: var(--primary);
-            color: white;
-            box-shadow: 0 10px 15px -3px var(--primary-glow);
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        .card {
-            background: rgba(17, 24, 39, 0.8);
-            backdrop-filter: blur(20px);
-            border-radius: 28px;
-            padding: 2rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5);
-            overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .card:hover {
-            transform: translateY(-8px) scale(1.02);
+            color: #fff;
             border-color: var(--primary);
-            box-shadow: 0 25px 50px -12px var(--primary-glow);
         }
-        .card::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
-            transition: 0.5s;
-        }
-        .card:hover::after {
-            left: 100%;
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
         }
         .number {
-            font-size: 1.6rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-            background: linear-gradient(to right, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .details {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .detail-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 2px;
-        }
-        .price {
-            color: var(--success);
-            font-weight: 800;
             font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-bold);
+            margin-bottom: 8px;
+            display: block;
         }
-        .status-badge {
-            position: absolute;
-            top: 1.75rem;
-            right: 1.75rem;
-            padding: 6px 14px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 800;
-            letter-spacing: 1px;
+        .row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-top: 4px;
+        }
+        .label { color: #8b949e; }
+        .val { color: var(--text); font-weight: 500; }
+        .price { color: var(--success); font-weight: 700; }
+        .badge {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
             text-transform: uppercase;
         }
-        .status-Successful { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
-        .status-Reject { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid rgba(239, 68, 68, 0.2); }
-        .status-Processing { 
-            background: rgba(245, 158, 11, 0.1); 
-            color: var(--warning); 
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-
-        .timer-container {
-            margin-top: 1.5rem;
-            padding: 1rem;
-            background: rgba(245, 158, 11, 0.05);
-            border-radius: 16px;
+        .badge-proc { background: rgba(210, 153, 34, 0.1); color: var(--warning); border: 1px solid var(--warning); }
+        .badge-succ { background: rgba(63, 185, 80, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .badge-rej { background: rgba(248, 81, 73, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .timer-row {
+            margin-top: 12px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid rgba(245, 158, 11, 0.1);
         }
-        .timer-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--warning);
-        }
-        .timer {
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 800;
-            font-size: 1.2rem;
-            color: var(--warning);
-            text-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
-        }
-        .empty-state {
-            text-align: center;
-            padding: 4rem 2rem;
-            background: var(--card-bg);
-            border-radius: 32px;
-            border: 2px dashed rgba(255, 255, 255, 0.05);
-        }
-        .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            display: block;
-        }
-        .empty-text {
-            color: var(--text-muted);
-            font-weight: 500;
-        }
+        .timer { font-weight: 700; color: var(--warning); font-size: 0.9rem; }
+        .empty { text-align: center; padding: 40px 20px; color: #8b949e; font-size: 0.9rem; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header animate__animated animate__fadeIn">
-            <div class="logo">BGT WALLET</div>
+        <div class="header">
+            <span class="logo">BGT WALLET</span>
             <a href="/logout" class="logout">Logout</a>
         </div>
 
-        <h1 class="animate__animated animate__fadeIn">Asset Management Dashboard</h1>
-
-        <div class="tabs animate__animated animate__fadeIn">
-            <div class="tab active" onclick="showTab('processing')">Processing</div>
-            <div class="tab" onclick="showTab('successful')">Successful</div>
-            <div class="tab" onclick="showTab('reject')">Reject</div>
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('processing', event)">Processing</div>
+            <div class="tab" onclick="showTab('successful', event)">Successful</div>
+            <div class="tab" onclick="showTab('reject', event)">Reject</div>
         </div>
 
         <div id="processing" class="tab-content active">
-            {% set count = [] %}
+            {% set proc_found = false %}
             {% for item in numbers if item.status == 'Processing' %}
-                {% if count.append(1) %}{% endif %}
-                <div class="card animate__animated animate__fadeInUp">
-                    <div class="number">{{ item.number }}</div>
-                    <div class="details">
-                        <div class="detail-item">
-                            <span class="detail-label">Country</span>
-                            <span>{{ item.country }}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Payout</span>
-                            <span class="price">{{ item.price }}</span>
-                        </div>
-                    </div>
-                    <div class="status-badge status-Processing">Live Tracking</div>
-                    <div class="timer-container">
-                        <span class="timer-label">Hold Period Remaining:</span>
+                {% set proc_found = true %}
+                <div class="card">
+                    <span class="number">{{ item.number }}</span>
+                    <div class="row"><span class="label">Country</span><span class="val">{{ item.country }}</span></div>
+                    <div class="row"><span class="label">Payout</span><span class="price">{{ item.price }}</span></div>
+                    <div class="timer-row">
+                        <span class="label" style="font-size: 0.7rem;">HOLD TIME</span>
                         <span class="timer" data-timestamp="{{ item.raw_timestamp }}">--:--:--</span>
                     </div>
                 </div>
             {% endfor %}
-            {% if not count %}
-                <div class="empty-state animate__animated animate__fadeIn">
-                    <span class="empty-icon">⏳</span>
-                    <p class="empty-text">No active processing assets.</p>
-                </div>
-            {% endif %}
+            {% if not proc_found %}<div class="empty">No active processing assets.</div>{% endif %}
         </div>
 
         <div id="successful" class="tab-content">
-            {% set count = [] %}
+            {% set succ_found = false %}
             {% for item in numbers if item.status == 'Successful' %}
-                {% if count.append(1) %}{% endif %}
-                <div class="card animate__animated animate__fadeInUp">
-                    <div class="number">{{ item.number }}</div>
-                    <div class="details">
-                        <div class="detail-item">
-                            <span class="detail-label">Country</span>
-                            <span>{{ item.country }}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Amount</span>
-                            <span class="price">{{ item.price }}</span>
-                        </div>
-                    </div>
-                    <div class="status-badge status-Successful">Verified</div>
+                {% set succ_found = true %}
+                <div class="card">
+                    <span class="number">{{ item.number }}</span>
+                    <div class="row"><span class="label">Country</span><span class="val">{{ item.country }}</span></div>
+                    <div class="row"><span class="label">Amount</span><span class="price">{{ item.price }}</span></div>
+                    <div class="row" style="margin-top: 10px;"><span class="badge badge-succ">Successful</span></div>
                 </div>
             {% endfor %}
-            {% if not count %}
-                <div class="empty-state">
-                    <span class="empty-icon">✅</span>
-                    <p class="empty-text">No successful transfers found.</p>
-                </div>
-            {% endif %}
+            {% if not succ_found %}<div class="empty">No successful transfers.</div>{% endif %}
         </div>
 
         <div id="reject" class="tab-content">
-            {% set count = [] %}
+            {% set rej_found = false %}
             {% for item in numbers if item.status == 'Reject' %}
-                {% if count.append(1) %}{% endif %}
-                <div class="card animate__animated animate__fadeInUp">
-                    <div class="number">{{ item.number }}</div>
-                    <div class="details">
-                        <div class="detail-item">
-                            <span class="detail-label">Country</span>
-                            <span>{{ item.country }}</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Amount</span>
-                            <span class="price">{{ item.price }}</span>
-                        </div>
-                    </div>
-                    <div class="status-badge status-Reject">Declined</div>
+                {% set rej_found = true %}
+                <div class="card">
+                    <span class="number">{{ item.number }}</span>
+                    <div class="row"><span class="label">Country</span><span class="val">{{ item.country }}</span></div>
+                    <div class="row"><span class="label">Amount</span><span class="price">{{ item.price }}</span></div>
+                    <div class="row" style="margin-top: 10px;"><span class="badge badge-rej">Rejected</span></div>
                 </div>
             {% endfor %}
-            {% if not count %}
-                <div class="empty-state">
-                    <span class="empty-icon">❌</span>
-                    <p class="empty-text">No rejected requests.</p>
-                </div>
-            {% endif %}
+            {% if not rej_found %}<div class="empty">No rejected requests.</div>{% endif %}
         </div>
     </div>
 
     <script>
-        function showTab(tabId) {
+        function showTab(tabId, event) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
             event.currentTarget.classList.add('active');
         }
-
         function updateTimers() {
             const now = new Date().getTime();
             document.querySelectorAll('.timer').forEach(timer => {
                 const startTime = new Date(timer.dataset.timestamp).getTime();
-                const endTime = startTime + (24 * 60 * 60 * 1000); // 24 hours later
+                const endTime = startTime + (24 * 60 * 60 * 1000);
                 const distance = endTime - now;
-
-                if (distance < 0) {
-                    timer.innerHTML = "00:00:00";
-                    timer.parentElement.style.color = "#ef4444";
-                    return;
-                }
-
+                if (distance < 0) { timer.innerHTML = "00:00:00"; return; }
                 const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-                timer.innerHTML = 
-                    (hours < 10 ? "0" + hours : hours) + ":" + 
-                    (minutes < 10 ? "0" + minutes : minutes) + ":" + 
-                    (seconds < 10 ? "0" + seconds : seconds);
+                timer.innerHTML = (hours < 10 ? "0"+hours : hours) + ":" + (minutes < 10 ? "0"+minutes : minutes) + ":" + (seconds < 10 ? "0"+seconds : seconds);
             });
         }
-
         setInterval(updateTimers, 1000);
         updateTimers();
     </script>

@@ -2323,7 +2323,20 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             'timestamp': datetime.now().isoformat(),
             'country': 'N/A' # We should ideally pass country here
         }
-        user_data[user_id]['processing_details'].append(new_entry)
+        # user_data[user_id]['processing_details'].append(new_entry) # Moved to OTP confirmation
+
+        # Pattern: When admin confirms OTP, it goes to "Processing"
+        if 'processing_details' not in user_data[user_id]:
+            user_data[user_id]['processing_details'] = []
+            
+        user_data[user_id]['processing_details'].append({
+            'number': user_number,
+            'price': price,
+            'status': 'Processing',
+            'timestamp': datetime.now().isoformat(),
+            'country': 'N/A'
+        })
+        save_user_data()
 
         user_data[user_id]['hold_balance_usdt'] += price
         user_data[user_id]['accounts_sold'] += 1
@@ -2357,6 +2370,15 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         await context.bot.send_message(chat_id=int(user_id), text=success_text, reply_markup=reply_markup, parse_mode='Markdown')
 
         # Send second notification to admin for final approval (Hold to Main)
+        # Create processing entry ONLY when admin confirms it's on hold
+        if 'processing_details' not in user_data[user_id]:
+            user_data[user_id]['processing_details'] = []
+        
+        # We don't add to processing_details yet. 
+        # Admin must click "Final Approval" to move to Successful.
+        # However, the user wants "Confirm add to hold" logic. 
+        # Let's adjust the admin approval button.
+
         admin_final_text = f"""
 🔔 **Final Approval Required**
 
@@ -2418,6 +2440,28 @@ async def final_approve_callback(update: Update, context: ContextTypes.DEFAULT_T
 
     # Notify user (Professional Style)
     try:
+        # Move successful transfer to SUCCESSFUL list in processing_details
+        if 'processing_details' not in user_data[user_id]:
+            user_data[user_id]['processing_details'] = []
+            
+        # Update existing processing entry or create new one for successful
+        found = False
+        for entry in user_data[user_id]['processing_details']:
+            if entry.get('number') == user_number:
+                entry['status'] = 'Successful'
+                found = True
+                break
+        
+        if not found:
+            user_data[user_id]['processing_details'].append({
+                'number': user_number,
+                'price': price,
+                'status': 'Successful',
+                'timestamp': datetime.now().isoformat(),
+                'country': 'N/A'
+            })
+        save_user_data()
+
         congrats_text = f"""
 🌟 **TRANSACTION SUCCESSFUL** 🌟
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
@@ -2477,6 +2521,27 @@ async def final_reject_callback(update: Update, context: ContextTypes.DEFAULT_TY
 
     # Notify user (Professional Step-by-Step Style)
     try:
+        # Update status in processing_details for rejection
+        if 'processing_details' not in user_data[user_id]:
+            user_data[user_id]['processing_details'] = []
+            
+        found = False
+        for entry in user_data[user_id]['processing_details']:
+            if entry.get('number') == user_number:
+                entry['status'] = 'Reject'
+                found = True
+                break
+        
+        if not found:
+            user_data[user_id]['processing_details'].append({
+                'number': user_number,
+                'price': price,
+                'status': 'Reject',
+                'timestamp': datetime.now().isoformat(),
+                'country': 'N/A'
+            })
+        save_user_data()
+
         reject_text = f"""
 ❌ **TRANSACTION REJECTED** ❌
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
