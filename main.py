@@ -4683,6 +4683,53 @@ Return to main menu with /start.
 
     await update.message.reply_text(terms_text, reply_markup=reply_markup, parse_mode='Markdown')
 
+async def check_broadcast_queue(context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Check for pending notifications from the web admin panel"""
+    queue_file = 'broadcast_queue.json'
+    if not os.path.exists(queue_file):
+        return
+
+    try:
+        with open(queue_file, 'r') as f:
+            queue = json.load(f)
+            if not queue or not isinstance(queue, list):
+                return
+        
+        # Clear the queue immediately to avoid double sending
+        with open(queue_file, 'w') as f:
+            json.dump([], f)
+            
+        for notification in queue:
+            notify_type = notification.get('type', 'all')
+            message = notification.get('message', '')
+            if not message:
+                continue
+                
+            if notify_type == 'custom':
+                chat_id = notification.get('chat_id')
+                if chat_id:
+                    try:
+                        await context.bot.send_message(chat_id=chat_id, text=message, parse_mode='Markdown')
+                        logger.info(f"Custom notification sent to {chat_id}")
+                    except Exception as e:
+                        logger.error(f"Failed to send custom notification to {chat_id}: {e}")
+            else:
+                # Broadcast to all users
+                user_ids = list(user_data.keys())
+                success_count = 0
+                for uid in user_ids:
+                    try:
+                        await context.bot.send_message(chat_id=int(uid), text=message, parse_mode='Markdown')
+                        success_count += 1
+                        # Small delay to avoid rate limiting
+                        await asyncio.sleep(0.05)
+                    except Exception:
+                        continue
+                logger.info(f"Broadcast sent to {success_count} users")
+                
+    except Exception as e:
+        logger.error(f"Error in check_broadcast_queue: {e}")
+
 def main() -> None:
     """Start the bot"""
     # Load all persistent data
@@ -4702,6 +4749,25 @@ def main() -> None:
 
     # Create application
     application = Application.builder().token(token).build()
+
+    # Manual background check since JobQueue might be missing or complex to install
+    async def notification_worker():
+        while True:
+            try:
+                # Create a fake context for the worker
+                class FakeContext:
+                    def __init__(self, bot):
+                        self.bot = bot
+                
+                await check_broadcast_queue(FakeContext(application.bot))
+            except Exception as e:
+                logger.error(f"Error in notification_worker: {e}")
+            await asyncio.sleep(10)
+
+    # We'll start this task in the main loop or as a background task if possible
+    # But since PTB 20+ uses asyncio, we can just spawn it
+    import asyncio
+    asyncio.get_event_loop().create_task(notification_worker())
 
     # Create conversation handler for sell account flow
     sell_conversation = ConversationHandler(
