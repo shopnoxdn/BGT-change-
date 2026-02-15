@@ -530,17 +530,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         save_user_data()
 
     welcome_text = f"""
-🤖 Welcome {user.first_name}!
+🌟 **WELCOME TO BGT WALLET** 🌟
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Hello {user.first_name}! 👋 
 
-I am a Telegram Account Trading Bot. Here you can:
+Manage your digital assets and account sales with professional speed and security.
 
-💰 Check your balance
-💸 Sell Telegram Account
-🏦 Withdraw money
+💰 **Main Balance:** {user_info['main_balance_usdt']:.2f} USDT
+⏳ **Hold Balance:** {user_info['hold_balance_usdt']:.2f} USDT
 
-Choose your desired option from the buttons below:
+🚀 Select an option below to get started:
 """
-
+    
     inline_markup = create_main_menu()
     reply_markup = create_reply_keyboard()
 
@@ -549,7 +550,7 @@ Choose your desired option from the buttons below:
     else:
         await update.callback_query.edit_message_text(welcome_text, reply_markup=inline_markup, parse_mode='Markdown')
         # Also send reply keyboard separately for callback queries
-        await update.callback_query.message.reply_text("Choose an option:", reply_markup=reply_markup)
+        await update.callback_query.message.reply_text("Main Dashboard Menu:", reply_markup=reply_markup)
 
 async def my_history_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle My History button callback"""
@@ -592,16 +593,14 @@ async def balance_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     is_admin = user_id == ADMIN_CHAT_ID
 
     balance_text = f"""
-Your balance Details 
+🏦 **BGT WALLET - ASSET DETAILS** 🏦
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+💰 **Main Balance:** `{user_info['main_balance_usdt']:.2f} USDT`
+⏳ **Hold Balance:** `{user_info['hold_balance_usdt']:.2f} USDT`
+⏳ **Withdrawal In-Progress:** `{user_info.get('withdrawal_processing_balance', 0.0):.2f} USDT`
 
-Hold balance: {user_info['hold_balance_usdt']:.2f} USDT
-
-Main balance: {user_info['main_balance_usdt']:.2f} USDT
-
-Withdrawal processing balance: {user_info.get('withdrawal_processing_balance', 0.0):.2f} USDT
-
-
-User id: `{user_id}`
+🆔 **User ID:** `{user_id}`
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 """
 
     keyboard = []
