@@ -27,22 +27,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Telegram Bot"
+args = "Web App Dashboard"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Web App Dashboard"
-
-[[workflows.workflow]]
-name = "Telegram Bot"
-author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "console"
+args = "Telegram Bot (Updated)"
 
 [[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python main.py"
+task = "workflow.run"
+args = "Web App Dashboard (Updated)"
 
 [[workflows.workflow]]
 name = "Web App Dashboard"
@@ -55,6 +48,29 @@ outputType = "webview"
 task = "shell.exec"
 args = "python web_app.py"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Telegram Bot (Updated)"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow]]
+name = "Web App Dashboard (Updated)"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python web_app.py"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
 
 [[ports]]
 localPort = 5000
