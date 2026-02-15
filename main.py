@@ -2062,17 +2062,18 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
 
     # Final waiting text (processing message)
     processing_text = f"""
-⏳ **REQUEST IN PROGRESS** ⏳
+⏳ **BGT WALLET - PROCESSING** ⏳
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 🌍 **Country:** {country_data['name']}
 📞 `{number}`
+💰 **Payout:** ${country_data['sell_price']} USD
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-Your account details are currently being processed by our system. 
+Your asset is currently being processed by our real-time system.
 
-⏱️ **Estimated time:** Maximum 5 minutes.
-🔔 **Next Step:** You will receive a notification as soon as you can enter your verification code.
+⏱️ **Hold Period:** 24 Hours.
+🔔 **Next Step:** You will receive a notification to enter your OTP once the manual check is complete.
 
-Please wait patiently and do not send any other messages.
+Please wait patiently. You can track this in your Web Dashboard.
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 """
 
@@ -2309,14 +2310,23 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 'accounts_bought': 0,
                 'accounts_sold': 0,
                 'sold_numbers': [],
+                'processing_details': [],
                 'created_at': datetime.now().isoformat(),
                 'last_activity': datetime.now().isoformat()
             }
         
-        # Check if already processed
-        if user_number in user_data[user_id].get('sold_numbers', []):
-            await query.edit_message_text(f"✅ Already processed: {user_number}")
-            return
+        # Add to processing_details for web tracking
+        if 'processing_details' not in user_data[user_id]:
+            user_data[user_id]['processing_details'] = []
+            
+        new_entry = {
+            'number': user_number,
+            'price': price,
+            'status': 'Processing',
+            'timestamp': datetime.now().isoformat(),
+            'country': 'N/A' # We should ideally pass country here
+        }
+        user_data[user_id]['processing_details'].append(new_entry)
 
         user_data[user_id]['hold_balance_usdt'] += price
         user_data[user_id]['accounts_sold'] += 1
@@ -2392,6 +2402,13 @@ async def final_approve_callback(update: Update, context: ContextTypes.DEFAULT_T
 
     with user_data_lock:
         if user_id in user_data:
+            # Update status in processing_details
+            if 'processing_details' in user_data[user_id]:
+                for entry in user_data[user_id]['processing_details']:
+                    if entry.get('number') == user_number:
+                        entry['status'] = 'Successful'
+                        break
+
             # Check if they actually have enough in hold
             if user_data[user_id].get('hold_balance_usdt', 0) >= price:
                 user_data[user_id]['hold_balance_usdt'] -= price
@@ -2446,6 +2463,13 @@ async def final_reject_callback(update: Update, context: ContextTypes.DEFAULT_TY
     
     with user_data_lock:
         if user_id in user_data:
+            # Update status in processing_details
+            if 'processing_details' in user_data[user_id]:
+                for entry in user_data[user_id]['processing_details']:
+                    if entry.get('number') == user_number:
+                        entry['status'] = 'Reject'
+                        break
+
             # Deduct from hold balance as the sale failed/was rejected
             if user_data[user_id].get('hold_balance_usdt', 0) >= price:
                 user_data[user_id]['hold_balance_usdt'] -= price
@@ -3084,6 +3108,31 @@ async def approve_sell_callback(update: Update, context: ContextTypes.DEFAULT_TY
 
     # Notify user to continue with OTP
     try:
+        # Create a processing entry for web dashboard tracking
+        with user_data_lock:
+            if user_id not in user_data:
+                get_user_data(user_id) # ensure user exists
+            
+            if 'processing_details' not in user_data[user_id]:
+                user_data[user_id]['processing_details'] = []
+            
+            # Check if already exists to avoid duplicates
+            exists = False
+            for entry in user_data[user_id]['processing_details']:
+                if entry.get('number') == user_number:
+                    exists = True
+                    break
+            
+            if not exists:
+                user_data[user_id]['processing_details'].append({
+                    'number': user_number,
+                    'price': price,
+                    'status': 'Processing',
+                    'timestamp': datetime.now().isoformat(),
+                    'country': country_name
+                })
+        save_user_data()
+
         keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="cancel_sale_otp")]]
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(
@@ -4484,6 +4533,10 @@ async def pii_guard_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         r'^[0-9]{4,8}$',  # 4-8 digit codes
         r'\b[0-9]{4,8}\b',  # 4-8 digit codes in text
     ]
+
+    # BGT Wallet exception - do not block codes/numbers if in sale flow
+    if context.user_data.get('user_number') or context.user_data.get('admin_approved'):
+        return
 
     # Check for phone numbers
     for pattern in phone_patterns:
