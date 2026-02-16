@@ -27,6 +27,16 @@
     </div>
 
     <div class="card">
+        <h2>Quick Actions</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <a href="/admin/users" style="text-decoration: none;"><button type="button" style="background: #238636;">User List</button></a>
+            <a href="/admin/processing" style="text-decoration: none;"><button type="button" style="background: #d29922;">Processing</button></a>
+            <a href="/admin/successful" style="text-decoration: none;"><button type="button" style="background: #58a6ff;">Successful</button></a>
+            <a href="/admin" style="text-decoration: none;"><button type="button" style="background: #30363d;">Refresh</button></a>
+        </div>
+    </div>
+
+    <div class="card">
         <h2>User Info Search</h2>
         <form action="/admin/search" method="POST">
             <input type="text" name="chat_id" placeholder="Enter User Chat ID" required>

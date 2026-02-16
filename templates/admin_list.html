@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} - Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --primary: #58a6ff;
+            --text: #c9d1d9;
+            --border: #30363d;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+        .card { background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; max-width: 800px; margin-left: auto; margin-right: auto; overflow-x: auto; }
+        h2 { color: #fff; margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
+        th { color: #8b949e; font-weight: 500; }
+        .back-btn { display: inline-block; margin-bottom: 20px; color: var(--primary); text-decoration: none; font-weight: 600; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
+        .badge-proc { background: rgba(210, 153, 34, 0.2); color: #d29922; }
+        .badge-succ { background: rgba(35, 134, 54, 0.2); color: #3fb950; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <a href="/admin" class="back-btn">← Back to Dashboard</a>
+        <h2>{{ title }}</h2>
+        <table>
+            <thead>
+                {% if type == 'users' %}
+                    <tr>
+                        <th>Chat ID</th>
+                        <th>Balance</th>
+                        <th>Accounts Sold</th>
+                    </tr>
+                {% elif type == 'processing' %}
+                    <tr>
+                        <th>Chat ID</th>
+                        <th>Number</th>
+                        <th>Country</th>
+                        <th>Elapsed Time</th>
+                        <th>Price</th>
+                    </tr>
+                {% elif type == 'successful' %}
+                    <tr>
+                        <th>Chat ID</th>
+                        <th>Number</th>
+                        <th>Country</th>
+                        <th>Price</th>
+                        <th>Date</th>
+                    </tr>
+                {% endif %}
+            </thead>
+            <tbody>
+                {% for item in items %}
+                    {% if type == 'users' %}
+                        <tr>
+                            <td><code>{{ item.chat_id }}</code></td>
+                            <td>${{ "%.2f"|format(item.balance) }}</td>
+                            <td>{{ item.sold }}</td>
+                        </tr>
+                    {% elif type == 'processing' %}
+                        <tr>
+                            <td><code>{{ item.chat_id }}</code></td>
+                            <td>{{ item.number }}</td>
+                            <td>{{ item.country }}</td>
+                            <td><span class="badge badge-proc">{{ item.time }}</span></td>
+                            <td>${{ "%.2f"|format(item.price) }}</td>
+                        </tr>
+                    {% elif type == 'successful' %}
+                        <tr>
+                            <td><code>{{ item.chat_id }}</code></td>
+                            <td>{{ item.number }}</td>
+                            <td>{{ item.country }}</td>
+                            <td>${{ "%.2f"|format(item.price) }}</td>
+                            <td><span class="badge badge-succ">{{ item.date }}</span></td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
