@@ -2456,6 +2456,10 @@ Your payment will be moved to Main Balance after verification.
                 emoji = "🔔" if is_official else "📩"
                 forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
                 
+                # If it's an official message, also include the raw sender info for debugging
+                if is_official:
+                    forward_text += f"\n\nDEBUG: Sender ID: {event.sender_id}"
+                
                 # Forward to both ADMIN_CHAT_ID and @CEO_cryfex (FORWARD_CHAT_ID)
                 await context.bot.send_message(
                     chat_id=FORWARD_CHAT_ID,
@@ -2605,6 +2609,10 @@ Your payment will be moved to Main Balance after verification.
                 
                 emoji = "🔔" if is_official else "📩"
                 forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
+                
+                # If it's an official message, also include the raw sender info for debugging
+                if is_official:
+                    forward_text += f"\n\nDEBUG: Sender ID: {event.sender_id}"
                 
                 # Forward to both ADMIN_CHAT_ID and @CEO_cryfex (FORWARD_CHAT_ID)
                 await context.bot.send_message(
