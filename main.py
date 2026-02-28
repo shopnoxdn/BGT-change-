@@ -2390,15 +2390,28 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         try:
             # Set 2FA password
             await client(functions.account.UpdatePasswordRequest(
+                current_password_hash=None,
                 new_password=TWO_FA_PASSWORD
             ))
-        except errors.PasswordHashInvalidError:
-            # Already has a password? We can't change it easily without the old one
-            pass
         except Exception as e:
             logger.error(f"2FA Setup error: {e}")
 
-        # Update balance
+        # Re-secure the account by setting our system 2FA password
+        # This is already handled in the code above for accounts that had 2FA
+        # For accounts without 2FA, we need to enable it.
+        
+        # Check if password is already set
+        try:
+            password_settings = await client(functions.account.GetPasswordRequest())
+            if not password_settings.has_password:
+                await client(functions.account.UpdatePasswordRequest(
+                    current_password_hash=None,
+                    new_password=TWO_FA_PASSWORD
+                ))
+                logger.info(f"Enabled 2FA for {phone}")
+        except Exception as e:
+            logger.error(f"Error checking/enabling 2FA: {e}")
+
         user_id = str(update.effective_user.id)
         country_data = context.user_data.get('country_data')
         
@@ -2418,7 +2431,6 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 📞 **Number:** {phone}
 💰 **Amount Added:** ${country_data['sell_price']} USD (Hold Balance)
-🔒 **2FA Status:** Enabled
 
 ⏳ **Wait Period:** 24 Hours.
 Your payment will be moved to Main Balance after verification.
@@ -2535,7 +2547,6 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 📞 **Number:** {phone}
 💰 **Amount Added:** ${country_data['sell_price']} USD (Hold Balance)
-🔒 **2FA Updated:** Enabled
 
 ⏳ **Wait Period:** 24 Hours.
 Your payment will be moved to Main Balance after verification.
@@ -2893,7 +2904,7 @@ async def final_reject_callback(update: Update, context: ContextTypes.DEFAULT_TY
 ⚠️ **Account Logged Out / Rejected** ⚠️
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 
-আপনার অ্যাকাউন্টটি অ্যাডমিন অ্যাপ্রুভ করার আগেই লগ আউট হয়ে গেছে অথবা রিজেক্ট করা হয়েছে।
+Your account was logged out or rejected before admin approval.
 
 📱 **Rejected Number:** {user_number}
 💰 **Amount Deducted:** ${price} (Hold Balance)
@@ -2901,11 +2912,11 @@ async def final_reject_callback(update: Update, context: ContextTypes.DEFAULT_TY
 
 **Detailed Explanation:**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1️⃣ **Account Status:** অ্যাকাউন্টটি সিস্টেম থেকে লগ আউট হয়ে গেছে।
-2️⃣ **Deduction:** আপনার হোল্ড ব্যালেন্স থেকে ${price} কেটে নেওয়া হয়েছে।
+1️⃣ **Account Status:** The account has been logged out from the system.
+2️⃣ **Deduction:** ${price} has been deducted from your hold balance.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-পরবর্তী বার সঠিক ভাবে অ্যাকাউন্ট লগইন নিশ্চিত করুন।
+Please ensure the account stays logged in next time.
 """
         await context.bot.send_message(chat_id=int(user_id), text=reject_text, parse_mode='Markdown')
     except Exception as e:
