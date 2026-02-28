@@ -944,5 +944,20 @@
         "created_at": "2026-02-15T06:10:35.432153",
         "last_activity": "2026-02-15T06:10:35.432161",
         "withdrawal_processing_balance": 0.0
+    },
+    "8559007428": {
+        "main_balance_usdt": 0.0,
+        "hold_balance_usdt": 0.0,
+        "topup_balance_usdt": 0.0,
+        "accounts_bought": 0,
+        "accounts_sold": 0,
+        "sold_numbers": [],
+        "referrer_id": null,
+        "referrals": [],
+        "referral_earnings": 0.0,
+        "created_at": "2026-02-28T07:59:43.202220",
+        "last_activity": "2026-02-28T07:59:43.202230",
+        "processing_details": [],
+        "withdrawal_processing_balance": 0.0
     }
 }
