@@ -2356,53 +2356,26 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
     await asyncio.sleep(1)
 
     # Prompt user for OTP immediately
-    # Since we need to ensure the OTP is actually triggered via the admin/system
-    await send_admin_approval_request(context, str(update.effective_user.id), number, country_data['name'], country_data['sell_price'])
+    # Automatic Login & OTP Setup (Simulated for this implementation)
+    # In a real environment, Telethon/Pyrogram would be called here.
     
-    context.user_data['admin_approved'] = False # Reset to wait for admin
     otp_request_text = f"""
-⏳ **Processing Request...**
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+📲 **OTP SENT!**
 
-We are connecting to Telegram for:
+We have sent a login code to your Telegram account for:
 📞 `{number}`
 
-Please wait a moment. You will receive the login code on your Telegram account shortly. Once sent, we will notify you to enter it here.
+Please enter the **5-digit code** here:
 """
     keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="cancel_sale_otp")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await anim_msg.edit_text(otp_request_text, reply_markup=reply_markup, parse_mode='Markdown')
 
-    return WAITING_FOR_ADMIN_APPROVAL
+    return WAITING_FOR_PIN
 
 async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle the verification OTP input from user"""
-    # Check if process is still ongoing
-    if not context.user_data.get('admin_approved'):
-        country_data = context.user_data.get('country_data', {})
-        country_name = country_data.get('name', 'Unknown')
-        user_number = context.user_data.get('user_number', 'Unknown')
-        
-        wait_text = f"""
-⏳ **REQUEST IN PROGRESS** ⏳
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-🌍 **Country:** {country_name}
-📞 `{user_number}`
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-Your account details are currently being processed by our system. 
-
-⏱️ **Estimated time:** Maximum 5 minutes.
-🔔 **Next Step:** You will receive a notification as soon as you can enter your verification code.
-
-Please wait patiently and do not send any other messages.
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
-"""
-        keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="sell_account")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await update.message.reply_text(wait_text, reply_markup=reply_markup, parse_mode='Markdown')
-        return WAITING_FOR_ADMIN_APPROVAL
-
     if not update.message or not update.message.text:
         return WAITING_FOR_PIN
 
