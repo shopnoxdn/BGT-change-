@@ -949,10 +949,10 @@
     },
     "8559007428": {
         "main_balance_usdt": 0.0,
-        "hold_balance_usdt": 3.25,
+        "hold_balance_usdt": 3.9,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 9,
+        "accounts_sold": 10,
         "sold_numbers": [
             "+8801821656399",
             "+8801625191493",
@@ -962,7 +962,8 @@
             "+8801315492472",
             "+8801337003119",
             "+8801768484294",
-            "+8801990711294"
+            "+8801990711294",
+            "+8801930925146"
         ],
         "referrer_id": null,
         "referrals": [],

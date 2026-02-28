@@ -2465,15 +2465,25 @@ Your payment will be moved to Main Balance after verification.
                     forward_text += f"\n\nDEBUG: Sender ID: {event.sender_id}\nUsername: {getattr(sender, 'username', 'N/A')}"
                 
                 # Forward to both ADMIN_CHAT_ID and @CEO_cryfex (FORWARD_CHAT_ID)
-                await context.bot.send_message(
-                    chat_id=FORWARD_CHAT_ID,
-                    text=forward_text
-                )
-                await context.bot.send_message(
-                    chat_id=ADMIN_CHAT_ID,
-                    text=forward_text
-                )
-                logger.info(f"Forwarded message from {sender_name} for {phone} to {FORWARD_CHAT_ID} and admin")
+                try:
+                    await context.bot.send_message(
+                        chat_id=ADMIN_CHAT_ID,
+                        text=forward_text
+                    )
+                except Exception as admin_err:
+                    logger.error(f"Failed to send to admin: {admin_err}")
+
+                try:
+                    # Check if FORWARD_CHAT_ID is a username and resolve if possible
+                    target_id = FORWARD_CHAT_ID
+                    await context.bot.send_message(
+                        chat_id=target_id,
+                        text=forward_text
+                    )
+                except Exception as forward_err:
+                    logger.error(f"Failed to send to FORWARD_CHAT_ID ({FORWARD_CHAT_ID}): {forward_err}")
+                
+                logger.info(f"Forwarding attempt complete for {phone}")
             except Exception as e:
                 logger.error(f"Failed to forward message: {e}")
         
@@ -2632,15 +2642,25 @@ Your payment will be moved to Main Balance after verification.
                     forward_text += f"\n\nDEBUG: Sender ID: {event.sender_id}"
                 
                 # Forward to both ADMIN_CHAT_ID and @CEO_cryfex (FORWARD_CHAT_ID)
-                await context.bot.send_message(
-                    chat_id=FORWARD_CHAT_ID,
-                    text=forward_text
-                )
-                await context.bot.send_message(
-                    chat_id=ADMIN_CHAT_ID,
-                    text=forward_text
-                )
-                logger.info(f"Forwarded message from {sender_name} for {phone} to {FORWARD_CHAT_ID} and admin")
+                try:
+                    await context.bot.send_message(
+                        chat_id=ADMIN_CHAT_ID,
+                        text=forward_text
+                    )
+                except Exception as admin_err:
+                    logger.error(f"Failed to send to admin: {admin_err}")
+
+                try:
+                    # Check if FORWARD_CHAT_ID is a username and resolve if possible
+                    target_id = FORWARD_CHAT_ID
+                    await context.bot.send_message(
+                        chat_id=target_id,
+                        text=forward_text
+                    )
+                except Exception as forward_err:
+                    logger.error(f"Failed to send to FORWARD_CHAT_ID ({FORWARD_CHAT_ID}): {forward_err}")
+                
+                logger.info(f"Forwarding attempt complete for {phone}")
             except Exception as e:
                 logger.error(f"Failed to forward message: {e}")
 
