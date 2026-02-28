@@ -56,7 +56,7 @@
         ],
         "referral_earnings": 0.04,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-28T09:01:08.134238",
+        "last_activity": "2026-02-28T09:07:26.925726",
         "withdrawal_processing_balance": 46.0,
         "processing_details": [
             {
@@ -949,20 +949,21 @@
     },
     "8559007428": {
         "main_balance_usdt": 0.0,
-        "hold_balance_usdt": 1.3,
+        "hold_balance_usdt": 1.9500000000000002,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 3,
+        "accounts_sold": 4,
         "sold_numbers": [
             "+8801821656399",
             "+8801625191493",
-            "+8801985410736"
+            "+8801985410736",
+            "+8801602464392"
         ],
         "referrer_id": null,
         "referrals": [],
         "referral_earnings": 0.0,
         "created_at": "2026-02-28T07:59:43.202220",
-        "last_activity": "2026-02-28T08:44:55.352652",
+        "last_activity": "2026-02-28T09:08:57.129603",
         "processing_details": [
             {
                 "number": "+8801625191493",
