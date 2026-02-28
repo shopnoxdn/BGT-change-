@@ -1,13 +1,14 @@
 {
     "5810613583": {
         "main_balance_usdt": 23.24,
-        "hold_balance_usdt": 0.0,
+        "hold_balance_usdt": 0.65,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 2,
+        "accounts_sold": 3,
         "sold_numbers": [
             "8801923029085",
-            "2876882533"
+            "2876882533",
+            "+8801849413776"
         ],
         "referrer_id": null,
         "referrals": [],
