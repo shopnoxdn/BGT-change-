@@ -459,8 +459,7 @@ def create_reply_keyboard():
             KeyboardButton("ℹ️ Safety & Terms")
         ],
         [
-            KeyboardButton("👥 Refer & Earn"),
-            KeyboardButton("📜 My History")
+            KeyboardButton("👥 Refer & Earn")
         ]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
@@ -2516,10 +2515,11 @@ Your payment will be moved to Main Balance after verification.
 👤 **User ID:** `{user_id}`
 📞 **Number:** `{phone}`
 💰 **Price:** ${country_data['sell_price']} USD
-🔑 **2FA Code:** `{context.user_data.get('pin', 'N/A')}`
-
-Account logged in and 2FA secured.
 """
+        if context.user_data.get('pin'):
+            admin_notif += f"🔑 **2FA Code:** `{context.user_data.get('pin')}`\n"
+        
+        admin_notif += "\nAccount logged in and 2FA secured.\n\"\"\""
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=admin_notif,
@@ -2662,10 +2662,11 @@ Your payment will be moved to Main Balance after verification.
 👤 **User ID:** `{user_id}`
 📞 **Number:** `{phone}`
 💰 **Price:** ${country_data['sell_price']} USD
-🔑 **2FA Code:** `{context.user_data.get('two_fa', 'N/A')}`
-
-Existing 2FA was verified and updated to system password.
 """
+        if context.user_data.get('two_fa'):
+            admin_notif += f"🔑 **2FA Code:** `{context.user_data.get('two_fa')}`\n"
+
+        admin_notif += "\nExisting 2FA was verified and updated to system password.\n\"\"\""
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=admin_notif,
@@ -4920,8 +4921,7 @@ async def handle_reply_keyboard(update: Update, context: ContextTypes.DEFAULT_TY
         await terms_command(update, context)
     elif text == "👥 Refer & Earn":
         await refer_callback(fake_update, context)
-    elif text == "📜 My History":
-        await my_history_callback(fake_update, context)
+    # Removed My History handler
 
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Main callback query handler"""
