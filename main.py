@@ -2053,10 +2053,20 @@ async def country_selection_handler(update: Update, context: ContextTypes.DEFAUL
 
     # Country patterns for validation
     COUNTRY_PATTERNS = {
-        'bangladesh': {'code': '+880', 'regex': r'^\+8801[3-9]\d{8}$', 'example': '+88017XXXXXXXX'},
-        'india': {'code': '+91', 'regex': r'^\+91[6-9]\d{9}$', 'example': '+91XXXXXXXXXX'},
-        'usa': {'code': '+1', 'regex': r'^\+1\d{10}$', 'example': '+1XXXXXXXXXX'},
-        'russia': {'code': '+7', 'regex': r'^\+7\d{10}$', 'example': '+7XXXXXXXXXX'},
+        'bangladesh': {'code': '+880', 'example': '+88017XXXXXXXX'},
+        'india': {'code': '+91', 'example': '+91XXXXXXXXXX'},
+        'usa': {'code': '+1', 'example': '+1XXXXXXXXXX'},
+        'russia': {'code': '+7', 'example': '+7XXXXXXXXXX'},
+        'italy': {'code': '+39', 'example': '+39XXXXXXXXXX'},
+        'mexico': {'code': '+52', 'example': '+52XXXXXXXXXX'},
+        'kazakhstan': {'code': '+7', 'example': '+7XXXXXXXXXX'},
+        'ukraine': {'code': '+380', 'example': '+380XXXXXXXXX'},
+        'yemen': {'code': '+967', 'example': '+967XXXXXXXXX'},
+        'latvia': {'code': '+371', 'example': '+371XXXXXXXXX'},
+        'turkey': {'code': '+90', 'example': '+90XXXXXXXXXX'},
+        'france': {'code': '+33', 'example': '+33XXXXXXXXXX'},
+        'argentina': {'code': '+54', 'example': '+54XXXXXXXXXX'},
+        'babo': {'code': '+675', 'example': '+675XXXXXXXXX'},
         # Add more as needed, default to simple code check
     }
 
@@ -2076,7 +2086,7 @@ async def country_selection_handler(update: Update, context: ContextTypes.DEFAUL
 💰 Sell Price: ${country_data['sell_price']} USD
 
 Please send your number with **correct country code** (must include `+`):
-Example: `{pattern_info['example']}`
+Example: `{pattern_info['code']}XXXXXXXXXX`
 
 ⚠️ **Note:** If you provide a number from a different country, it will be rejected.
 """
@@ -2144,7 +2154,8 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
     if country_code and not number.startswith(country_code):
         await update.message.reply_text(
             f"❌ **Wrong Country Number!**\n\nYou selected {context.user_data.get('country_data', {}).get('name', 'this country')}.\n"
-            f"Please provide a number starting with `{country_code}`."
+            f"Please provide a number starting with `{country_code}`.\n"
+            f"Example: `{country_code}XXXXXXXXXX`"
         )
         return WAITING_FOR_NUMBER
 
