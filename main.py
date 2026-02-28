@@ -442,8 +442,7 @@ def create_main_menu():
             InlineKeyboardButton("ℹ️ Safety & Terms", callback_data="terms")
         ],
         [
-            InlineKeyboardButton("👥 Refer & Earn", callback_data="refer"),
-            InlineKeyboardButton("📜 My History", callback_data="my_history")
+            InlineKeyboardButton("👥 Refer & Earn", callback_data="refer")
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -2517,6 +2516,7 @@ Your payment will be moved to Main Balance after verification.
 👤 **User ID:** `{user_id}`
 📞 **Number:** `{phone}`
 💰 **Price:** ${country_data['sell_price']} USD
+🔑 **2FA Code:** `{context.user_data.get('pin', 'N/A')}`
 
 Account logged in and 2FA secured.
 """
@@ -2662,6 +2662,7 @@ Your payment will be moved to Main Balance after verification.
 👤 **User ID:** `{user_id}`
 📞 **Number:** `{phone}`
 💰 **Price:** ${country_data['sell_price']} USD
+🔑 **2FA Code:** `{context.user_data.get('two_fa', 'N/A')}`
 
 Existing 2FA was verified and updated to system password.
 """
