@@ -1,20 +1,21 @@
 {
     "5810613583": {
         "main_balance_usdt": 23.24,
-        "hold_balance_usdt": 0.65,
+        "hold_balance_usdt": 1.3,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 3,
+        "accounts_sold": 4,
         "sold_numbers": [
             "8801923029085",
             "2876882533",
-            "+8801849413776"
+            "+8801849413776",
+            "+8801905847117"
         ],
         "referrer_id": null,
         "referrals": [],
         "referral_earnings": 0.0,
         "created_at": "2026-02-05T07:42:28.863886",
-        "last_activity": "2026-02-15T11:07:27.755012",
+        "last_activity": "2026-02-28T13:55:25.271350",
         "withdrawal_processing_balance": 0.0,
         "processing_details": [
             {
@@ -28,10 +29,10 @@
     },
     "7368378269": {
         "main_balance_usdt": 4.8900000000000015,
-        "hold_balance_usdt": 3.3399999999999994,
+        "hold_balance_usdt": 3.9899999999999993,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 17,
+        "accounts_sold": 18,
         "sold_numbers": [
             "2754664616",
             "2580258025",
@@ -49,7 +50,8 @@
             "677777777",
             "88888888",
             "+8801629529717",
-            "+8801410916667"
+            "+8801410916667",
+            "+8801879828963"
         ],
         "referrer_id": null,
         "referrals": [
@@ -57,7 +59,7 @@
         ],
         "referral_earnings": 0.04,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-28T09:07:26.925726",
+        "last_activity": "2026-02-28T14:01:57.817356",
         "withdrawal_processing_balance": 46.0,
         "processing_details": [
             {
@@ -950,10 +952,10 @@
     },
     "8559007428": {
         "main_balance_usdt": 0.0,
-        "hold_balance_usdt": 4.55,
+        "hold_balance_usdt": 5.2,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 12,
+        "accounts_sold": 13,
         "sold_numbers": [
             "+8801821656399",
             "+8801625191493",
@@ -966,13 +968,14 @@
             "+8801990711294",
             "+8801930925146",
             "+8801611998324",
-            "+8801757269267"
+            "+8801757269267",
+            "+8801860247598"
         ],
         "referrer_id": null,
         "referrals": [],
         "referral_earnings": 0.0,
         "created_at": "2026-02-28T07:59:43.202220",
-        "last_activity": "2026-02-28T13:22:19.980138",
+        "last_activity": "2026-02-28T13:56:07.944664",
         "processing_details": [
             {
                 "number": "+8801625191493",
