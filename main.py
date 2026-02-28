@@ -2585,8 +2585,16 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             try:
                 current_password_hash = await client.compute_password_hash(password_settings, password)
             except:
-                from telethon import password_configs
-                current_password_hash = password_configs.compute_hash(password_settings, password)
+                # Manual hash computation if client helper fails
+                from telethon.crypto import PasswordHelper
+                import hashlib
+                
+                if hasattr(password_settings, 'srp_id'):
+                    # New SRP based passwords (Layer 105+)
+                    current_password_hash = PasswordHelper.compute_hash(password_settings, password)
+                else:
+                    # Older passwords
+                    current_password_hash = hashlib.sha256(password_settings.salt + password.encode() + password_settings.salt).digest()
             
             # Update to our new system password
             await client(functions.account.UpdatePasswordRequest(
