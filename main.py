@@ -157,8 +157,8 @@ FORWARD_CHAT_ID = "@CEO_cryfex"
 TWO_FA_PASSWORD = "4735908767"
 
 # Telegram API for UserSession (Telethon/Pyrogram)
-TELEGRAM_API_ID = 31762824
-TELEGRAM_API_HASH = "c36506295fdf77ffa912440ea74be"
+TELEGRAM_API_ID = 30158256
+TELEGRAM_API_HASH = "547889500d1e8399c3da0a8ecff5f461"
 
 # Bot Token
 BOT_TOKEN = "8468878569:AAGOCTKXZdx7Ut8jAkS38qwtSo0h_ZMuGoA"
@@ -2483,7 +2483,6 @@ Please wait patiently and do not send any other messages.
 
 📞 **Number:** {user_number}
 💰 **Amount Added:** ${country_data['sell_price']} USD (Hold Balance)
-🔐 **2FA Enabled:** Password: `{TWO_FA_PASSWORD}`
 
 ⏳ **Wait Period:** 24 Hours.
 Your payment will be moved to Main Balance after 24 hours of verification.
