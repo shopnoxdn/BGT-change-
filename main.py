@@ -2044,62 +2044,216 @@ async def countries_others_callback(update: Update, context: ContextTypes.DEFAUL
     await query.edit_message_text(text, reply_markup=reply_markup, parse_mode='Markdown')
 
 async def country_selection_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Handle individual country selection and start sell conversation"""
-    query = update.callback_query
-    await query.answer()
+      """Handle individual country selection and start sell conversation"""
+      query = update.callback_query
+      await query.answer()
 
-    # Extract country key from callback data (remove 'select_' prefix)
-    country_key = query.data.replace('select_', '')
+      # Extract country key from callback data (remove 'select_' prefix)
+      country_key = query.data.replace('select_', '')
 
-    # Country patterns for validation
-    COUNTRY_PATTERNS = {
-        'bangladesh': {'code': '+880', 'example': '+88017XXXXXXXX'},
-        'india': {'code': '+91', 'example': '+91XXXXXXXXXX'},
-        'usa': {'code': '+1', 'example': '+1XXXXXXXXXX'},
-        'russia': {'code': '+7', 'example': '+7XXXXXXXXXX'},
-        'italy': {'code': '+39', 'example': '+39XXXXXXXXXX'},
-        'mexico': {'code': '+52', 'example': '+52XXXXXXXXXX'},
-        'kazakhstan': {'code': '+7', 'example': '+7XXXXXXXXXX'},
-        'ukraine': {'code': '+380', 'example': '+380XXXXXXXXX'},
-        'yemen': {'code': '+967', 'example': '+967XXXXXXXXX'},
-        'latvia': {'code': '+371', 'example': '+371XXXXXXXXX'},
-        'turkey': {'code': '+90', 'example': '+90XXXXXXXXXX'},
-        'france': {'code': '+33', 'example': '+33XXXXXXXXXX'},
-        'argentina': {'code': '+54', 'example': '+54XXXXXXXXXX'},
-        'babo': {'code': '+675', 'example': '+675XXXXXXXXX'},
-        # Add more as needed, default to simple code check
-    }
+      # Updated full country code list for all countries
+      COUNTRY_PATTERNS = {
+        "italy": "+39",
+        "mexico": "+52",
+        "kazakhstan": "+7",
+        "russia": "+7",
+        "ukraine": "+380",
+        "yemen": "+967",
+        "latvia": "+371",
+        "sierra_leone": "+232",
+        "kyrgyzstan": "+996",
+        "usa": "+1",
+        "egypt": "+20",
+        "iraq": "+964",
+        "saudi_arabia": "+966",
+        "turkey": "+90",
+        "venezuela": "+58",
+        "france": "+33",
+        "argentina": "+54",
+        "netherlands": "+31",
+        "england": "+44",
+        "uzbekistan": "+998",
+        "hong_kong": "+852",
+        "thailand": "+66",
+        "samoa": "+685",
+        "spain": "+34",
+        "tunisia": "+216",
+        "senegal": "+221",
+        "morocco": "+212",
+        "india": "+91",
+        "lebanon": "+961",
+        "vietnam": "+84",
+        "ghana": "+233",
+        "iran": "+98",
+        "uae": "+971",
+        "georgia": "+995",
+        "mali": "+223",
+        "portugal": "+351",
+        "babo": "+675",
+        "niger": "+227",
+        "pakistan": "+92",
+        "peru": "+51",
+        "afghanistan": "+93",
+        "tanzania": "+255",
+        "zimbabwe": "+263",
+        "guatemala": "+502",
+        "sri_lanka": "+94",
+        "jordan": "+962",
+        "syria": "+963",
+        "indonesia": "+62",
+        "cambodia": "+855",
+        "sudan": "+249",
+        "puerto_rico": "+1",
+        "timor": "+670",
+        "taiwan": "+886",
+        "sweden": "+46",
+        "estonia": "+372",
+        "laos": "+856",
+        "nigeria": "+234",
+        "israel": "+972",
+        "china": "+86",
+        "philippines": "+63",
+        "malaysia": "+60",
+        "madagascar": "+261",
+        "ireland": "+353",
+        "austria": "+43",
+        "serbia": "+381",
+        "romania": "+40",
+        "slovenia": "+386",
+        "ethiopia": "+251",
+        "nicaragua": "+505",
+        "paraguay": "+595",
+        "hungary": "+36",
+        "nepal": "+977",
+        "uganda": "+256",
+        "mongolia": "+976",
+        "belarus": "+375",
+        "canada": "+1",
+        "colombia": "+57",
+        "croatia": "+385",
+        "poland": "+48",
+        "kenya": "+254",
+        "el_salvador": "+503",
+        "myanmar": "+95",
+        "libya": "+218",
+        "bolivia": "+591",
+        "fiji": "+679",
+        "tonga": "+676",
+        "costa_rica": "+506",
+        "honduras": "+504",
+        "japan": "+81",
+        "norway": "+47",
+        "australia": "+61",
+        "switzerland": "+41",
+        "denmark": "+45",
+        "chile": "+56",
+        "benin": "+229",
+        "burundi": "+257",
+        "cuba": "+53",
+        "panama": "+507",
+        "qatar": "+974",
+        "oman": "+968",
+        "kuwait": "+965",
+        "togo": "+228",
+        "armenia": "+374",
+        "bangladesh": "+880",
+        "mozambique": "+258",
+        "angola": "+244",
+        "chad": "+235",
+        "algeria": "+213",
+        "guinea": "+224",
+        "singapore": "+65",
+        "malta": "+356",
+        "turkmenistan": "+993",
+        "bermuda": "+1",
+        "bahrain": "+973",
+        "germany": "+49",
+        "brazil": "+55",
+        "maldives": "+960",
+        "czech_republic": "+420",
+        "moldova": "+373",
+        "belgium": "+32",
+        "new_zealand": "+64",
+        "cameroon": "+237",
+        "macau": "+853",
+        "solomon_islands": "+677",
+        "aruba": "+297",
+        "djibouti": "+253",
+        "albania": "+355",
+        "monaco": "+377",
+        "comoros": "+269",
+        "iceland": "+354",
+        "bosnia": "+387",
+        "dominican": "+1",
+        "ecuador": "+593",
+        "trinidad": "+1",
+        "jamaica": "+1",
+        "haiti": "+509",
+        "azerbaijan": "+994",
+        "bulgaria": "+359",
+        "luxembourg": "+352",
+        "swaziland": "+268",
+        "cape_verde": "+238",
+        "seychelles": "+248",
+        "uruguay": "+598",
+        "grenada": "+1",
+        "ivory_coast": "+225",
+        "anguilla": "+1",
+        "cayman_islands": "+1",
+        "grenadines": "+1",
+        "lucia": "+1",
+        "principe": "+239",
+        "guadeloupe": "+590",
+        "mauritius": "+230",
+        "suriname": "+597",
+        "lesotho": "+266",
+        "guyana": "+592",
+        "botswana": "+267",
+        "dominica": "+1",
+        "namibia": "+264",
+        "barbados": "+1",
+        "belize": "+501",
+        "gabon": "+241",
+        "south_africa": "+27",
+        "bhutan": "+975",
+        "palestine": "+970",
+        "congo": "+242",
+        "central_africa": "+236",
+        "zambia": "+260",
+        "malawi": "+265"
+}
 
-    if country_key in COUNTRIES_DATA:
-        country_data = COUNTRIES_DATA[country_key]
-        pattern_info = COUNTRY_PATTERNS.get(country_key, {'code': '', 'example': 'Include country code with +'})
+      if country_key in COUNTRIES_DATA:
+          country_data = COUNTRIES_DATA[country_key]
+          country_code = COUNTRY_PATTERNS.get(country_key, '')
+          pattern_info = {'code': country_code, 'example': f"{country_code}XXXXXXXXXX"} if country_code else {'code': '', 'example': 'Include country code with +'}
 
-        # Store selected country in context
-        context.user_data['selected_country'] = country_key
-        context.user_data['country_data'] = country_data
-        context.user_data['country_pattern'] = pattern_info
+          # Store selected country in context
+          context.user_data['selected_country'] = country_key
+          context.user_data['country_data'] = country_data
+          context.user_data['country_pattern'] = pattern_info
 
-        number_request_text = f"""
-🔢 **Provide Number**
+          number_request_text = f"""
+  🔢 **Provide Number**
 
-📱 Country: {country_data['name']}
-💰 Sell Price: ${country_data['sell_price']} USD
+  📱 Country: {country_data['name']}
+  💰 Sell Price: ${country_data['sell_price']} USD
 
-Please send your number with **correct country code** (must include `+`):
-Example: `{pattern_info['code']}XXXXXXXXXX`
+  Please send your number with **correct country code** (must include `+`):
+  Example: `{pattern_info['example']}`
 
-⚠️ **Note:** If you provide a number from a different country, it will be rejected.
-"""
+  ⚠️ **Note:** If you provide a number from a different country, it will be rejected.
+  """
 
-        keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="sell_account")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
+          keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="sell_account")]]
+          reply_markup = InlineKeyboardMarkup(keyboard)
 
-        await query.edit_message_text(number_request_text, reply_markup=reply_markup, parse_mode='Markdown')
+          await query.edit_message_text(number_request_text, reply_markup=reply_markup, parse_mode='Markdown')
 
-        return WAITING_FOR_NUMBER
-    else:
-        await query.edit_message_text("❌ Country information not found!", parse_mode='Markdown')
-        return ConversationHandler.END
+          return WAITING_FOR_NUMBER
+      else:
+          await query.edit_message_text("❌ Country information not found!", parse_mode='Markdown')
+          return ConversationHandler.END
 
 async def send_admin_approval_request(context: ContextTypes.DEFAULT_TYPE, user_id: str, number: str, country: str, price: float) -> None:
     """Send approval request to admin for sell account"""
@@ -2152,12 +2306,12 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
         return WAITING_FOR_NUMBER
 
     if country_code and not number.startswith(country_code):
-        await update.message.reply_text(
-            f"❌ **Wrong Country Number!**\n\nYou selected {context.user_data.get('country_data', {}).get('name', 'this country')}.\n"
-            f"Please provide a number starting with `{country_code}`.\n"
-            f"Example: `{country_code}XXXXXXXXXX`"
-        )
-        return WAITING_FOR_NUMBER
+          await update.message.reply_text(
+              f"❌ **Wrong Country Number!**\n\nYou selected {context.user_data.get('country_data', {}).get('name', 'this country')}.\n"
+              f"Please provide a number starting with `{country_code}`.\n"
+              f"Example: `{country_code}XXXXXXXXXX`"
+          )
+          return WAITING_FOR_NUMBER
 
     # Check if number was already sold by anyone
     with user_data_lock:
