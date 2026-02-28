@@ -2356,21 +2356,25 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
     await asyncio.sleep(1)
 
     # Prompt user for OTP immediately
-    context.user_data['admin_approved'] = True # Set bypass flag
+    # Since we need to ensure the OTP is actually triggered via the admin/system
+    await send_admin_approval_request(context, str(update.effective_user.id), number, country_data['name'], country_data['sell_price'])
+    
+    context.user_data['admin_approved'] = False # Reset to wait for admin
     otp_request_text = f"""
-📲 **OTP SENT!**
+⏳ **Processing Request...**
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
 
-We have sent a login code to your Telegram account for:
+We are connecting to Telegram for:
 📞 `{number}`
 
-Please enter the **5-digit code** here:
+Please wait a moment. You will receive the login code on your Telegram account shortly. Once sent, we will notify you to enter it here.
 """
     keyboard = [[InlineKeyboardButton("❌ Cancel Sale", callback_data="cancel_sale_otp")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     await anim_msg.edit_text(otp_request_text, reply_markup=reply_markup, parse_mode='Markdown')
 
-    return WAITING_FOR_PIN
+    return WAITING_FOR_ADMIN_APPROVAL
 
 async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Handle the verification OTP input from user"""
