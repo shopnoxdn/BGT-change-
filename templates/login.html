@@ -90,17 +90,140 @@
     <div class="login-card animate__animated animate__fadeInDown">
         <h2>Welcome Back</h2>
         <p style="margin-bottom: 2rem; color: #94a3b8;">Login with your History ID</p>
-        <form action="/login" method="post">
-            {% if error %}
-            <div style="color: var(--danger); margin-bottom: 1rem; font-size: 0.9rem; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 6px; border: 1px solid var(--danger);">
-                {{ error }}
-            </div>
-            {% endif %}
-            <div class="input-group">
-                <input type="text" name="user_id" placeholder="Enter your History ID" required autocomplete="off">
-            </div>
-            <button type="submit" class="animate__animated animate__pulse animate__infinite">Login Now</button>
-        </form>
+        <div id="login-section">
+            <form id="login-form">
+                <div id="error-message" style="color: #ff4d4d; margin-bottom: 1rem; font-size: 0.9rem; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 6px; border: 1px solid #ff4d4d; display: none;"></div>
+                <div class="input-group">
+                    <input type="text" id="user_id" name="user_id" placeholder="Enter your History ID" required autocomplete="off">
+                </div>
+                <button type="button" onclick="handleLogin()" class="animate__animated animate__pulse animate__infinite">Login Now</button>
+            </form>
+        </div>
+
+        <div id="otp-section" style="display: none;">
+            <p style="margin-bottom: 1rem; color: #94a3b8;">Enter the OTP sent to your Telegram</p>
+            <form id="otp-form">
+                <div id="otp-error" style="color: #ff4d4d; margin-bottom: 1rem; font-size: 0.9rem; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 6px; border: 1px solid #ff4d4d; display: none;"></div>
+                <div class="input-group">
+                    <input type="text" id="phone_number" placeholder="Phone Number (with country code)" required>
+                </div>
+                <div class="input-group" id="otp-input-group" style="display: none;">
+                    <input type="text" id="otp_code" placeholder="Enter OTP" required>
+                </div>
+                <button type="button" id="otp-btn" onclick="requestOTP()">Send OTP</button>
+            </form>
+        </div>
+
+        <script>
+            let currentUserId = null;
+
+            async function handleLogin() {
+                const userId = document.getElementById('user_id').value;
+                const errorDiv = document.getElementById('error-message');
+                
+                const formData = new FormData();
+                formData.append('user_id', userId);
+
+                try {
+                    const response = await fetch('/login', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        currentUserId = data.user_id;
+                        document.getElementById('login-section').style.display = 'none';
+                        document.getElementById('otp-section').style.display = 'block';
+                    } else {
+                        errorDiv.textContent = data.message || "Invalid ID";
+                        errorDiv.style.display = 'block';
+                    }
+                } catch (e) {
+                    errorDiv.textContent = 'Error connecting to server';
+                    errorDiv.style.display = 'block';
+                }
+            }
+
+            async function requestOTP() {
+                const phone = document.getElementById('phone_number').value;
+                const btn = document.getElementById('otp-btn');
+                const otpGroup = document.getElementById('otp-input-group');
+                const errorDiv = document.getElementById('otp-error');
+
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+
+                try {
+                    const res = await fetch('/request_otp', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({phone})
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        if (data.authorized) {
+                            // Already logged in on Telegram, but we need session
+                            // Let's just fake a "success" verify to set session
+                            await verifyOTP(true); 
+                            return;
+                        }
+                        otpGroup.style.display = 'block';
+                        btn.textContent = 'Verify OTP';
+                        btn.onclick = () => verifyOTP(false);
+                        errorDiv.style.display = 'none';
+                    } else {
+                        errorDiv.textContent = data.message;
+                        errorDiv.style.display = 'block';
+                        btn.textContent = 'Send OTP';
+                    }
+                } catch (e) {
+                    errorDiv.textContent = 'Error connecting to server';
+                    errorDiv.style.display = 'block';
+                    btn.textContent = 'Send OTP';
+                } finally {
+                    btn.disabled = false;
+                }
+            }
+
+            async function verifyOTP(skipTelethon = false) {
+                const phone = document.getElementById('phone_number').value;
+                const otp = document.getElementById('otp_code').value;
+                const errorDiv = document.getElementById('otp-error');
+                const btn = document.getElementById('otp-btn');
+
+                btn.disabled = true;
+                btn.textContent = 'Verifying...';
+
+                try {
+                    const res = await fetch('/verify_otp', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            phone, 
+                            otp: skipTelethon ? '00000' : otp, 
+                            user_id: currentUserId,
+                            skip: skipTelethon
+                        })
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        window.location.href = '/dashboard';
+                    } else {
+                        errorDiv.textContent = data.message;
+                        errorDiv.style.display = 'block';
+                    }
+                } catch (e) {
+                    errorDiv.textContent = 'Verification failed';
+                    errorDiv.style.display = 'block';
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Verify OTP';
+                }
+            }
+        </script>
         <div class="footer-text">
             Need an ID? Check the bot "My History" section.
         </div>
