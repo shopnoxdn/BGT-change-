@@ -949,10 +949,10 @@
     },
     "8559007428": {
         "main_balance_usdt": 0.0,
-        "hold_balance_usdt": 4.55,
+        "hold_balance_usdt": 5.2,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 11,
+        "accounts_sold": 12,
         "sold_numbers": [
             "+8801821656399",
             "+8801625191493",
@@ -964,13 +964,14 @@
             "+8801768484294",
             "+8801990711294",
             "+8801930925146",
-            "+8801611998324"
+            "+8801611998324",
+            "+8801757269267"
         ],
         "referrer_id": null,
         "referrals": [],
         "referral_earnings": 0.0,
         "created_at": "2026-02-28T07:59:43.202220",
-        "last_activity": "2026-02-28T13:07:38.945542",
+        "last_activity": "2026-02-28T13:14:16.387062",
         "processing_details": [
             {
                 "number": "+8801625191493",

