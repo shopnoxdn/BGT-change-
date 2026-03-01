@@ -323,5 +323,36 @@ def admin_successful():
                 })
     return render_template('admin_list.html', title="Successful Numbers", items=items, type='successful')
 
+@app.route('/admin/approve', methods=['POST'])
+def admin_approve():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    
+    chat_id = request.form.get('chat_id')
+    number = request.form.get('number')
+    action = request.form.get('action') # 'approve' or 'reject'
+    
+    data = load_data()
+    if chat_id in data:
+        user_info = data[chat_id]
+        processing_details = user_info.get('processing_details', [])
+        
+        for item in processing_details:
+            if item.get('number') == number and item.get('status') == 'Processing':
+                if action == 'approve':
+                    item['status'] = 'Successful'
+                    # Update balance and counts
+                    price = item.get('price', 0.0)
+                    user_info['main_balance_usdt'] = user_info.get('main_balance_usdt', 0.0) + price
+                    user_info['accounts_sold'] = user_info.get('accounts_sold', 0) + 1
+                else:
+                    item['status'] = 'Reject'
+                break
+        
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+            
+    return redirect(request.referrer or url_for('admin_panel'))
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
