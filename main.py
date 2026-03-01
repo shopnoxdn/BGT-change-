@@ -442,7 +442,8 @@ def create_main_menu():
             InlineKeyboardButton("ℹ️ Safety & Terms", callback_data="terms")
         ],
         [
-            InlineKeyboardButton("👥 Refer & Earn", callback_data="refer")
+            InlineKeyboardButton("👥 Refer & Earn", callback_data="refer"),
+            InlineKeyboardButton("📜 My History", callback_data="history")
         ]
     ]
     return InlineKeyboardMarkup(keyboard)
@@ -459,7 +460,8 @@ def create_reply_keyboard():
             KeyboardButton("ℹ️ Safety & Terms")
         ],
         [
-            KeyboardButton("👥 Refer & Earn")
+            KeyboardButton("👥 Refer & Earn"),
+            KeyboardButton("📜 My History")
         ]
     ]
     return ReplyKeyboardMarkup(keyboard, resize_keyboard=True, one_time_keyboard=False)
@@ -4930,6 +4932,8 @@ async def handle_reply_keyboard(update: Update, context: ContextTypes.DEFAULT_TY
         await terms_command(update, context)
     elif text == "👥 Refer & Earn":
         await refer_callback(fake_update, context)
+    elif text == "📜 My History":
+        await my_history_callback(update, context)
     # Removed My History handler
 
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -4977,6 +4981,7 @@ async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     handlers = {
         'balance': balance_callback,
+        'history': my_history_callback,
         'my_history': my_history_callback,
         'buy_account': buy_account_callback,
         'sell_account': sell_account_callback,
