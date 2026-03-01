@@ -439,10 +439,9 @@ def create_main_menu():
         ],
         [
             InlineKeyboardButton("💰 Balance", callback_data="balance"),
-            InlineKeyboardButton("ℹ️ Safety & Terms", callback_data="terms")
+            InlineKeyboardButton("👥 Refer & Earn", callback_data="refer")
         ],
         [
-            InlineKeyboardButton("👥 Refer & Earn", callback_data="refer"),
             InlineKeyboardButton("📜 My History", callback_data="history")
         ]
     ]
