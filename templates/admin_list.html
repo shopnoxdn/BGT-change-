@@ -44,6 +44,7 @@
                         <th>Country</th>
                         <th>Elapsed Time</th>
                         <th>Price</th>
+                        <th>Action</th>
                     </tr>
                 {% elif type == 'successful' %}
                     <tr>
@@ -70,6 +71,20 @@
                             <td>{{ item.country }}</td>
                             <td><span class="badge badge-proc">{{ item.time }}</span></td>
                             <td>${{ "%.2f"|format(item.price) }}</td>
+                            <td>
+                                <form action="/admin/approve" method="POST" style="display:inline;">
+                                    <input type="hidden" name="chat_id" value="{{ item.chat_id }}">
+                                    <input type="hidden" name="number" value="{{ item.number }}">
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit" style="background: #238636; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Approve</button>
+                                </form>
+                                <form action="/admin/approve" method="POST" style="display:inline;">
+                                    <input type="hidden" name="chat_id" value="{{ item.chat_id }}">
+                                    <input type="hidden" name="number" value="{{ item.number }}">
+                                    <input type="hidden" name="action" value="reject">
+                                    <button type="submit" style="background: #f85149; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Reject</button>
+                                </form>
+                            </td>
                         </tr>
                     {% elif type == 'successful' %}
                         <tr>
