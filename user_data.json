@@ -33,11 +33,11 @@
         ]
     },
     "7368378269": {
-        "main_balance_usdt": 10.38,
+        "main_balance_usdt": 10.600000000000001,
         "hold_balance_usdt": 10.69,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 23,
+        "accounts_sold": 24,
         "sold_numbers": [
             "2754664616",
             "2580258025",
@@ -61,7 +61,8 @@
             "8801341918338",
             "01923029089",
             "255589566855",
-            "2876886925"
+            "2876886925",
+            "+16055694124"
         ],
         "referrer_id": null,
         "referrals": [
@@ -70,7 +71,7 @@
         ],
         "referral_earnings": 0.08,
         "created_at": "2026-02-05T07:43:03.600008",
-        "last_activity": "2026-02-28T07:52:51.196791",
+        "last_activity": "2026-03-01T05:16:03.459319",
         "withdrawal_processing_balance": 46.0,
         "processing_details": [
             {
@@ -191,6 +192,13 @@
                 "status": "Processing",
                 "timestamp": "2026-02-18T10:27:38.910196",
                 "country": "Kuwait \ud83c\uddf0\ud83c\uddfc"
+            },
+            {
+                "number": "+16055694124",
+                "price": 0.22,
+                "status": "Successful",
+                "timestamp": "2026-03-01T05:15:30.676749",
+                "country": "United States \ud83c\uddfa\ud83c\uddf8"
             }
         ]
     },
