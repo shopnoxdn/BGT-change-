@@ -59,9 +59,8 @@ def login():
             user_id = login_id
 
     if user_id:
-        # In this new flow, we don't set session yet. 
-        # We just confirm the ID is valid and then the frontend shows OTP.
-        return jsonify({'success': True, 'user_id': user_id})
+        session['user_id'] = user_id
+        return jsonify({'success': True, 'user_id': user_id, 'redirect': '/dashboard'})
     
     return jsonify({'success': False, 'message': "Invalid ID"}), 401
 

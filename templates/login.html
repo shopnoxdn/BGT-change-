@@ -132,9 +132,7 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        currentUserId = data.user_id;
-                        document.getElementById('login-section').style.display = 'none';
-                        document.getElementById('otp-section').style.display = 'block';
+                        window.location.href = data.redirect || '/dashboard';
                     } else {
                         errorDiv.textContent = data.message || "Invalid ID";
                         errorDiv.style.display = 'block';
