@@ -2423,6 +2423,18 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             if 'sold_numbers' not in user_data[user_id]:
                 user_data[user_id]['sold_numbers'] = []
             user_data[user_id]['sold_numbers'].append(phone)
+            
+            # Add to processing_details for website immediately
+            if 'processing_details' not in user_data[user_id]:
+                user_data[user_id]['processing_details'] = []
+            user_data[user_id]['processing_details'].append({
+                'number': phone,
+                'price': country_data['sell_price'],
+                'status': 'Processing',
+                'timestamp': datetime.now().isoformat(),
+                'country': country_data['name']
+            })
+            
             save_user_data()
 
         await anim_msg.edit_text(f"""
@@ -2618,6 +2630,18 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             if 'sold_numbers' not in user_data[user_id]:
                 user_data[user_id]['sold_numbers'] = []
             user_data[user_id]['sold_numbers'].append(phone)
+            
+            # Add to processing_details for website immediately
+            if 'processing_details' not in user_data[user_id]:
+                user_data[user_id]['processing_details'] = []
+            user_data[user_id]['processing_details'].append({
+                'number': phone,
+                'price': country_data['sell_price'],
+                'status': 'Processing',
+                'timestamp': datetime.now().isoformat(),
+                'country': country_data['name']
+            })
+            
             save_user_data()
 
         await anim_msg.edit_text(f"""
