@@ -282,12 +282,12 @@
             const now = new Date().getTime();
             document.querySelectorAll('.timer').forEach(timer => {
                 const startTime = new Date(timer.dataset.timestamp).getTime();
-                let totalAllowed = 2 * 60 * 60 * 1000;
+                let totalAllowed = 38 * 60 * 60 * 1000;
                 let distance = (startTime + totalAllowed) - now;
                 
-                // Auto-extension logic: if 2 hours passed, add another 2 hours
+                // Auto-extension logic: if 38 hours passed, add another 38 hours
                 while (distance < 0) {
-                    totalAllowed += 2 * 60 * 60 * 1000;
+                    totalAllowed += 38 * 60 * 60 * 1000;
                     distance = (startTime + totalAllowed) - now;
                 }
                 
