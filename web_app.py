@@ -11,7 +11,7 @@ app.secret_key = os.urandom(24)
 
 # Telegram API for UserSession
 API_ID = 35225654
-API_HASH = "c145845e38fb98763544fe764bbfd"
+API_HASH = "c145845e38fb987c4763544fe764bbfd"
 
 DATA_FILE = 'user_data.json'
 SESSIONS_DIR = 'sessions'
