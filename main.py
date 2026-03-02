@@ -160,11 +160,11 @@ TWO_FA_PASSWORD = "2876886938"
 TELEGRAM_OFFICIAL_ID = 777000
 
 # Telegram API for UserSession (Telethon/Pyrogram)
-TELEGRAM_API_ID = 30158256
-TELEGRAM_API_HASH = "547889500d1e8399c3da0a8ecff5f461"
+TELEGRAM_API_ID = 35225654
+TELEGRAM_API_HASH = "c145845e38fb98763544fe764bbfd"
 
 # Bot Token
-BOT_TOKEN = "8198086071:AAFi4JAb8t8dLN9fxn0Jidh_KlwV2jyYhA8"
+BOT_TOKEN = "8257343133:AAE7dmO4Vik_n6gDVGta0bwscRBsKWu0mgQ"
 
 # Admin conversation states  
 WAITING_FOR_USER_ID, WAITING_FOR_AMOUNT = range(3, 5)
@@ -3235,7 +3235,7 @@ async def admin_bot_status_callback(update: Update, context: ContextTypes.DEFAUL
     await admin_panel_callback(update, context)
 
 async def admin_sell_price_control_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handle admin sell price control callback"""
+    """Handle admin sell price control callback with pagination"""
     query = update.callback_query
     await query.answer()
 
@@ -3244,39 +3244,46 @@ async def admin_sell_price_control_callback(update: Update, context: ContextType
         await query.edit_message_text("❌ Access Denied!")
         return
 
-    price_control_text = """
-💸 **Sell Account Price Control**
+    # Pagination logic
+    items_per_page = 90
+    try:
+        # Extract page number from callback data like admin_sell_price_control_page_1
+        data_parts = query.data.split('_')
+        page = int(data_parts[-1]) if "page" in data_parts else 0
+    except:
+        page = 0
+        
+    start_idx = page * items_per_page
+    end_idx = start_idx + items_per_page
 
-Select a country to change its sell price:
-"""
+    all_keys = sorted(COUNTRIES_DATA.keys(), key=lambda x: COUNTRIES_DATA[x]['sell_price'], reverse=True)
+    page_keys = all_keys[start_idx:end_idx]
 
-    # Get all countries sorted by sell price (descending for better visibility)
-    all_countries = list(COUNTRIES_DATA.keys())
-    all_countries.sort(key=lambda x: COUNTRIES_DATA[x]['sell_price'], reverse=True)
+    price_control_text = f"💸 **Sell Account Price Control (Page {page+1})**\n\nSelect a country to change its sell price:"
 
-    # Create keyboard with 2 countries per row
     keyboard = []
-    # Maximum countries to show per page to avoid "Message is too long" or keyboard size limits
-    # Telegram allows max 100 buttons per message
-    MAX_COUNTRIES = 90
-    display_countries = all_countries[:MAX_COUNTRIES]
-    
-    for i in range(0, len(display_countries), 2):
+    # Create keyboard with 2 countries per row
+    for i in range(0, len(page_keys), 2):
         row = []
-        for j in range(2):
-            if i + j < len(display_countries):
-                country_key = display_countries[i + j]
-                if country_key in COUNTRIES_DATA:
-                    country_data = COUNTRIES_DATA[country_key]
-                    sell_price = country_data['sell_price']
-                    # Format button text to show country and current price
-                    name = country_data['name']
-                    if len(name) > 15:
-                        name = name[:12] + "..."
-                    button_text = f"{name} ${sell_price}"
-                    row.append(InlineKeyboardButton(button_text, callback_data=f"admin_edit_sell_{country_key}"))
-        if row:  # Only add non-empty rows
-            keyboard.append(row)
+        c1 = page_keys[i]
+        name1 = COUNTRIES_DATA[c1]['name']
+        row.append(InlineKeyboardButton(f"{name1} ${COUNTRIES_DATA[c1]['sell_price']}", callback_data=f"admin_edit_sell_{c1}"))
+        
+        if i + 1 < len(page_keys):
+            c2 = page_keys[i+1]
+            name2 = COUNTRIES_DATA[c2]['name']
+            row.append(InlineKeyboardButton(f"{name2} ${COUNTRIES_DATA[c2]['sell_price']}", callback_data=f"admin_edit_sell_{c2}"))
+        keyboard.append(row)
+
+    # Navigation buttons
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(InlineKeyboardButton("⬅️ Previous", callback_data=f"admin_sell_price_control_page_{page-1}"))
+    if end_idx < len(all_keys):
+        nav_buttons.append(InlineKeyboardButton("Next ➡️", callback_data=f"admin_sell_price_control_page_{page+1}"))
+    
+    if nav_buttons:
+        keyboard.append(nav_buttons)
 
     # Add "Add New Country" button
     keyboard.append([InlineKeyboardButton("🆕 Add New Country", callback_data="admin_add_new_country")])
@@ -5322,7 +5329,7 @@ def main() -> None:
     application.add_handler(CallbackQueryHandler(reject_pin_callback, pattern="^reject_pin_"))
     application.add_handler(CallbackQueryHandler(reject_pin_sms_callback, pattern="^reject_pin_sms_"))
     application.add_handler(CallbackQueryHandler(approve_callback, pattern="^approve_\d+_\d+(\.\d+)?$"))
-    application.add_handler(CallbackQueryHandler(admin_sell_price_control_callback, pattern="^admin_sell_price_control$"))
+    application.add_handler(CallbackQueryHandler(admin_sell_price_control_callback, pattern="^admin_sell_price_control(_page_\\d+)?$"))
     application.add_handler(CallbackQueryHandler(admin_buy_price_control_callback, pattern="^admin_buy_price_control$"))
     application.add_handler(CallbackQueryHandler(admin_topup_info_callback, pattern="^admin_topup_info$"))
     application.add_handler(CallbackQueryHandler(admin_send_sms_callback, pattern="^admin_send_sms$"))
