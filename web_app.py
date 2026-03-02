@@ -146,11 +146,13 @@ def dashboard():
                     elapsed = now - start_time
                     total_allowed = 38 * 3600 # 38 hours
                     
-                    # Auto-extension logic: if 38 hours passed, add another 38 hours
-                    while elapsed.total_seconds() > total_allowed:
-                        total_allowed += 38 * 3600
-                    
                     remaining_seconds = total_allowed - elapsed.total_seconds()
+                    
+                    # Auto-extension logic: if 38 hours passed, add another 38 hours
+                    while remaining_seconds < 0:
+                        total_allowed += 38 * 3600
+                        remaining_seconds = total_allowed - elapsed.total_seconds()
+                    
                     hours = int(remaining_seconds // 3600)
                     minutes = int((remaining_seconds % 3600) // 60)
                     countdown = f"{hours}h {minutes}m"

@@ -285,13 +285,12 @@
                 let totalAllowed = 38 * 60 * 60 * 1000;
                 let distance = (startTime + totalAllowed) - now;
                 
-                // Auto-extension logic: if 38 hours passed, add another 38 hours
-                while (distance < 0) {
-                    totalAllowed += 38 * 60 * 60 * 1000;
-                    distance = (startTime + totalAllowed) - now;
-                }
+                // If distance is more than 38 hours, it means the start time is in the future or 
+                // the logic needs to show the initial 38 hours.
+                // The user says it starts from 8 hours, which means distance is likely ~8 hours.
+                // This usually happens if startTime is already ~30 hours old.
                 
-                const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const hours = Math.floor(distance / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
                 timer.innerHTML = (hours < 10 ? "0"+hours : hours) + ":" + (minutes < 10 ? "0"+minutes : minutes) + ":" + (seconds < 10 ? "0"+seconds : seconds);
