@@ -10,8 +10,8 @@ app = Flask(__name__)
 app.secret_key = os.urandom(24)
 
 # Telegram API for UserSession
-API_ID = 30158256
-API_HASH = "547889500d1e8399c3da0a8ecff5f461"
+API_ID = 35225654
+API_HASH = "c145845e38fb98763544fe764bbfd"
 
 DATA_FILE = 'user_data.json'
 SESSIONS_DIR = 'sessions'
