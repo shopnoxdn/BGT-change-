@@ -57,6 +57,9 @@ logger.info(f"telegram loaded successfully from python-telegram-bot v{getattr(tg
 user_data: Dict[str, Dict[str, Any]] = {}
 user_data_lock = threading.Lock()
 
+# Pending withdrawal requests storage
+pending_withdrawals: Dict[str, Dict[str, Any]] = {}
+
 # Global withdrawal settings
 withdrawal_settings: Dict[str, Any] = {
     'global_limit': 1.0,  # Default global minimum withdrawal limit
@@ -1010,7 +1013,7 @@ async def handle_withdraw_amount(update: Update, context: ContextTypes.DEFAULT_T
         await start(update, context)
         return ConversationHandler.END
 
-    # Process withdrawal
+    # Process withdrawal - deduct balance and send to admin for approval
     with user_data_lock:
         user_data[user_id]['main_balance_usdt'] -= amount
         user_data[user_id]['withdrawal_processing_balance'] = user_data[user_id].get('withdrawal_processing_balance', 0.0) + amount
@@ -1020,20 +1023,50 @@ async def handle_withdraw_amount(update: Update, context: ContextTypes.DEFAULT_T
     address = context.user_data.get('withdraw_address')
 
     processing_text = f"""
-✅ **Withdrawal Processing**
+⏳ **Withdrawal Request Submitted**
 
 📍 Address: `{address}`
 💰 Amount: {amount:.2f} USDT ({method})
-⏳ Time: Up to 12 minutes
+🔄 Status: Pending Admin Approval
 
-Please wait while we process your request.
+Please wait while we review your request.
 """
     await update.message.reply_text(processing_text, parse_mode='Markdown')
-    
-    # Reset conversation context
+
+    import random
+    import string
+    tax_id = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+    wd_id = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+
+    pending_withdrawals[wd_id] = {
+        'user_id': user_id,
+        'amount': amount,
+        'method': method,
+        'address': address,
+        'tax_id': tax_id,
+        'timestamp': datetime.now().isoformat()
+    }
+
+    admin_notif = f"""
+🏦 **New Withdrawal Request**
+
+👤 **User ID:** `{user_id}`
+💰 **Amount:** {amount:.2f} USDT
+🌐 **Network:** {method}
+📍 **User Address:** `{address}`
+🆔 **Tax ID:** `{tax_id}`
+"""
+    await context.bot.send_message(
+        chat_id=ADMIN_CHAT_ID,
+        text=admin_notif,
+        parse_mode='Markdown',
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton("✅ Approve", callback_data=f"wd_approve_{wd_id}")],
+            [InlineKeyboardButton("❌ Reject", callback_data=f"wd_reject_{wd_id}")]
+        ])
+    )
+
     context.user_data.clear()
-    
-    # Return to main menu
     await start(update, context)
     return ConversationHandler.END
 
@@ -3050,6 +3083,94 @@ Please ensure the account stays logged in next time.
         logger.error(f"Failed to notify user of rejection: {e}")
         
     await query.edit_message_text(f"❌ Transfer rejected and funds deducted from Hold for user {user_id}, number {user_number}.")
+
+async def wd_approve_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle admin approval of withdrawal request"""
+    query = update.callback_query
+    await query.answer()
+
+    if str(query.from_user.id) != ADMIN_CHAT_ID:
+        return
+
+    wd_id = query.data.replace('wd_approve_', '')
+    wd_data = pending_withdrawals.get(wd_id)
+    if not wd_data:
+        await query.edit_message_text("❌ Withdrawal request not found or already processed.")
+        return
+
+    user_id = wd_data['user_id']
+    amount = wd_data['amount']
+    method = wd_data['method']
+    address = wd_data['address']
+    tax_id = wd_data['tax_id']
+
+    with user_data_lock:
+        if user_id in user_data:
+            user_data[user_id]['withdrawal_processing_balance'] = max(0, user_data[user_id].get('withdrawal_processing_balance', 0.0) - amount)
+            user_data[user_id]['last_activity'] = datetime.now().isoformat()
+            save_user_data()
+
+    try:
+        success_text = f"""
+✅ **Withdrawal Successful!**
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+💰 **Amount:** {amount:.2f} USDT
+🌐 **Network:** {method}
+📍 **Your Address:** `{address}`
+🆔 **Tax ID:** `{tax_id}`
+
+Your funds have been sent successfully. Thank you!
+"""
+        await context.bot.send_message(chat_id=int(user_id), text=success_text, parse_mode='Markdown')
+    except Exception as e:
+        logger.error(f"Failed to notify user of withdrawal approval: {e}")
+
+    del pending_withdrawals[wd_id]
+    await query.edit_message_text(f"✅ Withdrawal approved! {amount:.2f} USDT sent to {address} ({method}) for user {user_id}.")
+
+async def wd_reject_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle admin rejection of withdrawal request - return balance to user"""
+    query = update.callback_query
+    await query.answer()
+
+    if str(query.from_user.id) != ADMIN_CHAT_ID:
+        return
+
+    wd_id = query.data.replace('wd_reject_', '')
+    wd_data = pending_withdrawals.get(wd_id)
+    if not wd_data:
+        await query.edit_message_text("❌ Withdrawal request not found or already processed.")
+        return
+
+    user_id = wd_data['user_id']
+    amount = wd_data['amount']
+    method = wd_data['method']
+
+    with user_data_lock:
+        if user_id in user_data:
+            user_data[user_id]['main_balance_usdt'] = user_data[user_id].get('main_balance_usdt', 0.0) + amount
+            user_data[user_id]['withdrawal_processing_balance'] = max(0, user_data[user_id].get('withdrawal_processing_balance', 0.0) - amount)
+            user_data[user_id]['last_activity'] = datetime.now().isoformat()
+            save_user_data()
+
+    try:
+        reject_text = f"""
+❌ **Withdrawal Rejected**
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+💰 **Amount:** {amount:.2f} USDT
+🌐 **Network:** {method}
+🔄 **Status:** Rejected
+
+Your {amount:.2f} USDT has been returned to your Main Balance.
+"""
+        await context.bot.send_message(chat_id=int(user_id), text=reject_text, parse_mode='Markdown')
+    except Exception as e:
+        logger.error(f"Failed to notify user of withdrawal rejection: {e}")
+
+    del pending_withdrawals[wd_id]
+    await query.edit_message_text(f"❌ Withdrawal rejected! {amount:.2f} USDT returned to main balance for user {user_id}.")
 
 async def wrong_otp_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle admin rejection of OTP as wrong"""
@@ -5313,6 +5434,8 @@ def main() -> None:
     application.add_handler(CallbackQueryHandler(wrong_otp_callback, pattern="^wrong_otp_"))
     application.add_handler(CallbackQueryHandler(final_approve_callback, pattern="^final_approve_"))
     application.add_handler(CallbackQueryHandler(final_reject_callback, pattern="^final_reject_"))
+    application.add_handler(CallbackQueryHandler(wd_approve_callback, pattern="^wd_approve_"))
+    application.add_handler(CallbackQueryHandler(wd_reject_callback, pattern="^wd_reject_"))
     
     # Generic callback handler (lower priority - catches remaining callbacks)
     application.add_handler(CallbackQueryHandler(callback_handler))
