@@ -4,100 +4,335 @@
     <meta charset="UTF-8">
     <title>{{ title }} - Admin Panel</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #0d1117;
-            --surface: #161b22;
-            --primary: #58a6ff;
-            --text: #c9d1d9;
-            --border: #30363d;
+            --bg: #0a0e17;
+            --surface: #111827;
+            --surface-2: #1a2332;
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border: #1e293b;
         }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
-        .card { background: var(--surface); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 20px; max-width: 100%; margin-left: 10px; margin-right: 10px; overflow-x: auto; }
-        h2 { color: #fff; margin-top: 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { text-align: left; padding: 12px; border-bottom: 1px solid var(--border); }
-        th { color: #8b949e; font-weight: 500; }
-        .back-btn { display: inline-block; margin-bottom: 20px; color: var(--primary); text-decoration: none; font-weight: 600; }
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; }
-        .badge-proc { background: rgba(210, 153, 34, 0.2); color: #d29922; }
-        .badge-succ { background: rgba(35, 134, 54, 0.2); color: #3fb950; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .navbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+        }
+        .navbar-brand i { color: var(--primary); }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-title .badge-count {
+            background: var(--primary);
+            color: #fff;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .back-link:hover { background: rgba(99, 102, 241, 0.1); }
+
+        .table-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: var(--surface-2); }
+        th {
+            text-align: left;
+            padding: 14px 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        td {
+            padding: 14px 16px;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+        }
+        tr:hover { background: rgba(99, 102, 241, 0.04); }
+
+        code {
+            background: var(--bg);
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--primary-light);
+            font-weight: 500;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-processing { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .badge-reject { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+        .btn-sm {
+            padding: 6px 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-approve { background: var(--success); color: #fff; }
+        .btn-approve:hover { background: #059669; transform: scale(1.05); }
+        .btn-reject { background: var(--danger); color: #fff; margin-left: 6px; }
+        .btn-reject:hover { background: #dc2626; transform: scale(1.05); }
+
+        .actions-cell { display: flex; gap: 6px; align-items: center; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+        .empty-state i { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+        .empty-state p { font-size: 1rem; }
+
+        .money { color: var(--success); font-weight: 600; }
+
+        @media (max-width: 768px) {
+            th, td { padding: 10px 12px; font-size: 0.8rem; }
+            .page-header { flex-direction: column; align-items: flex-start; }
+        }
     </style>
 </head>
 <body>
-    <div class="card">
-        <a href="/admin" class="back-btn">← Back to Dashboard</a>
-        <h2>{{ title }}</h2>
-        <table>
-            <thead>
+    <nav class="navbar">
+        <a href="/admin" class="navbar-brand">
+            <i class="fas fa-shield-halved"></i>
+            TG-Lion Admin
+        </a>
+        <a href="/admin" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <div class="page-title">
                 {% if type == 'users' %}
-                    <tr>
-                        <th>Chat ID</th>
-                        <th>Balance</th>
-                        <th>Accounts Sold</th>
-                    </tr>
+                    <i class="fas fa-users" style="color: var(--primary-light);"></i>
                 {% elif type == 'processing' %}
-                    <tr>
-                        <th>Chat ID</th>
-                        <th>Number</th>
-                        <th>Country</th>
-                        <th>Elapsed Time</th>
-                        <th>Price</th>
-                        <th>Action</th>
-                    </tr>
+                    <i class="fas fa-spinner" style="color: var(--warning);"></i>
                 {% elif type == 'successful' %}
-                    <tr>
-                        <th>Chat ID</th>
-                        <th>Number</th>
-                        <th>Country</th>
-                        <th>Price</th>
-                        <th>Date</th>
-                    </tr>
+                    <i class="fas fa-check-double" style="color: var(--success);"></i>
+                {% elif type == 'rejected' %}
+                    <i class="fas fa-ban" style="color: var(--danger);"></i>
+                {% elif type == 'withdrawals' %}
+                    <i class="fas fa-wallet" style="color: var(--info);"></i>
                 {% endif %}
-            </thead>
-            <tbody>
-                {% for item in items %}
-                    {% if type == 'users' %}
+                {{ title }}
+                <span class="badge-count">{{ items|length }}</span>
+            </div>
+        </div>
+
+        <div class="table-card">
+            {% if items %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        {% if type == 'users' %}
                         <tr>
-                            <td><code>{{ item.chat_id }}</code></td>
-                            <td>${{ "%.2f"|format(item.balance) }}</td>
-                            <td>{{ item.sold }}</td>
+                            <th>#</th>
+                            <th>Chat ID</th>
+                            <th>Main Balance</th>
+                            <th>Hold Balance</th>
+                            <th>Accounts Sold</th>
+                            <th>Referrals</th>
                         </tr>
-                    {% elif type == 'processing' %}
+                        {% elif type == 'processing' %}
                         <tr>
+                            <th>#</th>
+                            <th>Chat ID</th>
+                            <th>Number</th>
+                            <th>Country</th>
+                            <th>Elapsed</th>
+                            <th>Price</th>
+                            <th>Actions</th>
+                        </tr>
+                        {% elif type == 'successful' %}
+                        <tr>
+                            <th>#</th>
+                            <th>Chat ID</th>
+                            <th>Number</th>
+                            <th>Country</th>
+                            <th>Price</th>
+                            <th>Date</th>
+                        </tr>
+                        {% elif type == 'rejected' %}
+                        <tr>
+                            <th>#</th>
+                            <th>Chat ID</th>
+                            <th>Number</th>
+                            <th>Country</th>
+                            <th>Price</th>
+                            <th>Date</th>
+                        </tr>
+                        {% elif type == 'withdrawals' %}
+                        <tr>
+                            <th>#</th>
+                            <th>Chat ID</th>
+                            <th>Method</th>
+                            <th>Amount</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                        </tr>
+                        {% endif %}
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        {% if type == 'users' %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
                             <td><code>{{ item.chat_id }}</code></td>
-                            <td>{{ item.number }}</td>
+                            <td class="money">${{ "%.2f"|format(item.balance) }}</td>
+                            <td style="color: var(--warning);">${{ "%.2f"|format(item.hold_balance) }}</td>
+                            <td>{{ item.sold }}</td>
+                            <td>{{ item.referrals }}</td>
+                        </tr>
+                        {% elif type == 'processing' %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><code>{{ item.chat_id }}</code></td>
+                            <td><code>{{ item.number }}</code></td>
                             <td>{{ item.country }}</td>
-                            <td><span class="badge badge-proc">{{ item.time }}</span></td>
-                            <td>${{ "%.2f"|format(item.price) }}</td>
+                            <td><span class="badge badge-processing"><i class="fas fa-clock"></i> {{ item.time }}</span></td>
+                            <td class="money">${{ "%.2f"|format(item.price) }}</td>
                             <td>
-                                <form action="/admin/approve" method="POST" style="display:inline;">
-                                    <input type="hidden" name="chat_id" value="{{ item.chat_id }}">
-                                    <input type="hidden" name="number" value="{{ item.number }}">
-                                    <input type="hidden" name="action" value="approve">
-                                    <button type="submit" style="background: #238636; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Approve</button>
-                                </form>
-                                <form action="/admin/approve" method="POST" style="display:inline;">
-                                    <input type="hidden" name="chat_id" value="{{ item.chat_id }}">
-                                    <input type="hidden" name="number" value="{{ item.number }}">
-                                    <input type="hidden" name="action" value="reject">
-                                    <button type="submit" style="background: #f85149; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Reject</button>
-                                </form>
+                                <div class="actions-cell">
+                                    <form action="/admin/approve" method="POST" style="display:inline;">
+                                        <input type="hidden" name="chat_id" value="{{ item.chat_id }}">
+                                        <input type="hidden" name="number" value="{{ item.number }}">
+                                        <input type="hidden" name="action" value="approve">
+                                        <button type="submit" class="btn-sm btn-approve"><i class="fas fa-check"></i> Approve</button>
+                                    </form>
+                                    <form action="/admin/approve" method="POST" style="display:inline;">
+                                        <input type="hidden" name="chat_id" value="{{ item.chat_id }}">
+                                        <input type="hidden" name="number" value="{{ item.number }}">
+                                        <input type="hidden" name="action" value="reject">
+                                        <button type="submit" class="btn-sm btn-reject"><i class="fas fa-times"></i> Reject</button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
-                    {% elif type == 'successful' %}
+                        {% elif type == 'successful' %}
                         <tr>
+                            <td>{{ loop.index }}</td>
                             <td><code>{{ item.chat_id }}</code></td>
-                            <td>{{ item.number }}</td>
+                            <td><code>{{ item.number }}</code></td>
                             <td>{{ item.country }}</td>
-                            <td>${{ "%.2f"|format(item.price) }}</td>
-                            <td><span class="badge badge-succ">{{ item.date }}</span></td>
+                            <td class="money">${{ "%.2f"|format(item.price) }}</td>
+                            <td><span class="badge badge-success">{{ item.date }}</span></td>
                         </tr>
-                    {% endif %}
-                {% endfor %}
-            </tbody>
-        </table>
+                        {% elif type == 'rejected' %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><code>{{ item.chat_id }}</code></td>
+                            <td><code>{{ item.number }}</code></td>
+                            <td>{{ item.country }}</td>
+                            <td class="money">${{ "%.2f"|format(item.price) }}</td>
+                            <td><span class="badge badge-reject">{{ item.date }}</span></td>
+                        </tr>
+                        {% elif type == 'withdrawals' %}
+                        <tr>
+                            <td>{{ loop.index }}</td>
+                            <td><code>{{ item.chat_id }}</code></td>
+                            <td>{{ item.method }}</td>
+                            <td class="money">${{ "%.2f"|format(item.amount) }}</td>
+                            <td>{{ item.date }}</td>
+                            <td>
+                                {% if item.status == 'Processing' %}
+                                    <span class="badge badge-processing"><i class="fas fa-clock"></i> Processing</span>
+                                {% elif item.status == 'Completed' %}
+                                    <span class="badge badge-success"><i class="fas fa-check"></i> Completed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No records found</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </body>
 </html>

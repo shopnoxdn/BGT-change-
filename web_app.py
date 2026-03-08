@@ -180,7 +180,28 @@ def logout():
 def admin_panel():
     if 'user_id' not in session or session['user_id'] != '2876886938':
         return redirect(url_for('index'))
-    return render_template('admin.html')
+    
+    data = load_data()
+    stats = {
+        'total_users': len(data),
+        'processing': 0,
+        'successful': 0,
+        'rejected': 0,
+        'total_balance': 0.0
+    }
+    for uid, info in data.items():
+        stats['total_balance'] += info.get('main_balance_usdt', 0.0)
+        for detail in info.get('processing_details', []):
+            status = detail.get('status', '')
+            if status == 'Processing':
+                stats['processing'] += 1
+            elif status == 'Successful':
+                stats['successful'] += 1
+            elif status == 'Reject':
+                stats['rejected'] += 1
+    
+    message = request.args.get('message', '')
+    return render_template('admin.html', stats=stats, message=message)
 
 @app.route('/admin/search', methods=['POST'])
 def admin_search():
@@ -213,7 +234,11 @@ def admin_search():
             elif status == 'Reject':
                 stats['reject'] += 1
     
-    return render_template('admin_results.html', numbers=processed_numbers, search_id=search_id, stats=stats)
+    user_balance = {
+        'main': user_info.get('main_balance_usdt', 0.0),
+        'hold': user_info.get('hold_balance_usdt', 0.0)
+    }
+    return render_template('admin_results.html', numbers=processed_numbers, search_id=search_id, stats=stats, user_balance=user_balance)
 
 @app.route('/admin/notify', methods=['POST'])
 def admin_notify():
@@ -275,8 +300,11 @@ def admin_users():
         users.append({
             'chat_id': uid,
             'balance': info.get('main_balance_usdt', 0.0),
-            'sold': info.get('accounts_sold', 0)
+            'hold_balance': info.get('hold_balance_usdt', 0.0),
+            'sold': info.get('accounts_sold', 0),
+            'referrals': info.get('referral_count', 0)
         })
+    users.sort(key=lambda x: x['balance'], reverse=True)
     return render_template('admin_list.html', title="User List", items=users, type='users')
 
 @app.route('/admin/processing')
@@ -324,6 +352,72 @@ def admin_successful():
                     'date': detail.get('timestamp', '').split('T')[0] if 'T' in detail.get('timestamp', '') else 'N/A'
                 })
     return render_template('admin_list.html', title="Successful Numbers", items=items, type='successful')
+
+@app.route('/admin/rejected')
+def admin_rejected():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    data = load_data()
+    items = []
+    for uid, info in data.items():
+        for detail in info.get('processing_details', []):
+            if detail.get('status') == 'Reject':
+                items.append({
+                    'chat_id': uid,
+                    'number': detail.get('number'),
+                    'country': detail.get('country'),
+                    'price': detail.get('price', 0.0),
+                    'date': detail.get('timestamp', '').split('T')[0] if 'T' in detail.get('timestamp', '') else 'N/A'
+                })
+    return render_template('admin_list.html', title="Rejected Numbers", items=items, type='rejected')
+
+@app.route('/admin/withdrawals')
+def admin_withdrawals():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    data = load_data()
+    items = []
+    for uid, info in data.items():
+        wd_processing = info.get('withdrawal_processing_balance', 0.0)
+        if wd_processing > 0:
+            items.append({
+                'chat_id': uid,
+                'method': 'USDT',
+                'amount': wd_processing,
+                'date': info.get('last_activity', 'N/A').split('T')[0] if 'T' in info.get('last_activity', '') else 'N/A',
+                'status': 'Processing'
+            })
+    return render_template('admin_list.html', title="Withdrawal History", items=items, type='withdrawals')
+
+@app.route('/admin/reset_number', methods=['POST'])
+def admin_reset_number():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    
+    phone = request.form.get('phone_number', '').strip()
+    if not phone:
+        return redirect(url_for('admin_panel', message='Phone number is required'))
+    
+    data = load_data()
+    found = False
+    for uid, info in data.items():
+        sold = info.get('sold_numbers', [])
+        if phone in sold:
+            info['sold_numbers'] = [n for n in sold if n != phone]
+            found = True
+        
+        pd = info.get('processing_details', [])
+        new_pd = [d for d in pd if d.get('number') != phone]
+        if len(new_pd) != len(pd):
+            info['processing_details'] = new_pd
+            found = True
+    
+    if found:
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+        return redirect(url_for('admin_panel', message=f'Number {phone} has been reset and can be re-sold'))
+    
+    return redirect(url_for('admin_panel', message=f'Number {phone} not found in any user data'))
 
 @app.route('/admin/approve', methods=['POST'])
 def admin_approve():
