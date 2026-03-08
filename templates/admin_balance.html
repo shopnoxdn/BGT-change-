@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Balance - Admin Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0e17;
+            --surface: #111827;
+            --surface-2: #1a2332;
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border: #1e293b;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        .navbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+        }
+        .navbar-brand i { color: var(--primary); }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .back-link:hover { background: rgba(99, 102, 241, 0.1); }
+        .container { max-width: 600px; margin: 0 auto; padding: 24px; }
+
+        .user-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .user-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(99, 102, 241, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 1.5rem;
+            color: var(--primary-light);
+        }
+        .user-id-label { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 4px; }
+        .user-id-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            background: var(--bg);
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 8px;
+        }
+
+        .balance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .balance-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+        .balance-card.main::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .balance-card.hold::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .balance-card.processing::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .balance-card.total::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+
+        .balance-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            margin: 0 auto 12px;
+        }
+        .balance-icon.main { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .balance-icon.hold { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .balance-icon.processing { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .balance-icon.total { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+
+        .balance-amount { font-size: 1.8rem; font-weight: 800; color: #fff; }
+        .balance-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; font-weight: 500; }
+
+        .stats-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .stats-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stats-title i { color: var(--primary-light); }
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .stats-row:last-child { border-bottom: none; }
+        .stats-label { font-size: 0.85rem; color: var(--text-dim); }
+        .stats-value { font-size: 0.95rem; font-weight: 700; color: #fff; }
+
+        .not-found {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .not-found i { font-size: 3rem; color: var(--danger); opacity: 0.5; margin-bottom: 16px; }
+        .not-found p { font-size: 1rem; color: var(--text-dim); }
+
+        @media (max-width: 480px) {
+            .balance-grid { grid-template-columns: 1fr; }
+            .balance-amount { font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/admin" class="navbar-brand">
+            <i class="fas fa-shield-halved"></i>
+            TG-Lion Admin
+        </a>
+        <a href="/admin" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+    </nav>
+
+    <div class="container">
+        {% if found %}
+        <div class="user-card">
+            <div class="user-avatar"><i class="fas fa-user"></i></div>
+            <div class="user-id-label">User Chat ID</div>
+            <div class="user-id-value">{{ search_id }}</div>
+        </div>
+
+        <div class="balance-grid">
+            <div class="balance-card main">
+                <div class="balance-icon main"><i class="fas fa-wallet"></i></div>
+                <div class="balance-amount">${{ "%.2f"|format(balances.main) }}</div>
+                <div class="balance-label">Main Balance</div>
+            </div>
+            <div class="balance-card hold">
+                <div class="balance-icon hold"><i class="fas fa-lock"></i></div>
+                <div class="balance-amount">${{ "%.2f"|format(balances.hold) }}</div>
+                <div class="balance-label">Hold Balance</div>
+            </div>
+            <div class="balance-card processing">
+                <div class="balance-icon processing"><i class="fas fa-spinner"></i></div>
+                <div class="balance-amount">${{ "%.2f"|format(balances.withdrawal_processing) }}</div>
+                <div class="balance-label">Withdrawal Processing</div>
+            </div>
+            <div class="balance-card total">
+                <div class="balance-icon total"><i class="fas fa-coins"></i></div>
+                <div class="balance-amount">${{ "%.2f"|format(balances.total) }}</div>
+                <div class="balance-label">Total Balance</div>
+            </div>
+        </div>
+
+        <div class="stats-card">
+            <div class="stats-title"><i class="fas fa-chart-bar"></i> Account Stats</div>
+            <div class="stats-row">
+                <span class="stats-label">Accounts Sold</span>
+                <span class="stats-value">{{ extra.accounts_sold }}</span>
+            </div>
+            <div class="stats-row">
+                <span class="stats-label">Referral Count</span>
+                <span class="stats-value">{{ extra.referral_count }}</span>
+            </div>
+            <div class="stats-row">
+                <span class="stats-label">Referral Earnings</span>
+                <span class="stats-value" style="color: var(--success);">${{ "%.2f"|format(extra.referral_earnings) }}</span>
+            </div>
+            <div class="stats-row">
+                <span class="stats-label">Last Activity</span>
+                <span class="stats-value" style="font-size: 0.85rem;">{{ extra.last_activity }}</span>
+            </div>
+        </div>
+        {% else %}
+        <div class="not-found">
+            <i class="fas fa-user-slash"></i>
+            <p>User <strong>{{ search_id }}</strong> not found</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

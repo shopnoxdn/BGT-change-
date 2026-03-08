@@ -389,6 +389,80 @@ def admin_withdrawals():
             })
     return render_template('admin_list.html', title="Withdrawal History", items=items, type='withdrawals')
 
+@app.route('/admin/search_processing', methods=['POST'])
+def admin_search_processing():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    
+    search_id = request.form.get('chat_id', '').strip()
+    data = load_data()
+    user_info = data.get(search_id, {})
+    
+    items = []
+    now = datetime.now()
+    
+    for detail in user_info.get('processing_details', []):
+        if detail.get('status') == 'Processing':
+            ts = detail.get('timestamp', '')
+            elapsed_str = "N/A"
+            hours_elapsed = 0
+            date_str = "N/A"
+            if ts:
+                try:
+                    start_time = datetime.fromisoformat(ts)
+                    elapsed = now - start_time
+                    total_seconds = int(elapsed.total_seconds())
+                    hours, remainder = divmod(total_seconds, 3600)
+                    minutes, seconds = divmod(remainder, 60)
+                    elapsed_str = f"{hours}h {minutes}m {seconds}s"
+                    hours_elapsed = hours
+                    date_str = ts.split('T')[0] if 'T' in ts else ts
+                except:
+                    pass
+            
+            items.append({
+                'number': detail.get('number', 'N/A'),
+                'country': detail.get('country', 'N/A'),
+                'price': detail.get('price', 0.0),
+                'date': date_str,
+                'elapsed': elapsed_str,
+                'hours_elapsed': hours_elapsed
+            })
+    
+    return render_template('admin_processing_search.html', items=items, search_id=search_id)
+
+@app.route('/admin/check_balance', methods=['POST'])
+def admin_check_balance():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    
+    search_id = request.form.get('chat_id', '').strip()
+    data = load_data()
+    user_info = data.get(search_id, {})
+    
+    if not user_info:
+        return render_template('admin_balance.html', found=False, search_id=search_id)
+    
+    main_bal = user_info.get('main_balance_usdt', 0.0)
+    hold_bal = user_info.get('hold_balance_usdt', 0.0)
+    wd_processing = user_info.get('withdrawal_processing_balance', 0.0)
+    
+    balances = {
+        'main': main_bal,
+        'hold': hold_bal,
+        'withdrawal_processing': wd_processing,
+        'total': main_bal + hold_bal + wd_processing
+    }
+    
+    extra = {
+        'accounts_sold': user_info.get('accounts_sold', 0),
+        'referral_count': user_info.get('referral_count', 0),
+        'referral_earnings': user_info.get('referral_earnings', 0.0),
+        'last_activity': user_info.get('last_activity', 'N/A')
+    }
+    
+    return render_template('admin_balance.html', found=True, search_id=search_id, balances=balances, extra=extra)
+
 @app.route('/admin/reset_number', methods=['POST'])
 def admin_reset_number():
     if 'user_id' not in session or session['user_id'] != '2876886938':
