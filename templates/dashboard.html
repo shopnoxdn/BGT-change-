@@ -12,7 +12,6 @@
             --bg: #050a15;
             --surface: #0c1222;
             --surface-2: #111b2e;
-            --surface-3: #162036;
             --primary: #6366f1;
             --primary-light: #818cf8;
             --primary-glow: rgba(99, 102, 241, 0.2);
@@ -29,7 +28,6 @@
             --border: rgba(99, 102, 241, 0.12);
             --glass: rgba(12, 18, 34, 0.9);
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg);
@@ -37,263 +35,84 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
-
         .bg-grid {
-            position: fixed;
-            inset: 0;
+            position: fixed; inset: 0;
             background-image:
-                linear-gradient(rgba(99, 102, 241, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(99, 102, 241, 0.02) 1px, transparent 1px);
+                linear-gradient(rgba(99,102,241,0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.02) 1px, transparent 1px);
             background-size: 60px 60px;
-            z-index: 0;
-            pointer-events: none;
+            z-index: 0; pointer-events: none;
         }
-
         .navbar {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(5, 10, 21, 0.85);
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(5,10,21,0.85);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
             padding: 0 20px;
         }
         .nav-inner {
-            max-width: 500px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 60px;
+            max-width: 500px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center; height: 60px;
         }
-        .nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .nav-brand { display: flex; align-items: center; gap: 10px; }
         .nav-logo {
-            width: 36px; height: 36px;
-            border-radius: 10px;
+            width: 36px; height: 36px; border-radius: 10px;
             background: linear-gradient(135deg, var(--primary), #8b5cf6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 1rem;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 1rem;
         }
         .nav-title { font-size: 1rem; font-weight: 800; color: #fff; }
-        .nav-actions { display: flex; gap: 8px; align-items: center; }
         .nav-btn {
-            padding: 8px 14px;
-            border-radius: 10px;
-            border: 1px solid var(--border);
-            background: transparent;
-            color: var(--text-dim);
-            font-size: 0.8rem;
-            font-weight: 600;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            text-decoration: none;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 6px;
+            padding: 8px 14px; border-radius: 10px;
+            border: 1px solid var(--border); background: transparent;
+            color: var(--text-dim); font-size: 0.8rem; font-weight: 600;
+            font-family: 'Inter', sans-serif; cursor: pointer;
+            text-decoration: none; transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px;
         }
-        .nav-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(239, 68, 68, 0.05); }
-
+        .nav-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.05); }
         .main-content {
-            position: relative;
-            z-index: 1;
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px 16px 100px;
+            position: relative; z-index: 1;
+            max-width: 500px; margin: 0 auto; padding: 20px 16px 100px;
         }
-
-        .wallet-card {
-            background: linear-gradient(135deg, #1a1147, #0f1e3d, #0c1a2e);
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 24px;
-            padding: 28px 24px;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        .wallet-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -30%;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 70%);
-            pointer-events: none;
-        }
-        .wallet-card::after {
-            content: '';
-            position: absolute;
-            bottom: -40%;
-            left: -20%;
-            width: 250px;
-            height: 250px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.08), transparent 70%);
-            pointer-events: none;
-        }
-        .wallet-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            position: relative;
-        }
-        .wallet-amount {
-            font-size: 2.8rem;
-            font-weight: 900;
-            color: #fff;
-            letter-spacing: -1px;
-            position: relative;
-            margin-bottom: 24px;
-        }
-        .wallet-amount .currency {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--primary-light);
-            vertical-align: super;
-            margin-left: 4px;
-        }
-        .wallet-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 12px;
-            position: relative;
-        }
-        .wallet-stat {
-            background: rgba(255, 255, 255, 0.04);
-            border-radius: 14px;
-            padding: 14px 12px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .wallet-stat-val {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #fff;
-            display: block;
-        }
-        .wallet-stat-label {
-            font-size: 0.65rem;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            margin-top: 4px;
-            display: block;
-            font-weight: 500;
-        }
-
-        .quick-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .stat-card {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 18px 16px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            transition: all 0.3s;
-        }
-        .stat-card:hover { border-color: rgba(99, 102, 241, 0.3); transform: translateY(-2px); }
-        .stat-icon {
-            width: 44px; height: 44px;
-            border-radius: 13px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            flex-shrink: 0;
-        }
-        .stat-icon.green { background: rgba(16, 185, 129, 0.12); color: var(--success-light); }
-        .stat-icon.yellow { background: rgba(245, 158, 11, 0.12); color: var(--warning-light); }
-        .stat-icon.blue { background: rgba(99, 102, 241, 0.12); color: var(--primary-light); }
-        .stat-icon.cyan { background: rgba(34, 211, 238, 0.12); color: var(--accent); }
-        .stat-info { flex: 1; min-width: 0; }
-        .stat-value { font-size: 1.2rem; font-weight: 800; color: #fff; display: block; }
-        .stat-label { font-size: 0.7rem; color: var(--text-dim); font-weight: 500; display: block; margin-top: 2px; }
 
         .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             margin-bottom: 14px;
-            margin-top: 8px;
         }
         .section-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-size: 1.05rem; font-weight: 700; color: #fff;
+            display: flex; align-items: center; gap: 8px;
         }
         .section-title i { color: var(--primary-light); font-size: 0.9rem; }
         .section-count {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--primary-light);
-            background: rgba(99, 102, 241, 0.12);
-            padding: 4px 10px;
-            border-radius: 20px;
+            font-size: 0.7rem; font-weight: 700; color: var(--primary-light);
+            background: rgba(99,102,241,0.12); padding: 4px 10px; border-radius: 20px;
         }
 
         .tabs-container {
-            display: flex;
-            gap: 6px;
-            background: rgba(12, 18, 34, 0.6);
-            padding: 5px;
-            border-radius: 14px;
-            border: 1px solid var(--border);
-            margin-bottom: 16px;
+            display: flex; gap: 6px;
+            background: rgba(12,18,34,0.6); padding: 5px;
+            border-radius: 14px; border: 1px solid var(--border); margin-bottom: 16px;
         }
         .tab-btn {
-            flex: 1;
-            padding: 11px 8px;
-            text-align: center;
-            background: transparent;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: var(--text-dim);
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
+            flex: 1; padding: 11px 8px; text-align: center;
+            background: transparent; border: none; border-radius: 10px;
+            cursor: pointer; font-size: 0.78rem; font-weight: 600;
+            color: var(--text-dim); font-family: 'Inter', sans-serif;
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
         }
         .tab-btn.active {
-            background: var(--primary);
-            color: #fff;
+            background: var(--primary); color: #fff;
             box-shadow: 0 4px 16px var(--primary-glow);
         }
         .tab-btn .tab-count {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 18px;
-            height: 18px;
-            font-size: 0.65rem;
-            font-weight: 700;
-            border-radius: 10px;
-            margin-left: 4px;
-            padding: 0 5px;
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 18px; height: 18px; font-size: 0.65rem; font-weight: 700;
+            border-radius: 10px; margin-left: 4px; padding: 0 5px;
         }
         .tab-btn.active .tab-count { background: rgba(255,255,255,0.2); color: #fff; }
-        .tab-btn:not(.active) .tab-count { background: rgba(99, 102, 241, 0.15); color: var(--primary-light); }
+        .tab-btn:not(.active) .tab-count { background: rgba(99,102,241,0.15); color: var(--primary-light); }
 
         .tab-panel { display: none; animation: fadeUp 0.4s ease; }
         .tab-panel.active { display: block; }
@@ -303,242 +122,218 @@
         }
 
         .account-card {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 20px;
-            margin-bottom: 12px;
-            transition: all 0.3s;
-            position: relative;
-            overflow: hidden;
+            background: var(--glass); backdrop-filter: blur(10px);
+            border: 1px solid var(--border); border-radius: 18px;
+            padding: 20px; margin-bottom: 12px;
+            transition: all 0.3s; position: relative; overflow: hidden;
         }
-        .account-card:hover { border-color: rgba(99, 102, 241, 0.25); }
+        .account-card:hover { border-color: rgba(99,102,241,0.25); }
         .account-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
         }
         .account-card.processing::before { background: linear-gradient(90deg, var(--warning), var(--warning-light)); }
         .account-card.successful::before { background: linear-gradient(90deg, var(--success), var(--success-light)); }
         .account-card.rejected::before { background: linear-gradient(90deg, var(--danger), var(--danger-light)); }
 
-        .card-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 14px;
-        }
+        .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
         .card-number-group { flex: 1; }
         .card-number-label {
-            font-size: 0.65rem;
-            font-weight: 600;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
+            font-size: 0.65rem; font-weight: 600; color: var(--text-dim);
+            text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
         }
-        .card-number {
-            font-size: 1.15rem;
-            font-weight: 800;
-            color: #fff;
-            letter-spacing: -0.3px;
-        }
+        .card-number { font-size: 1.15rem; font-weight: 800; color: #fff; letter-spacing: -0.3px; }
         .status-badge {
-            font-size: 0.65rem;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
+            font-size: 0.65rem; padding: 5px 12px; border-radius: 20px;
+            font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
         }
-        .status-badge.processing {
-            background: rgba(245, 158, 11, 0.12);
-            color: var(--warning-light);
-            border: 1px solid rgba(245, 158, 11, 0.25);
-        }
-        .status-badge.successful {
-            background: rgba(16, 185, 129, 0.12);
-            color: var(--success-light);
-            border: 1px solid rgba(16, 185, 129, 0.25);
-        }
-        .status-badge.rejected {
-            background: rgba(239, 68, 68, 0.12);
-            color: var(--danger-light);
-            border: 1px solid rgba(239, 68, 68, 0.25);
-        }
+        .status-badge.processing { background: rgba(245,158,11,0.12); color: var(--warning-light); border: 1px solid rgba(245,158,11,0.25); }
+        .status-badge.successful { background: rgba(16,185,129,0.12); color: var(--success-light); border: 1px solid rgba(16,185,129,0.25); }
+        .status-badge.rejected { background: rgba(239,68,68,0.12); color: var(--danger-light); border: 1px solid rgba(239,68,68,0.25); }
 
-        .card-details {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .detail-item {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .detail-label {
-            font-size: 0.65rem;
-            color: var(--text-muted);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-        .detail-value {
-            font-size: 0.88rem;
-            font-weight: 700;
-            color: var(--text);
-        }
+        .card-details { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .detail-item { display: flex; flex-direction: column; gap: 2px; }
+        .detail-label { font-size: 0.65rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+        .detail-value { font-size: 0.88rem; font-weight: 700; color: var(--text); }
         .detail-value.price { color: var(--success-light); }
 
         .timer-bar {
             margin-top: 14px;
-            background: rgba(245, 158, 11, 0.06);
-            border: 1px solid rgba(245, 158, 11, 0.12);
-            border-radius: 12px;
-            padding: 12px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.12);
+            border-radius: 12px; padding: 12px 16px;
+            display: flex; justify-content: space-between; align-items: center;
         }
         .timer-label {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: var(--warning);
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.72rem; font-weight: 600; color: var(--warning);
+            text-transform: uppercase; letter-spacing: 0.3px;
         }
         .timer-label i { font-size: 0.8rem; }
         .timer-value {
-            font-size: 1.05rem;
-            font-weight: 800;
-            color: var(--warning-light);
+            font-size: 1.05rem; font-weight: 800; color: var(--warning-light);
             font-variant-numeric: tabular-nums;
         }
 
         .empty-state {
-            text-align: center;
-            padding: 50px 20px;
-            background: var(--glass);
-            border: 1px dashed var(--border);
-            border-radius: 18px;
+            text-align: center; padding: 50px 20px;
+            background: var(--glass); border: 1px dashed var(--border); border-radius: 18px;
         }
         .empty-icon {
-            width: 56px; height: 56px;
-            border-radius: 16px;
-            background: rgba(99, 102, 241, 0.08);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 14px;
-            font-size: 1.3rem;
-            color: var(--text-dim);
+            width: 56px; height: 56px; border-radius: 16px;
+            background: rgba(99,102,241,0.08);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px; font-size: 1.3rem; color: var(--text-dim);
         }
-        .empty-text {
-            font-size: 0.9rem;
-            color: var(--text-dim);
-            font-weight: 500;
+        .empty-text { font-size: 0.9rem; color: var(--text-dim); font-weight: 500; }
+        .empty-sub { font-size: 0.78rem; color: var(--text-muted); margin-top: 4px; }
+
+        .info-hero {
+            background: linear-gradient(135deg, #1a1147, #0f1e3d, #0c1a2e);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 24px; padding: 28px 24px; margin-bottom: 16px;
+            position: relative; overflow: hidden; text-align: center;
         }
-        .empty-sub {
-            font-size: 0.78rem;
-            color: var(--text-muted);
-            margin-top: 4px;
+        .info-hero::before {
+            content: ''; position: absolute; top: -50%; right: -30%;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(99,102,241,0.12), transparent 70%);
+            pointer-events: none;
+        }
+        .info-hero-icon {
+            width: 64px; height: 64px; border-radius: 18px;
+            background: rgba(99,102,241,0.15);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px; font-size: 1.5rem; color: var(--primary-light);
+            position: relative;
+        }
+        .info-hero-title {
+            font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 4px;
+            position: relative;
+        }
+        .info-hero-sub {
+            font-size: 0.78rem; color: var(--text-dim); position: relative;
         }
 
-        .referral-card {
-            background: var(--glass);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--border);
-            border-radius: 18px;
-            padding: 22px 20px;
-            margin-top: 20px;
-            margin-bottom: 20px;
+        .info-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
         }
-        .referral-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
+        .info-card {
+            background: var(--glass); backdrop-filter: blur(10px);
+            border: 1px solid var(--border); border-radius: 16px;
+            padding: 20px 16px; text-align: center;
+            position: relative; overflow: hidden; transition: all 0.3s;
         }
-        .referral-icon {
-            width: 40px; height: 40px;
-            border-radius: 12px;
-            background: rgba(34, 211, 238, 0.12);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--accent);
-            font-size: 1rem;
+        .info-card:hover { border-color: rgba(99,102,241,0.25); transform: translateY(-2px); }
+        .info-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
         }
-        .referral-title { font-size: 0.95rem; font-weight: 700; color: #fff; }
-        .referral-desc { font-size: 0.75rem; color: var(--text-dim); }
-        .referral-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        .info-card.balance-card::before { background: linear-gradient(90deg, var(--success), var(--success-light)); }
+        .info-card.hold-card::before { background: linear-gradient(90deg, var(--warning), var(--warning-light)); }
+        .info-card.withdraw-card::before { background: linear-gradient(90deg, var(--accent), #67e8f9); }
+        .info-card.total-card::before { background: linear-gradient(90deg, var(--primary), var(--primary-light)); }
+        .info-card.sold-card::before { background: linear-gradient(90deg, #a78bfa, #c4b5fd); }
+        .info-card.income-card::before { background: linear-gradient(90deg, #f472b6, #f9a8d4); }
+        .info-card.referral-card-accent::before { background: linear-gradient(90deg, var(--accent), #67e8f9); }
+        .info-card.ref-earn-card::before { background: linear-gradient(90deg, var(--success), var(--success-light)); }
+
+        .info-card-icon {
+            width: 44px; height: 44px; border-radius: 13px;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 10px; font-size: 1.1rem;
         }
-        .ref-stat {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 14px;
-            text-align: center;
+        .info-card-icon.green { background: rgba(16,185,129,0.12); color: var(--success-light); }
+        .info-card-icon.yellow { background: rgba(245,158,11,0.12); color: var(--warning-light); }
+        .info-card-icon.cyan { background: rgba(34,211,238,0.12); color: var(--accent); }
+        .info-card-icon.purple { background: rgba(99,102,241,0.12); color: var(--primary-light); }
+        .info-card-icon.pink { background: rgba(244,114,182,0.12); color: #f9a8d4; }
+        .info-card-icon.violet { background: rgba(167,139,250,0.12); color: #c4b5fd; }
+
+        .info-card-val { font-size: 1.5rem; font-weight: 900; color: #fff; }
+        .info-card-label {
+            font-size: 0.68rem; color: var(--text-dim); font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.3px; margin-top: 4px;
         }
-        .ref-stat-val { font-size: 1.2rem; font-weight: 800; color: #fff; display: block; }
-        .ref-stat-label { font-size: 0.65rem; color: var(--text-dim); font-weight: 500; margin-top: 2px; display: block; text-transform: uppercase; }
+
+        .info-detail-card {
+            background: var(--glass); backdrop-filter: blur(10px);
+            border: 1px solid var(--border); border-radius: 16px;
+            padding: 18px 20px; margin-bottom: 12px;
+        }
+        .info-detail-title {
+            font-size: 0.85rem; font-weight: 700; color: #fff;
+            display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+        }
+        .info-detail-title i { color: var(--primary-light); font-size: 0.85rem; }
+        .info-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid rgba(99,102,241,0.08);
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-row-label { font-size: 0.82rem; color: var(--text-dim); font-weight: 500; }
+        .info-row-val { font-size: 0.9rem; font-weight: 700; color: #fff; }
+
+        .referral-hero {
+            background: linear-gradient(135deg, #0c2233, #0f1e3d, #1a1147);
+            border: 1px solid rgba(34,211,238,0.2);
+            border-radius: 24px; padding: 28px 24px; margin-bottom: 16px;
+            position: relative; overflow: hidden; text-align: center;
+        }
+        .referral-hero::before {
+            content: ''; position: absolute; top: -50%; left: -30%;
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(34,211,238,0.1), transparent 70%);
+            pointer-events: none;
+        }
+        .referral-hero-icon {
+            width: 64px; height: 64px; border-radius: 18px;
+            background: rgba(34,211,238,0.15);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 14px; font-size: 1.5rem; color: var(--accent);
+            position: relative;
+        }
+        .referral-hero-title {
+            font-size: 1.2rem; font-weight: 800; color: #fff; margin-bottom: 4px;
+            position: relative;
+        }
+        .referral-hero-sub {
+            font-size: 0.78rem; color: var(--text-dim); position: relative;
+        }
+        .ref-stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+            margin-top: 20px; position: relative;
+        }
+        .ref-stat-box {
+            background: rgba(255,255,255,0.04); border-radius: 14px;
+            padding: 16px 12px; text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .ref-stat-val { font-size: 1.4rem; font-weight: 900; color: #fff; display: block; }
+        .ref-stat-label {
+            font-size: 0.65rem; color: var(--text-dim); font-weight: 600;
+            text-transform: uppercase; margin-top: 4px; display: block;
+        }
 
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(5, 10, 21, 0.92);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid var(--border);
-            z-index: 100;
-            padding: 8px 0;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(5,10,21,0.92); backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border); z-index: 100; padding: 6px 0;
         }
         .bottom-nav-inner {
-            max-width: 500px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-around;
+            max-width: 500px; margin: 0 auto; display: flex; justify-content: space-around;
         }
         .bottom-nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            padding: 6px 16px;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            background: transparent;
-            border: none;
-            font-family: 'Inter', sans-serif;
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            padding: 6px 12px; border-radius: 12px; cursor: pointer;
+            transition: all 0.2s; text-decoration: none; background: transparent;
+            border: none; font-family: 'Inter', sans-serif;
         }
-        .bottom-nav-item i { font-size: 1.1rem; color: var(--text-dim); transition: color 0.2s; }
-        .bottom-nav-item span { font-size: 0.65rem; font-weight: 600; color: var(--text-dim); transition: color 0.2s; }
+        .bottom-nav-item i { font-size: 1.05rem; color: var(--text-dim); transition: color 0.2s; }
+        .bottom-nav-item span { font-size: 0.6rem; font-weight: 600; color: var(--text-dim); transition: color 0.2s; }
         .bottom-nav-item.active i { color: var(--primary-light); }
         .bottom-nav-item.active span { color: var(--primary-light); }
         .bottom-nav-item:hover i { color: var(--primary-light); }
 
         .page-section { display: none; }
         .page-section.active { display: block; animation: fadeUp 0.4s ease; }
-
-        @media (max-width: 400px) {
-            .wallet-amount { font-size: 2.2rem; }
-            .wallet-stats { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-            .wallet-stat { padding: 10px 8px; }
-        }
     </style>
 </head>
 <body>
@@ -550,64 +345,15 @@
                 <div class="nav-logo"><i class="fas fa-bolt"></i></div>
                 <span class="nav-title">TG-Lion</span>
             </div>
-            <div class="nav-actions">
+            <div>
                 <a href="/logout" class="nav-btn"><i class="fas fa-right-from-bracket"></i> Logout</a>
             </div>
         </div>
     </nav>
 
     <div class="main-content">
+
         <div id="page-home" class="page-section active">
-            <div class="wallet-card">
-                <div class="wallet-label"><i class="fas fa-wallet"></i> Total Balance</div>
-                <div class="wallet-amount">{{ "%.2f"|format(balance.total) }}<span class="currency">USDT</span></div>
-                <div class="wallet-stats">
-                    <div class="wallet-stat">
-                        <span class="wallet-stat-val" style="color: var(--warning-light);">${{ "%.2f"|format(balance.hold) }}</span>
-                        <span class="wallet-stat-label">Hold</span>
-                    </div>
-                    <div class="wallet-stat">
-                        <span class="wallet-stat-val" style="color: var(--accent);">${{ "%.2f"|format(balance.withdrawal) }}</span>
-                        <span class="wallet-stat-label">Withdrawing</span>
-                    </div>
-                    <div class="wallet-stat">
-                        <span class="wallet-stat-val" style="color: var(--success-light);">{{ accounts_sold }}</span>
-                        <span class="wallet-stat-label">Sold</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="quick-stats">
-                <div class="stat-card">
-                    <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-value">{{ success_count }}</span>
-                        <span class="stat-label">Successful</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-value">{{ processing_count }}</span>
-                        <span class="stat-label">Processing</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon blue"><i class="fas fa-ban"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-value">{{ reject_count }}</span>
-                        <span class="stat-label">Rejected</span>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon cyan"><i class="fas fa-user-plus"></i></div>
-                    <div class="stat-info">
-                        <span class="stat-value">{{ referral_count }}</span>
-                        <span class="stat-label">Referrals</span>
-                    </div>
-                </div>
-            </div>
-
             <div class="section-header">
                 <div class="section-title"><i class="fas fa-list-check"></i> Account History</div>
                 <span class="section-count">{{ numbers|length }} Total</span>
@@ -745,55 +491,99 @@
         </div>
 
         <div id="page-referral" class="page-section">
-            <div class="referral-card">
-                <div class="referral-header">
-                    <div class="referral-icon"><i class="fas fa-gift"></i></div>
-                    <div>
-                        <div class="referral-title">Referral Program</div>
-                        <div class="referral-desc">Invite friends and earn commissions</div>
-                    </div>
-                </div>
-                <div class="referral-stats">
-                    <div class="ref-stat">
+            <div class="referral-hero">
+                <div class="referral-hero-icon"><i class="fas fa-gift"></i></div>
+                <div class="referral-hero-title">Referral Program</div>
+                <div class="referral-hero-sub">Invite friends and earn commissions on every sale</div>
+                <div class="ref-stats-grid">
+                    <div class="ref-stat-box">
                         <span class="ref-stat-val">{{ referral_count }}</span>
                         <span class="ref-stat-label">Total Referrals</span>
                     </div>
-                    <div class="ref-stat">
+                    <div class="ref-stat-box">
                         <span class="ref-stat-val" style="color: var(--success-light);">${{ "%.2f"|format(referral_earnings) }}</span>
-                        <span class="ref-stat-label">Earnings</span>
+                        <span class="ref-stat-label">Total Earnings</span>
                     </div>
-                </div>
-            </div>
-
-            <div class="wallet-card" style="padding: 22px 20px;">
-                <div class="wallet-label" style="margin-bottom: 16px;"><i class="fas fa-chart-line"></i> Account Overview</div>
-                <div class="wallet-stats" style="grid-template-columns: 1fr 1fr;">
-                    <div class="wallet-stat">
-                        <span class="wallet-stat-val">{{ accounts_sold }}</span>
-                        <span class="wallet-stat-label">Accounts Sold</span>
-                    </div>
-                    <div class="wallet-stat">
-                        <span class="wallet-stat-val" style="color: var(--success-light);">${{ "%.2f"|format(balance.main) }}</span>
-                        <span class="wallet-stat-label">Total Earned</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card" style="margin-bottom: 12px;">
-                <div class="stat-icon cyan"><i class="fas fa-calendar"></i></div>
-                <div class="stat-info">
-                    <span class="stat-value" style="font-size: 0.9rem;">{{ joined_date }}</span>
-                    <span class="stat-label">Member Since</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon green"><i class="fas fa-signal"></i></div>
-                <div class="stat-info">
-                    <span class="stat-value" style="font-size: 0.9rem;">{{ last_activity }}</span>
-                    <span class="stat-label">Last Activity</span>
                 </div>
             </div>
         </div>
+
+        <div id="page-account" class="page-section">
+            <div class="info-hero">
+                <div class="info-hero-icon"><i class="fas fa-user-circle"></i></div>
+                <div class="info-hero-title">Account Info</div>
+                <div class="info-hero-sub">Your complete account overview</div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card balance-card">
+                    <div class="info-card-icon green"><i class="fas fa-wallet"></i></div>
+                    <div class="info-card-val" style="color: var(--success-light);">${{ "%.2f"|format(balance.main) }}</div>
+                    <div class="info-card-label">Main Balance</div>
+                </div>
+                <div class="info-card hold-card">
+                    <div class="info-card-icon yellow"><i class="fas fa-lock"></i></div>
+                    <div class="info-card-val" style="color: var(--warning-light);">${{ "%.2f"|format(balance.hold) }}</div>
+                    <div class="info-card-label">Hold Balance</div>
+                </div>
+                <div class="info-card withdraw-card">
+                    <div class="info-card-icon cyan"><i class="fas fa-arrow-right-from-bracket"></i></div>
+                    <div class="info-card-val" style="color: var(--accent);">${{ "%.2f"|format(balance.withdrawal) }}</div>
+                    <div class="info-card-label">Withdrawing</div>
+                </div>
+                <div class="info-card total-card">
+                    <div class="info-card-icon purple"><i class="fas fa-coins"></i></div>
+                    <div class="info-card-val" style="color: var(--primary-light);">${{ "%.2f"|format(balance.total) }}</div>
+                    <div class="info-card-label">Total Balance</div>
+                </div>
+            </div>
+
+            <div class="info-detail-card">
+                <div class="info-detail-title"><i class="fas fa-chart-bar"></i> Account Statistics</div>
+                <div class="info-row">
+                    <span class="info-row-label">Accounts Sold</span>
+                    <span class="info-row-val">{{ accounts_sold }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Processing</span>
+                    <span class="info-row-val" style="color: var(--warning-light);">{{ processing_count }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Successful</span>
+                    <span class="info-row-val" style="color: var(--success-light);">{{ success_count }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Rejected</span>
+                    <span class="info-row-val" style="color: var(--danger-light);">{{ reject_count }}</span>
+                </div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card referral-card-accent">
+                    <div class="info-card-icon cyan"><i class="fas fa-user-plus"></i></div>
+                    <div class="info-card-val">{{ referral_count }}</div>
+                    <div class="info-card-label">Referrals</div>
+                </div>
+                <div class="info-card ref-earn-card">
+                    <div class="info-card-icon green"><i class="fas fa-hand-holding-dollar"></i></div>
+                    <div class="info-card-val" style="color: var(--success-light);">${{ "%.2f"|format(referral_earnings) }}</div>
+                    <div class="info-card-label">Referral Earnings</div>
+                </div>
+            </div>
+
+            <div class="info-detail-card">
+                <div class="info-detail-title"><i class="fas fa-clock-rotate-left"></i> Activity</div>
+                <div class="info-row">
+                    <span class="info-row-label">Member Since</span>
+                    <span class="info-row-val">{{ joined_date }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-row-label">Last Activity</span>
+                    <span class="info-row-val">{{ last_activity }}</span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div class="bottom-nav">
@@ -805,6 +595,10 @@
             <button class="bottom-nav-item" onclick="showPage('referral', this)">
                 <i class="fas fa-users"></i>
                 <span>Referrals</span>
+            </button>
+            <button class="bottom-nav-item" onclick="showPage('account', this)">
+                <i class="fas fa-circle-info"></i>
+                <span>Account Info</span>
             </button>
             <a href="/logout" class="bottom-nav-item">
                 <i class="fas fa-right-from-bracket"></i>
@@ -820,7 +614,6 @@
             document.getElementById('tab-' + tabId).classList.add('active');
             btn.classList.add('active');
         }
-
         function showPage(pageId, btn) {
             document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
@@ -828,16 +621,16 @@
             btn.classList.add('active');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-
         function updateTimers() {
             const now = new Date().getTime();
             document.querySelectorAll('.timer-value').forEach(timer => {
-                const startTime = new Date(timer.dataset.timestamp).getTime();
+                const ts = timer.dataset.timestamp;
+                if (!ts) return;
+                const startTime = new Date(ts).getTime();
+                if (isNaN(startTime)) return;
                 let totalAllowed = 38 * 60 * 60 * 1000;
                 let elapsed = now - startTime;
-                while (elapsed > totalAllowed) {
-                    totalAllowed += 38 * 60 * 60 * 1000;
-                }
+                while (elapsed > totalAllowed) { totalAllowed += 38 * 60 * 60 * 1000; }
                 let distance = totalAllowed - elapsed;
                 if (distance < 0) distance = 0;
                 const hours = Math.floor(distance / (1000 * 60 * 60));
