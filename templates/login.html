@@ -2,229 +2,404 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login - TG-Lion</title>
+    <title>TG-Lion | BGT Wallet</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --primary: #00d2ff;
-            --secondary: #3a7bd5;
-            --bg: #0f172a;
-            --card-bg: #1e293b;
-            --text: #f8fafc;
+            --bg: #050a15;
+            --surface: #0c1222;
+            --surface-2: #111b2e;
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-glow: rgba(99, 102, 241, 0.25);
+            --accent: #22d3ee;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --border: rgba(99, 102, 241, 0.15);
+            --glass: rgba(12, 18, 34, 0.85);
         }
         body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: var(--bg);
             color: var(--text);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
             overflow: hidden;
+            position: relative;
         }
-        .login-card {
-            background: var(--card-bg);
-            padding: 2.5rem;
-            border-radius: 16px;
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+        }
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            animation: float 8s ease-in-out infinite;
+        }
+        .bg-orb-1 {
+            width: 400px; height: 400px;
+            background: rgba(99, 102, 241, 0.15);
+            top: -100px; left: -100px;
+        }
+        .bg-orb-2 {
+            width: 300px; height: 300px;
+            background: rgba(34, 211, 238, 0.1);
+            bottom: -80px; right: -80px;
+            animation-delay: -4s;
+        }
+        .bg-orb-3 {
+            width: 200px; height: 200px;
+            background: rgba(139, 92, 246, 0.1);
+            top: 50%; left: 60%;
+            animation-delay: -2s;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, -20px) scale(1.05); }
+        }
+
+        .login-wrapper {
+            position: relative;
+            z-index: 10;
             width: 100%;
-            max-width: 360px;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
+            max-width: 420px;
+            padding: 20px;
         }
-        h2 {
-            margin-bottom: 1.5rem;
-            font-weight: 700;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
+        .brand-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .brand-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 2rem;
+            color: #fff;
+            box-shadow: 0 8px 32px var(--primary-glow);
+        }
+        .brand-title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff, var(--primary-light));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
         }
-        .input-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-        input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 8px;
-            border: 1px solid #334155;
-            background: #0f172a;
-            color: white;
-            box-sizing: border-box;
-            transition: all 0.3s ease;
-            outline: none;
-        }
-        input:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(0, 210, 255, 0.2);
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, opacity 0.2s;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            opacity: 0.9;
-        }
-        button:active {
-            transform: translateY(0);
-        }
-        .footer-text {
-            margin-top: 1.5rem;
+        .brand-subtitle {
             font-size: 0.85rem;
-            color: #94a3b8;
+            color: var(--text-dim);
+            margin-top: 6px;
+            font-weight: 400;
+        }
+
+        .login-card {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 36px 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.03) inset;
+        }
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .card-desc {
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            margin-bottom: 28px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .input-label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            transition: color 0.3s;
+            z-index: 2;
+        }
+        .input-field {
+            width: 100%;
+            padding: 14px 16px 14px 46px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(99, 102, 241, 0.15);
+            background: rgba(5, 10, 21, 0.6);
+            color: #fff;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px var(--primary-glow);
+            background: rgba(5, 10, 21, 0.8);
+        }
+        .input-field:focus + .input-icon,
+        .input-field:focus ~ .input-icon { color: var(--primary-light); }
+        .input-field::placeholder { color: #475569; font-weight: 400; }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 20px var(--primary-glow);
+            position: relative;
+            overflow: hidden;
+        }
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .login-btn:hover::before { opacity: 1; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--primary-glow); }
+        .login-btn:active { transform: translateY(0); }
+        .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .error-alert {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .error-alert i { color: var(--danger); }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 24px 0;
+            color: var(--text-dim);
+            font-size: 0.75rem;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .features-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        .feature-badge {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.06);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+        .feature-badge i {
+            color: var(--primary-light);
+            font-size: 0.8rem;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 24px;
+            font-size: 0.78rem;
+            color: var(--text-dim);
+        }
+        .footer-text a {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 480px) {
+            .login-card { padding: 28px 20px; }
+            .brand-title { font-size: 1.5rem; }
         }
     </style>
 </head>
 <body>
-    <div class="login-card animate__animated animate__fadeInDown">
-        <h2>Welcome Back</h2>
-        <p style="margin-bottom: 2rem; color: #94a3b8;">Login with your History ID</p>
-        <div id="login-section">
-            <form id="login-form">
-                <div id="error-message" style="color: #ff4d4d; margin-bottom: 1rem; font-size: 0.9rem; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 6px; border: 1px solid #ff4d4d; display: none;"></div>
-                <div class="input-group">
-                    <input type="text" id="user_id" name="user_id" placeholder="Enter your History ID" required autocomplete="off">
-                </div>
-                <button type="button" onclick="handleLogin()" class="animate__animated animate__pulse animate__infinite">Login Now</button>
-            </form>
+    <div class="bg-grid"></div>
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+    <div class="bg-orb bg-orb-3"></div>
+
+    <div class="login-wrapper">
+        <div class="brand-section">
+            <div class="brand-icon"><i class="fas fa-lion"></i></div>
+            <div class="brand-title">TG-Lion</div>
+            <div class="brand-subtitle">BGT Wallet - Secure Account Trading</div>
         </div>
 
-        <div id="otp-section" style="display: none;">
-            <p style="margin-bottom: 1rem; color: #94a3b8;">Enter the OTP sent to your Telegram</p>
-            <form id="otp-form">
-                <div id="otp-error" style="color: #ff4d4d; margin-bottom: 1rem; font-size: 0.9rem; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 6px; border: 1px solid #ff4d4d; display: none;"></div>
+        <div class="login-card">
+            <div class="card-title">Welcome Back</div>
+            <div class="card-desc">Sign in with your History ID to access your wallet</div>
+
+            <div class="error-alert" id="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="error-text"></span>
+            </div>
+
+            <form id="login-form" onsubmit="return false;">
                 <div class="input-group">
-                    <input type="text" id="phone_number" placeholder="Phone Number (with country code)" required>
+                    <label class="input-label">History ID</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="user_id" class="input-field" placeholder="Enter your History ID" required autocomplete="off">
+                        <i class="fas fa-fingerprint input-icon"></i>
+                    </div>
                 </div>
-                <div class="input-group" id="otp-input-group" style="display: none;">
-                    <input type="text" id="otp_code" placeholder="Enter OTP" required>
-                </div>
-                <button type="button" id="otp-btn" onclick="requestOTP()">Send OTP</button>
+
+                <button type="button" onclick="handleLogin()" class="login-btn" id="login-btn">
+                    <span id="btn-text">Sign In</span>
+                    <i class="fas fa-arrow-right" id="btn-arrow"></i>
+                    <div class="spinner" id="btn-spinner"></div>
+                </button>
             </form>
+
+            <div class="divider">Platform Features</div>
+            <div class="features-row">
+                <div class="feature-badge"><i class="fas fa-shield-halved"></i> Secure</div>
+                <div class="feature-badge"><i class="fas fa-bolt"></i> Fast Payout</div>
+                <div class="feature-badge"><i class="fas fa-users"></i> Referrals</div>
+            </div>
         </div>
 
-        <script>
-            let currentUserId = null;
-
-            async function handleLogin() {
-                const userId = document.getElementById('user_id').value;
-                const errorDiv = document.getElementById('error-message');
-                
-                const formData = new FormData();
-                formData.append('user_id', userId);
-
-                try {
-                    const response = await fetch('/login', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const data = await response.json();
-
-                    if (data.success) {
-                        window.location.href = data.redirect || '/dashboard';
-                    } else {
-                        errorDiv.textContent = data.message || "Invalid ID";
-                        errorDiv.style.display = 'block';
-                    }
-                } catch (e) {
-                    errorDiv.textContent = 'Error connecting to server';
-                    errorDiv.style.display = 'block';
-                }
-            }
-
-            async function requestOTP() {
-                const phone = document.getElementById('phone_number').value;
-                const btn = document.getElementById('otp-btn');
-                const otpGroup = document.getElementById('otp-input-group');
-                const errorDiv = document.getElementById('otp-error');
-
-                btn.disabled = true;
-                btn.textContent = 'Sending...';
-
-                try {
-                    const res = await fetch('/request_otp', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({phone})
-                    });
-                    const data = await res.json();
-
-                    if (data.success) {
-                        if (data.authorized) {
-                            // Already logged in on Telegram, but we need session
-                            // Let's just fake a "success" verify to set session
-                            await verifyOTP(true); 
-                            return;
-                        }
-                        otpGroup.style.display = 'block';
-                        btn.textContent = 'Verify OTP';
-                        btn.onclick = () => verifyOTP(false);
-                        errorDiv.style.display = 'none';
-                    } else {
-                        errorDiv.textContent = data.message;
-                        errorDiv.style.display = 'block';
-                        btn.textContent = 'Send OTP';
-                    }
-                } catch (e) {
-                    errorDiv.textContent = 'Error connecting to server';
-                    errorDiv.style.display = 'block';
-                    btn.textContent = 'Send OTP';
-                } finally {
-                    btn.disabled = false;
-                }
-            }
-
-            async function verifyOTP(skipTelethon = false) {
-                const phone = document.getElementById('phone_number').value;
-                const otp = document.getElementById('otp_code').value;
-                const errorDiv = document.getElementById('otp-error');
-                const btn = document.getElementById('otp-btn');
-
-                btn.disabled = true;
-                btn.textContent = 'Verifying...';
-
-                try {
-                    const res = await fetch('/verify_otp', {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({
-                            phone, 
-                            otp: skipTelethon ? '00000' : otp, 
-                            user_id: currentUserId,
-                            skip: skipTelethon
-                        })
-                    });
-                    const data = await res.json();
-
-                    if (data.success) {
-                        window.location.href = '/dashboard';
-                    } else {
-                        errorDiv.textContent = data.message;
-                        errorDiv.style.display = 'block';
-                    }
-                } catch (e) {
-                    errorDiv.textContent = 'Verification failed';
-                    errorDiv.style.display = 'block';
-                } finally {
-                    btn.disabled = false;
-                    btn.textContent = 'Verify OTP';
-                }
-            }
-        </script>
         <div class="footer-text">
-            Need an ID? Check the bot section.
+            Powered by <a href="#">BGT Wallet</a>
         </div>
     </div>
+
+    <script>
+        const userIdInput = document.getElementById('user_id');
+        userIdInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') handleLogin();
+        });
+
+        async function handleLogin() {
+            const userId = userIdInput.value.trim();
+            const errorDiv = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const btn = document.getElementById('login-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnArrow = document.getElementById('btn-arrow');
+            const spinner = document.getElementById('btn-spinner');
+
+            if (!userId) {
+                errorText.textContent = 'Please enter your History ID';
+                errorDiv.style.display = 'flex';
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.textContent = 'Signing in...';
+            btnArrow.style.display = 'none';
+            spinner.style.display = 'block';
+            errorDiv.style.display = 'none';
+
+            const formData = new FormData();
+            formData.append('user_id', userId);
+
+            try {
+                const response = await fetch('/login', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (data.success) {
+                    btnText.textContent = 'Success!';
+                    spinner.style.display = 'none';
+                    btnArrow.style.display = 'none';
+                    window.location.href = data.redirect || '/dashboard';
+                } else {
+                    errorText.textContent = data.message || 'Invalid History ID. Please try again.';
+                    errorDiv.style.display = 'flex';
+                    btn.disabled = false;
+                    btnText.textContent = 'Sign In';
+                    btnArrow.style.display = 'inline';
+                    spinner.style.display = 'none';
+                }
+            } catch (e) {
+                errorText.textContent = 'Connection error. Please try again.';
+                errorDiv.style.display = 'flex';
+                btn.disabled = false;
+                btnText.textContent = 'Sign In';
+                btnArrow.style.display = 'inline';
+                spinner.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
