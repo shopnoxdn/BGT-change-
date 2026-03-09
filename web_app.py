@@ -169,7 +169,47 @@ def dashboard():
                 'countdown': countdown
             })
     
-    return render_template('dashboard.html', numbers=processed_numbers)
+    main_bal = user_info.get('main_balance_usdt', 0.0)
+    hold_bal = user_info.get('hold_balance_usdt', 0.0)
+    wd_bal = user_info.get('withdrawal_processing_balance', 0.0)
+    
+    balance = {
+        'main': main_bal,
+        'hold': hold_bal,
+        'withdrawal': wd_bal,
+        'total': main_bal + hold_bal + wd_bal
+    }
+    
+    processing_count = sum(1 for n in processed_numbers if n['status'] == 'Processing')
+    success_count = sum(1 for n in processed_numbers if n['status'] == 'Successful')
+    reject_count = sum(1 for n in processed_numbers if n['status'] == 'Reject')
+    
+    accounts_sold = user_info.get('accounts_sold', 0)
+    referral_count = len(user_info.get('referrals', []))
+    referral_earnings = user_info.get('referral_earnings', 0.0)
+    
+    created_at = user_info.get('created_at', 'N/A')
+    if 'T' in str(created_at):
+        joined_date = created_at.split('T')[0]
+    else:
+        joined_date = str(created_at)
+    
+    last_activity = user_info.get('last_activity', 'N/A')
+    if 'T' in str(last_activity):
+        last_activity = last_activity.split('T')[0]
+    
+    return render_template('dashboard.html',
+        numbers=processed_numbers,
+        balance=balance,
+        processing_count=processing_count,
+        success_count=success_count,
+        reject_count=reject_count,
+        accounts_sold=accounts_sold,
+        referral_count=referral_count,
+        referral_earnings=referral_earnings,
+        joined_date=joined_date,
+        last_activity=last_activity
+    )
 
 @app.route('/logout')
 def logout():

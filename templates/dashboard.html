@@ -2,301 +2,851 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BGT Wallet - Dashboard</title>
+    <title>Dashboard - TG-Lion</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #0d1117;
-            --surface: #161b22;
-            --surface-hover: #1c2128;
-            --primary: #58a6ff;
-            --primary-glow: rgba(88, 166, 255, 0.15);
-            --success: #3fb950;
-            --warning: #d29922;
-            --danger: #f85149;
-            --text: #8b949e;
-            --text-bold: #f0f6fc;
-            --border: #30363d;
-            --card-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            --bg: #050a15;
+            --surface: #0c1222;
+            --surface-2: #111b2e;
+            --surface-3: #162036;
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-glow: rgba(99, 102, 241, 0.2);
+            --accent: #22d3ee;
+            --success: #10b981;
+            --success-light: #34d399;
+            --warning: #f59e0b;
+            --warning-light: #fbbf24;
+            --danger: #ef4444;
+            --danger-light: #f87171;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --text-muted: #475569;
+            --border: rgba(99, 102, 241, 0.12);
+            --glass: rgba(12, 18, 34, 0.9);
         }
-        * { box-sizing: border-box; }
+
         body {
             font-family: 'Inter', sans-serif;
             background: var(--bg);
             color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             min-height: 100vh;
             overflow-x: hidden;
         }
-        .container {
-            width: 100%;
-            max-width: 450px;
-            animation: fadeIn 0.6s ease-out;
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(99, 102, 241, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99, 102, 241, 0.02) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 0;
+            pointer-events: none;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(5, 10, 21, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 20px;
         }
-        .header {
+        .nav-inner {
+            max-width: 500px;
+            margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 16px 20px;
-            background: var(--surface);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            margin-bottom: 24px;
-            box-shadow: var(--card-shadow);
+            height: 60px;
         }
-        .logo {
-            font-weight: 800;
-            font-size: 1.2rem;
-            color: var(--text-bold);
-            letter-spacing: -0.5px;
-            background: linear-gradient(45deg, #58a6ff, #bc8cff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .logout {
-            color: var(--danger);
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 600;
-            padding: 8px 16px;
-            border: 1px solid rgba(248, 81, 73, 0.2);
-            border-radius: 10px;
-            transition: 0.3s;
-        }
-        .logout:hover {
-            background: rgba(248, 81, 73, 0.1);
-            border-color: var(--danger);
-        }
-        .tabs {
+        .nav-brand {
             display: flex;
+            align-items: center;
             gap: 10px;
-            margin-bottom: 24px;
-            background: rgba(22, 27, 34, 0.5);
-            padding: 4px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
         }
-        .tab {
+        .nav-logo {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1rem;
+        }
+        .nav-title { font-size: 1rem; font-weight: 800; color: #fff; }
+        .nav-actions { display: flex; gap: 8px; align-items: center; }
+        .nav-btn {
+            padding: 8px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .nav-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+
+        .main-content {
+            position: relative;
+            z-index: 1;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px 16px 100px;
+        }
+
+        .wallet-card {
+            background: linear-gradient(135deg, #1a1147, #0f1e3d, #0c1a2e);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: 24px;
+            padding: 28px 24px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .wallet-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.12), transparent 70%);
+            pointer-events: none;
+        }
+        .wallet-card::after {
+            content: '';
+            position: absolute;
+            bottom: -40%;
+            left: -20%;
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.08), transparent 70%);
+            pointer-events: none;
+        }
+        .wallet-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+        .wallet-amount {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: -1px;
+            position: relative;
+            margin-bottom: 24px;
+        }
+        .wallet-amount .currency {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            vertical-align: super;
+            margin-left: 4px;
+        }
+        .wallet-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+            position: relative;
+        }
+        .wallet-stat {
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            padding: 14px 12px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .wallet-stat-val {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #fff;
+            display: block;
+        }
+        .wallet-stat-label {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            margin-top: 4px;
+            display: block;
+            font-weight: 500;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all 0.3s;
+        }
+        .stat-card:hover { border-color: rgba(99, 102, 241, 0.3); transform: translateY(-2px); }
+        .stat-icon {
+            width: 44px; height: 44px;
+            border-radius: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .stat-icon.green { background: rgba(16, 185, 129, 0.12); color: var(--success-light); }
+        .stat-icon.yellow { background: rgba(245, 158, 11, 0.12); color: var(--warning-light); }
+        .stat-icon.blue { background: rgba(99, 102, 241, 0.12); color: var(--primary-light); }
+        .stat-icon.cyan { background: rgba(34, 211, 238, 0.12); color: var(--accent); }
+        .stat-info { flex: 1; min-width: 0; }
+        .stat-value { font-size: 1.2rem; font-weight: 800; color: #fff; display: block; }
+        .stat-label { font-size: 0.7rem; color: var(--text-dim); font-weight: 500; display: block; margin-top: 2px; }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            margin-top: 8px;
+        }
+        .section-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title i { color: var(--primary-light); font-size: 0.9rem; }
+        .section-count {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--primary-light);
+            background: rgba(99, 102, 241, 0.12);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 6px;
+            background: rgba(12, 18, 34, 0.6);
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+        .tab-btn {
             flex: 1;
-            padding: 12px;
+            padding: 11px 8px;
             text-align: center;
             background: transparent;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             font-weight: 600;
+            color: var(--text-dim);
+            font-family: 'Inter', sans-serif;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            color: var(--text);
+            position: relative;
         }
-        .tab.active {
+        .tab-btn.active {
             background: var(--primary);
             color: #fff;
-            box-shadow: 0 4px 12px var(--primary-glow);
-            transform: translateY(-1px);
+            box-shadow: 0 4px 16px var(--primary-glow);
         }
-        .tab-content { display: none; }
-        .tab-content.active { 
-            display: block;
-            animation: slideUp 0.4s ease-out;
+        .tab-btn .tab-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border-radius: 10px;
+            margin-left: 4px;
+            padding: 0 5px;
         }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(10px); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.2); color: #fff; }
+        .tab-btn:not(.active) .tab-count { background: rgba(99, 102, 241, 0.15); color: var(--primary-light); }
+
+        .tab-panel { display: none; animation: fadeUp 0.4s ease; }
+        .tab-panel.active { display: block; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        .card {
-            background: var(--surface);
+
+        .account-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
             border: 1px solid var(--border);
-            border-radius: 16px;
+            border-radius: 18px;
             padding: 20px;
-            margin-bottom: 16px;
-            position: relative;
+            margin-bottom: 12px;
             transition: all 0.3s;
-            box-shadow: var(--card-shadow);
+            position: relative;
+            overflow: hidden;
         }
-        .card:hover {
-            border-color: var(--primary);
-            background: var(--surface-hover);
-            transform: scale(1.02);
+        .account-card:hover { border-color: rgba(99, 102, 241, 0.25); }
+        .account-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
         }
-        .card-header {
+        .account-card.processing::before { background: linear-gradient(90deg, var(--warning), var(--warning-light)); }
+        .account-card.successful::before { background: linear-gradient(90deg, var(--success), var(--success-light)); }
+        .account-card.rejected::before { background: linear-gradient(90deg, var(--danger), var(--danger-light)); }
+
+        .card-top {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 15px;
+            margin-bottom: 14px;
         }
-        .number-label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: var(--primary);
+        .card-number-group { flex: 1; }
+        .card-number-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-dim);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            display: block;
+            letter-spacing: 0.5px;
             margin-bottom: 4px;
         }
-        .number {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-bold);
-            display: block;
-            letter-spacing: -0.5px;
+        .card-number {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.3px;
         }
-        .row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            font-size: 0.85rem;
-            border-bottom: 1px solid rgba(48, 54, 61, 0.5);
-        }
-        .row:last-of-type { border-bottom: none; }
-        .label { color: #8b949e; font-weight: 500; }
-        .val { color: var(--text-bold); font-weight: 600; }
-        .price { color: var(--success); font-weight: 800; font-size: 1rem; }
-        .timer-row {
-            margin-top: 15px;
-            padding: 12px 16px;
-            background: rgba(210, 153, 34, 0.05);
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(210, 153, 34, 0.15);
-        }
-        .timer { 
-            font-weight: 700; 
-            color: var(--warning); 
-            font-size: 1rem;
-            font-variant-numeric: tabular-nums;
-        }
-        .badge {
-            font-size: 0.7rem;
-            padding: 4px 12px;
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 5px 12px;
             border-radius: 20px;
             font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
-        .badge-succ { background: rgba(63, 185, 80, 0.1); color: var(--success); border: 1px solid var(--success); }
-        .badge-rej { background: rgba(248, 81, 73, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-        .empty { 
-            text-align: center; 
-            padding: 60px 20px; 
-            color: #8b949e; 
-            font-size: 0.95rem;
-            background: var(--surface);
-            border-radius: 16px;
+        .status-badge.processing {
+            background: rgba(245, 158, 11, 0.12);
+            color: var(--warning-light);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+        .status-badge.successful {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--success-light);
+            border: 1px solid rgba(16, 185, 129, 0.25);
+        }
+        .status-badge.rejected {
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--danger-light);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .detail-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .detail-value {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .detail-value.price { color: var(--success-light); }
+
+        .timer-bar {
+            margin-top: 14px;
+            background: rgba(245, 158, 11, 0.06);
+            border: 1px solid rgba(245, 158, 11, 0.12);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .timer-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--warning);
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .timer-label i { font-size: 0.8rem; }
+        .timer-value {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: var(--warning-light);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            background: var(--glass);
             border: 1px dashed var(--border);
+            border-radius: 18px;
+        }
+        .empty-icon {
+            width: 56px; height: 56px;
+            border-radius: 16px;
+            background: rgba(99, 102, 241, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 14px;
+            font-size: 1.3rem;
+            color: var(--text-dim);
+        }
+        .empty-text {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+        .empty-sub {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .referral-card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 22px 20px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .referral-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .referral-icon {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            background: rgba(34, 211, 238, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 1rem;
+        }
+        .referral-title { font-size: 0.95rem; font-weight: 700; color: #fff; }
+        .referral-desc { font-size: 0.75rem; color: var(--text-dim); }
+        .referral-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .ref-stat {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+        }
+        .ref-stat-val { font-size: 1.2rem; font-weight: 800; color: #fff; display: block; }
+        .ref-stat-label { font-size: 0.65rem; color: var(--text-dim); font-weight: 500; margin-top: 2px; display: block; text-transform: uppercase; }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(5, 10, 21, 0.92);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            z-index: 100;
+            padding: 8px 0;
+        }
+        .bottom-nav-inner {
+            max-width: 500px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-around;
+        }
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            background: transparent;
+            border: none;
+            font-family: 'Inter', sans-serif;
+        }
+        .bottom-nav-item i { font-size: 1.1rem; color: var(--text-dim); transition: color 0.2s; }
+        .bottom-nav-item span { font-size: 0.65rem; font-weight: 600; color: var(--text-dim); transition: color 0.2s; }
+        .bottom-nav-item.active i { color: var(--primary-light); }
+        .bottom-nav-item.active span { color: var(--primary-light); }
+        .bottom-nav-item:hover i { color: var(--primary-light); }
+
+        .page-section { display: none; }
+        .page-section.active { display: block; animation: fadeUp 0.4s ease; }
+
+        @media (max-width: 400px) {
+            .wallet-amount { font-size: 2.2rem; }
+            .wallet-stats { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+            .wallet-stat { padding: 10px 8px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <span class="logo">BGT WALLET</span>
-            <a href="/logout" class="logout">Logout</a>
-        </div>
+    <div class="bg-grid"></div>
 
-        <div class="tabs">
-            <div class="tab active" onclick="showTab('processing', event)">Processing</div>
-            <div class="tab" onclick="showTab('successful', event)">Successful</div>
-            <div class="tab" onclick="showTab('reject', event)">Reject</div>
+    <nav class="navbar">
+        <div class="nav-inner">
+            <div class="nav-brand">
+                <div class="nav-logo"><i class="fas fa-bolt"></i></div>
+                <span class="nav-title">TG-Lion</span>
+            </div>
+            <div class="nav-actions">
+                <a href="/logout" class="nav-btn"><i class="fas fa-right-from-bracket"></i> Logout</a>
+            </div>
         </div>
+    </nav>
 
-        <div id="processing" class="tab-content active">
-            {% set proc_found = false %}
-            {% for item in numbers if item.status == 'Processing' %}
-                {% set proc_found = true %}
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <span class="number-label">Number</span>
-                            <span class="number">{{ item.number }}</span>
-                        </div>
+    <div class="main-content">
+        <div id="page-home" class="page-section active">
+            <div class="wallet-card">
+                <div class="wallet-label"><i class="fas fa-wallet"></i> Total Balance</div>
+                <div class="wallet-amount">{{ "%.2f"|format(balance.total) }}<span class="currency">USDT</span></div>
+                <div class="wallet-stats">
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" style="color: var(--warning-light);">${{ "%.2f"|format(balance.hold) }}</span>
+                        <span class="wallet-stat-label">Hold</span>
                     </div>
-                    <div class="row"><span class="label">Country</span><span class="val">{{ item.country }}</span></div>
-                    <div class="row"><span class="label">Payout</span><span class="price">{{ item.price }}</span></div>
-                    <div class="timer-row">
-                        <span class="label" style="font-size: 0.75rem; color: var(--warning);">HOLD TIME</span>
-                        <span class="timer" data-timestamp="{{ item.raw_timestamp }}">--:--:--</span>
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" style="color: var(--accent);">${{ "%.2f"|format(balance.withdrawal) }}</span>
+                        <span class="wallet-stat-label">Withdrawing</span>
+                    </div>
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" style="color: var(--success-light);">{{ accounts_sold }}</span>
+                        <span class="wallet-stat-label">Sold</span>
                     </div>
                 </div>
-            {% endfor %}
-            {% if not proc_found %}<div class="empty">No active processing assets.</div>{% endif %}
+            </div>
+
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ success_count }}</span>
+                        <span class="stat-label">Successful</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ processing_count }}</span>
+                        <span class="stat-label">Processing</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fas fa-ban"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ reject_count }}</span>
+                        <span class="stat-label">Rejected</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon cyan"><i class="fas fa-user-plus"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ referral_count }}</span>
+                        <span class="stat-label">Referrals</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <div class="section-title"><i class="fas fa-list-check"></i> Account History</div>
+                <span class="section-count">{{ numbers|length }} Total</span>
+            </div>
+
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchTab('processing', this)">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 0.7rem;"></i> Processing
+                    <span class="tab-count">{{ processing_count }}</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('successful', this)">
+                    <i class="fas fa-check" style="font-size: 0.7rem;"></i> Success
+                    <span class="tab-count">{{ success_count }}</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('rejected', this)">
+                    <i class="fas fa-xmark" style="font-size: 0.7rem;"></i> Reject
+                    <span class="tab-count">{{ reject_count }}</span>
+                </button>
+            </div>
+
+            <div id="tab-processing" class="tab-panel active">
+                {% set ns = namespace(found=false) %}
+                {% for item in numbers if item.status == 'Processing' %}
+                    {% set ns.found = true %}
+                    <div class="account-card processing">
+                        <div class="card-top">
+                            <div class="card-number-group">
+                                <div class="card-number-label">Phone Number</div>
+                                <div class="card-number">{{ item.number }}</div>
+                            </div>
+                            <span class="status-badge processing"><i class="fas fa-hourglass-half"></i> Processing</span>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Country</span>
+                                <span class="detail-value">{{ item.country }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Payout</span>
+                                <span class="detail-value price">{{ item.price }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Date</span>
+                                <span class="detail-value">{{ item.date }}</span>
+                            </div>
+                        </div>
+                        <div class="timer-bar">
+                            <div class="timer-label"><i class="fas fa-stopwatch"></i> Hold Timer</div>
+                            <div class="timer-value" data-timestamp="{{ item.raw_timestamp }}">--:--:--</div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if not ns.found %}
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fas fa-inbox"></i></div>
+                    <div class="empty-text">No processing accounts</div>
+                    <div class="empty-sub">Sell accounts via the Telegram bot to see them here</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div id="tab-successful" class="tab-panel">
+                {% set ns2 = namespace(found=false) %}
+                {% for item in numbers if item.status == 'Successful' %}
+                    {% set ns2.found = true %}
+                    <div class="account-card successful">
+                        <div class="card-top">
+                            <div class="card-number-group">
+                                <div class="card-number-label">Phone Number</div>
+                                <div class="card-number">{{ item.number }}</div>
+                            </div>
+                            <span class="status-badge successful"><i class="fas fa-circle-check"></i> Success</span>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Country</span>
+                                <span class="detail-value">{{ item.country }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Earned</span>
+                                <span class="detail-value price">{{ item.price }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Date</span>
+                                <span class="detail-value">{{ item.date }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if not ns2.found %}
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fas fa-trophy"></i></div>
+                    <div class="empty-text">No successful transfers yet</div>
+                    <div class="empty-sub">Completed accounts will appear here</div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div id="tab-rejected" class="tab-panel">
+                {% set ns3 = namespace(found=false) %}
+                {% for item in numbers if item.status == 'Reject' %}
+                    {% set ns3.found = true %}
+                    <div class="account-card rejected">
+                        <div class="card-top">
+                            <div class="card-number-group">
+                                <div class="card-number-label">Phone Number</div>
+                                <div class="card-number">{{ item.number }}</div>
+                            </div>
+                            <span class="status-badge rejected"><i class="fas fa-circle-xmark"></i> Rejected</span>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">Country</span>
+                                <span class="detail-value">{{ item.country }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Amount</span>
+                                <span class="detail-value price">{{ item.price }}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Date</span>
+                                <span class="detail-value">{{ item.date }}</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if not ns3.found %}
+                <div class="empty-state">
+                    <div class="empty-icon"><i class="fas fa-shield-halved"></i></div>
+                    <div class="empty-text">No rejected accounts</div>
+                    <div class="empty-sub">Rejected accounts will show up here</div>
+                </div>
+                {% endif %}
+            </div>
         </div>
 
-        <div id="successful" class="tab-content">
-            {% set succ_found = false %}
-            {% for item in numbers if item.status == 'Successful' %}
-                {% set succ_found = true %}
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <span class="number-label">Number</span>
-                            <span class="number">{{ item.number }}</span>
-                        </div>
-                        <span class="badge badge-succ">Successful</span>
+        <div id="page-referral" class="page-section">
+            <div class="referral-card">
+                <div class="referral-header">
+                    <div class="referral-icon"><i class="fas fa-gift"></i></div>
+                    <div>
+                        <div class="referral-title">Referral Program</div>
+                        <div class="referral-desc">Invite friends and earn commissions</div>
                     </div>
-                    <div class="row"><span class="label">Country</span><span class="val">{{ item.country }}</span></div>
-                    <div class="row"><span class="label">Amount Earned</span><span class="price">{{ item.price }}</span></div>
                 </div>
-            {% endfor %}
-            {% if not succ_found %}<div class="empty">No successful transfers.</div>{% endif %}
-        </div>
+                <div class="referral-stats">
+                    <div class="ref-stat">
+                        <span class="ref-stat-val">{{ referral_count }}</span>
+                        <span class="ref-stat-label">Total Referrals</span>
+                    </div>
+                    <div class="ref-stat">
+                        <span class="ref-stat-val" style="color: var(--success-light);">${{ "%.2f"|format(referral_earnings) }}</span>
+                        <span class="ref-stat-label">Earnings</span>
+                    </div>
+                </div>
+            </div>
 
-        <div id="reject" class="tab-content">
-            {% set rej_found = false %}
-            {% for item in numbers if item.status == 'Reject' %}
-                {% set rej_found = true %}
-                <div class="card">
-                    <div class="card-header">
-                        <div>
-                            <span class="number-label">Number</span>
-                            <span class="number">{{ item.number }}</span>
-                        </div>
-                        <span class="badge badge-rej">Rejected</span>
+            <div class="wallet-card" style="padding: 22px 20px;">
+                <div class="wallet-label" style="margin-bottom: 16px;"><i class="fas fa-chart-line"></i> Account Overview</div>
+                <div class="wallet-stats" style="grid-template-columns: 1fr 1fr;">
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val">{{ accounts_sold }}</span>
+                        <span class="wallet-stat-label">Accounts Sold</span>
                     </div>
-                    <div class="row"><span class="label">Country</span><span class="val">{{ item.country }}</span></div>
-                    <div class="row"><span class="label">Amount</span><span class="price">{{ item.price }}</span></div>
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" style="color: var(--success-light);">${{ "%.2f"|format(balance.main) }}</span>
+                        <span class="wallet-stat-label">Total Earned</span>
+                    </div>
                 </div>
-            {% endfor %}
-            {% if not rej_found %}<div class="empty">No rejected requests.</div>{% endif %}
+            </div>
+
+            <div class="stat-card" style="margin-bottom: 12px;">
+                <div class="stat-icon cyan"><i class="fas fa-calendar"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" style="font-size: 0.9rem;">{{ joined_date }}</span>
+                    <span class="stat-label">Member Since</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-signal"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value" style="font-size: 0.9rem;">{{ last_activity }}</span>
+                    <span class="stat-label">Last Activity</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bottom-nav-item active" onclick="showPage('home', this)">
+                <i class="fas fa-house"></i>
+                <span>Home</span>
+            </button>
+            <button class="bottom-nav-item" onclick="showPage('referral', this)">
+                <i class="fas fa-users"></i>
+                <span>Referrals</span>
+            </button>
+            <a href="/logout" class="bottom-nav-item">
+                <i class="fas fa-right-from-bracket"></i>
+                <span>Logout</span>
+            </a>
         </div>
     </div>
 
     <script>
-        function showTab(tabId, event) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            btn.classList.add('active');
         }
+
+        function showPage(pageId, btn) {
+            document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            btn.classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
         function updateTimers() {
             const now = new Date().getTime();
-            document.querySelectorAll('.timer').forEach(timer => {
+            document.querySelectorAll('.timer-value').forEach(timer => {
                 const startTime = new Date(timer.dataset.timestamp).getTime();
                 let totalAllowed = 38 * 60 * 60 * 1000;
                 let elapsed = now - startTime;
-                
-                // Auto-extension logic: if 38 hours passed, add another 38 hours
                 while (elapsed > totalAllowed) {
                     totalAllowed += 38 * 60 * 60 * 1000;
                 }
-                
                 let distance = totalAllowed - elapsed;
                 if (distance < 0) distance = 0;
-                
                 const hours = Math.floor(distance / (1000 * 60 * 60));
                 const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-                timer.innerHTML = (hours < 10 ? "0"+hours : hours) + ":" + (minutes < 10 ? "0"+minutes : minutes) + ":" + (seconds < 10 ? "0"+seconds : seconds);
+                timer.textContent =
+                    (hours < 10 ? "0" + hours : hours) + ":" +
+                    (minutes < 10 ? "0" + minutes : minutes) + ":" +
+                    (seconds < 10 ? "0" + seconds : seconds);
             });
         }
         setInterval(updateTimers, 1000);
