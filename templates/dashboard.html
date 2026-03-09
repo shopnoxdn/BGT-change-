@@ -191,6 +191,12 @@
             font-weight: 500;
         }
 
+        .quick-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
         .stat-card {
             background: var(--glass);
             backdrop-filter: blur(10px);
@@ -213,6 +219,8 @@
             flex-shrink: 0;
         }
         .stat-icon.green { background: rgba(16, 185, 129, 0.12); color: var(--success-light); }
+        .stat-icon.yellow { background: rgba(245, 158, 11, 0.12); color: var(--warning-light); }
+        .stat-icon.blue { background: rgba(99, 102, 241, 0.12); color: var(--primary-light); }
         .stat-icon.cyan { background: rgba(34, 211, 238, 0.12); color: var(--accent); }
         .stat-info { flex: 1; min-width: 0; }
         .stat-value { font-size: 1.2rem; font-weight: 800; color: #fff; display: block; }
@@ -245,70 +253,47 @@
 
         .tabs-container {
             display: flex;
-            gap: 10px;
+            gap: 6px;
+            background: rgba(12, 18, 34, 0.6);
+            padding: 5px;
+            border-radius: 14px;
+            border: 1px solid var(--border);
             margin-bottom: 16px;
         }
         .tab-btn {
             flex: 1;
-            padding: 14px 8px 12px;
+            padding: 11px 8px;
             text-align: center;
-            background: var(--glass);
-            border: 1.5px solid var(--border);
-            border-radius: 16px;
+            background: transparent;
+            border: none;
+            border-radius: 10px;
             cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-dim);
             font-family: 'Inter', sans-serif;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
         }
-        .tab-btn:hover { border-color: rgba(99, 102, 241, 0.35); transform: translateY(-2px); }
         .tab-btn.active {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.08);
-            box-shadow: 0 4px 20px var(--primary-glow), 0 0 0 1px rgba(99, 102, 241, 0.15) inset;
+            background: var(--primary);
+            color: #fff;
+            box-shadow: 0 4px 16px var(--primary-glow);
         }
-        .tab-icon-wrap {
-            width: 36px;
-            height: 36px;
-            border-radius: 11px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.95rem;
-            transition: all 0.3s;
-        }
-        .tab-icon-wrap.processing-icon { background: rgba(245, 158, 11, 0.12); color: var(--warning-light); }
-        .tab-icon-wrap.success-icon { background: rgba(16, 185, 129, 0.12); color: var(--success-light); }
-        .tab-icon-wrap.reject-icon { background: rgba(239, 68, 68, 0.12); color: var(--danger-light); }
-        .tab-btn.active .tab-icon-wrap.processing-icon { background: rgba(245, 158, 11, 0.2); }
-        .tab-btn.active .tab-icon-wrap.success-icon { background: rgba(16, 185, 129, 0.2); }
-        .tab-btn.active .tab-icon-wrap.reject-icon { background: rgba(239, 68, 68, 0.2); }
-
-        .tab-text {
-            font-size: 0.72rem;
-            font-weight: 600;
-            color: var(--text-dim);
-            transition: color 0.3s;
-        }
-        .tab-btn.active .tab-text { color: #fff; }
-
         .tab-btn .tab-count {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 22px;
-            height: 20px;
-            font-size: 0.7rem;
-            font-weight: 800;
+            min-width: 18px;
+            height: 18px;
+            font-size: 0.65rem;
+            font-weight: 700;
             border-radius: 10px;
-            padding: 0 7px;
-            transition: all 0.3s;
+            margin-left: 4px;
+            padding: 0 5px;
         }
-        .tab-btn.active .tab-count { background: var(--primary); color: #fff; }
-        .tab-btn:not(.active) .tab-count { background: rgba(99, 102, 241, 0.1); color: var(--primary-light); }
+        .tab-btn.active .tab-count { background: rgba(255,255,255,0.2); color: #fff; }
+        .tab-btn:not(.active) .tab-count { background: rgba(99, 102, 241, 0.15); color: var(--primary-light); }
 
         .tab-panel { display: none; animation: fadeUp 0.4s ease; }
         .tab-panel.active { display: block; }
@@ -592,6 +577,37 @@
                 </div>
             </div>
 
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon green"><i class="fas fa-circle-check"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ success_count }}</span>
+                        <span class="stat-label">Successful</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ processing_count }}</span>
+                        <span class="stat-label">Processing</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fas fa-ban"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ reject_count }}</span>
+                        <span class="stat-label">Rejected</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon cyan"><i class="fas fa-user-plus"></i></div>
+                    <div class="stat-info">
+                        <span class="stat-value">{{ referral_count }}</span>
+                        <span class="stat-label">Referrals</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="section-header">
                 <div class="section-title"><i class="fas fa-list-check"></i> Account History</div>
                 <span class="section-count">{{ numbers|length }} Total</span>
@@ -599,18 +615,15 @@
 
             <div class="tabs-container">
                 <button class="tab-btn active" onclick="switchTab('processing', this)">
-                    <span class="tab-icon-wrap processing-icon"><i class="fas fa-clock"></i></span>
-                    <span class="tab-text">Processing</span>
+                    <i class="fas fa-spinner fa-spin" style="font-size: 0.7rem;"></i> Processing
                     <span class="tab-count">{{ processing_count }}</span>
                 </button>
                 <button class="tab-btn" onclick="switchTab('successful', this)">
-                    <span class="tab-icon-wrap success-icon"><i class="fas fa-circle-check"></i></span>
-                    <span class="tab-text">Successful</span>
+                    <i class="fas fa-check" style="font-size: 0.7rem;"></i> Success
                     <span class="tab-count">{{ success_count }}</span>
                 </button>
                 <button class="tab-btn" onclick="switchTab('rejected', this)">
-                    <span class="tab-icon-wrap reject-icon"><i class="fas fa-circle-xmark"></i></span>
-                    <span class="tab-text">Rejected</span>
+                    <i class="fas fa-xmark" style="font-size: 0.7rem;"></i> Reject
                     <span class="tab-count">{{ reject_count }}</span>
                 </button>
             </div>
