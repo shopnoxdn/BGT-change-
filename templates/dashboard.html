@@ -163,6 +163,20 @@
             background: rgba(245,158,11,0.12); color: var(--warning-light);
             border: 1px solid rgba(245,158,11,0.25);
             animation: processingPulse 2s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        .status-badge.processing::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            animation: shimmer 2.5s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
         @keyframes processingPulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.3); }
@@ -347,11 +361,16 @@
             transition: all 0.2s; text-decoration: none; background: transparent;
             border: none; font-family: 'Inter', sans-serif;
         }
-        .bottom-nav-item i { font-size: 1.05rem; color: var(--text-dim); transition: color 0.2s; }
-        .bottom-nav-item span { font-size: 0.6rem; font-weight: 600; color: var(--text-dim); transition: color 0.2s; }
+        .bottom-nav-item i { font-size: 1.05rem; color: var(--text-dim); transition: all 0.2s; }
+        .bottom-nav-item span { font-size: 0.6rem; font-weight: 600; color: var(--text-dim); transition: all 0.2s; }
         .bottom-nav-item.active i { color: var(--primary-light); }
         .bottom-nav-item.active span { color: var(--primary-light); }
         .bottom-nav-item:hover i { color: var(--primary-light); }
+        .bottom-nav-item.logout-btn i { color: var(--danger); }
+        .bottom-nav-item.logout-btn span { color: var(--danger); }
+        .bottom-nav-item.logout-btn:hover i { color: var(--danger-light); }
+        .bottom-nav-item.logout-btn:hover span { color: var(--danger-light); }
+        .bottom-nav-item.logout-btn:active { transform: scale(0.9); }
 
         .page-section { display: none; }
         .page-section.active { display: block; animation: fadeUp 0.4s ease; }
@@ -621,7 +640,7 @@
                 <i class="fas fa-circle-info"></i>
                 <span>Account Info</span>
             </button>
-            <a href="/logout" class="bottom-nav-item">
+            <a href="/logout" class="bottom-nav-item logout-btn">
                 <i class="fas fa-right-from-bracket"></i>
                 <span>Logout</span>
             </a>
