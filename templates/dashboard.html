@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BGT Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --bg: #020510;
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --accent: #22d3ee;
+            --accent2: #a78bfa;
+            --success: #10b981;
+            --success-light: #34d399;
+            --warning: #f59e0b;
+            --warning-light: #fbbf24;
+            --danger: #ef4444;
+            --danger-light: #f87171;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --text-muted: #475569;
+            --border: rgba(99,102,241,0.13);
+            --glass: rgba(8,12,28,0.88);
+        }
+        body {
+            font-family:'Inter',sans-serif;
+            background:var(--bg);
+            color:var(--text);
+            min-height:100vh;
+            overflow-x:hidden;
+        }
+
+        /* Static gradient bg — no animation, GPU-friendly */
+        .bg-layer {
+            position:fixed; inset:0; z-index:0; pointer-events:none;
+            background:
+                radial-gradient(ellipse 70% 60% at 5% 5%, rgba(99,102,241,0.1) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 95% 95%, rgba(34,211,238,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 80% 20%, rgba(167,139,250,0.06) 0%, transparent 55%);
+        }
+        .bg-grid {
+            position:fixed; inset:0; z-index:0; pointer-events:none;
+            background-image:
+                linear-gradient(rgba(99,102,241,0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.035) 1px, transparent 1px);
+            background-size:48px 48px;
+        }
+
+        .main-content {
+            position:relative; z-index:1;
+            max-width:500px; margin:0 auto; padding:20px 14px 110px;
+        }
+
+        /* Page transitions — simple, not heavy */
+        .page-section { display:none; }
+        .page-section.active { display:block; animation:pageIn 0.3s ease; }
+        @keyframes pageIn { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+
+        /* Section header */
+        .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+        .section-title { font-size:1.05rem; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px; }
+        .section-title i { color:var(--primary-light); }
+        .section-count {
+            font-size:0.69rem; font-weight:800; color:var(--primary-light);
+            background:rgba(99,102,241,0.1); padding:4px 12px; border-radius:20px;
+            border:1px solid rgba(99,102,241,0.2);
+        }
+
+        /* Tabs */
+        .tabs-container {
+            display:flex; gap:6px;
+            background:rgba(8,12,28,0.6); padding:5px;
+            border-radius:16px; border:1px solid var(--border); margin-bottom:16px;
+            backdrop-filter:blur(10px);
+        }
+        .tab-btn {
+            flex:1; padding:11px 6px;
+            background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05);
+            border-radius:12px; cursor:pointer; font-size:0.76rem; font-weight:700;
+            color:#64748b; font-family:'Inter',sans-serif;
+            transition:all 0.2s ease;
+            display:flex; align-items:center; justify-content:center; gap:5px;
+        }
+        .tab-btn:not(.active):hover { background:rgba(255,255,255,0.07); color:#cbd5e1; }
+        .tab-btn.active {
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            color:#fff; border-color:transparent;
+            box-shadow:0 4px 18px rgba(99,102,241,0.35);
+        }
+        .tab-count {
+            display:inline-flex; align-items:center; justify-content:center;
+            min-width:18px; height:18px; font-size:0.62rem; font-weight:900;
+            border-radius:9px; padding:0 4px;
+        }
+        .tab-btn.active .tab-count { background:rgba(255,255,255,0.2); }
+        .tab-btn:not(.active) .tab-count { background:rgba(255,255,255,0.07); color:#94a3b8; }
+
+        .tab-panel { display:none; }
+        .tab-panel.active { display:block; animation:fadeUp 0.25s ease; }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+
+        /* Account cards */
+        .account-card {
+            background:var(--glass); backdrop-filter:blur(10px);
+            border:1px solid var(--border); border-radius:20px;
+            padding:20px; margin-bottom:12px;
+            position:relative; overflow:hidden;
+            transition:transform 0.2s, border-color 0.2s;
+        }
+        .account-card:hover { transform:translateY(-2px); border-color:rgba(99,102,241,0.28); }
+        .account-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+        .account-card.processing::before { background:linear-gradient(90deg,var(--warning),var(--warning-light),var(--warning)); }
+        .account-card.successful::before { background:linear-gradient(90deg,var(--success),var(--success-light)); }
+        .account-card.rejected::before { background:linear-gradient(90deg,var(--danger),var(--danger-light)); }
+
+        .card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; }
+        .card-number-label { font-size:0.62rem; font-weight:700; color:var(--primary-light); text-transform:uppercase; letter-spacing:0.8px; margin-bottom:4px; }
+        .card-number { font-size:1.15rem; font-weight:900; color:#fff; }
+
+        .status-badge {
+            font-size:0.62rem; padding:5px 12px; border-radius:20px;
+            font-weight:800; text-transform:uppercase; letter-spacing:0.5px;
+            display:flex; align-items:center; gap:5px;
+        }
+        .status-badge.processing {
+            background:rgba(245,158,11,0.1); color:var(--warning-light);
+            border:1px solid rgba(245,158,11,0.28);
+            animation:badgePulse 2.5s ease-in-out infinite;
+        }
+        @keyframes badgePulse { 0%,100%{opacity:1;} 50%{opacity:0.7;} }
+        .status-badge.successful { background:rgba(16,185,129,0.1); color:var(--success-light); border:1px solid rgba(16,185,129,0.28); }
+        .status-badge.rejected { background:rgba(239,68,68,0.1); color:var(--danger-light); border:1px solid rgba(239,68,68,0.28); }
+
+        .card-details { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+        .detail-item { display:flex; flex-direction:column; gap:2px; }
+        .detail-label { font-size:0.62rem; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:0.7px; }
+        .detail-value { font-size:0.87rem; font-weight:700; color:#fff; }
+        .detail-value.price { color:var(--success-light); font-weight:900; }
+
+        .timer-bar {
+            margin-top:14px; background:rgba(245,158,11,0.05);
+            border:1px solid rgba(245,158,11,0.16); border-radius:13px;
+            padding:11px 15px; display:flex; justify-content:space-between; align-items:center;
+        }
+        .timer-label { display:flex; align-items:center; gap:6px; font-size:0.69rem; font-weight:700; color:var(--warning); text-transform:uppercase; }
+        .timer-value { font-size:1.05rem; font-weight:900; color:var(--warning-light); font-variant-numeric:tabular-nums; }
+
+        /* Empty state */
+        .empty-state {
+            text-align:center; padding:48px 20px;
+            background:var(--glass); border:1px dashed rgba(99,102,241,0.15); border-radius:20px;
+        }
+        .empty-icon { width:58px;height:58px; border-radius:18px; background:rgba(99,102,241,0.07); display:flex; align-items:center; justify-content:center; margin:0 auto 13px; font-size:1.4rem; color:var(--text-dim); }
+        .empty-text { font-size:0.9rem; color:var(--text-dim); font-weight:600; }
+        .empty-sub { font-size:0.77rem; color:var(--text-muted); margin-top:4px; }
+
+        /* Hero sections */
+        .info-hero, .referral-hero {
+            border-radius:26px; padding:30px 22px; margin-bottom:14px;
+            position:relative; overflow:hidden; text-align:center;
+        }
+        .info-hero {
+            background:linear-gradient(135deg,#0e0b3a,#0d1e45,#081626);
+            border:1px solid rgba(99,102,241,0.25);
+        }
+        .referral-hero {
+            background:linear-gradient(135deg,#071e30,#0d1e42,#0e0c38);
+            border:1px solid rgba(34,211,238,0.22);
+        }
+        .hero-glow-1 { position:absolute; top:-40%;right:-20%; width:280px;height:280px; border-radius:50%; background:radial-gradient(circle,rgba(99,102,241,0.12),transparent 65%); pointer-events:none; }
+        .hero-glow-2 { position:absolute; bottom:-40%;left:-15%; width:220px;height:220px; border-radius:50%; background:radial-gradient(circle,rgba(34,211,238,0.08),transparent 65%); pointer-events:none; }
+
+        .info-hero-icon, .referral-hero-icon {
+            width:66px; height:66px; border-radius:20px;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 14px; font-size:1.6rem;
+            position:relative; z-index:1;
+        }
+        .info-hero-icon { background:rgba(99,102,241,0.14); border:1px solid rgba(99,102,241,0.3); color:var(--primary-light); box-shadow:0 0 28px rgba(99,102,241,0.2); }
+        .referral-hero-icon { background:rgba(34,211,238,0.12); border:1px solid rgba(34,211,238,0.28); color:var(--accent); box-shadow:0 0 28px rgba(34,211,238,0.18); }
+
+        .info-hero-title, .referral-hero-title {
+            font-size:1.2rem; font-weight:900;
+            background:linear-gradient(135deg,#fff,var(--primary-light));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            margin-bottom:4px; position:relative; z-index:1;
+        }
+        .referral-hero-title { background:linear-gradient(135deg,#fff,var(--accent)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .info-hero-sub, .referral-hero-sub { font-size:0.77rem; color:var(--text-dim); position:relative; z-index:1; }
+
+        /* Info grid */
+        .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-bottom:13px; }
+        .info-card {
+            background:var(--glass); backdrop-filter:blur(10px);
+            border:1px solid var(--border); border-radius:18px;
+            padding:18px 14px; text-align:center;
+            position:relative; overflow:hidden;
+            transition:transform 0.2s, box-shadow 0.2s;
+        }
+        .info-card:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,0,0,0.3); }
+        .info-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+        .info-card.balance-card::before { background:linear-gradient(90deg,var(--success),var(--success-light)); }
+        .info-card.hold-card::before { background:linear-gradient(90deg,var(--warning),var(--warning-light)); }
+        .info-card.withdraw-card::before { background:linear-gradient(90deg,var(--accent),#67e8f9); }
+        .info-card.total-card::before { background:linear-gradient(90deg,var(--primary),var(--primary-light)); }
+        .info-card.referral-card-accent::before { background:linear-gradient(90deg,var(--accent),#67e8f9); }
+        .info-card.ref-earn-card::before { background:linear-gradient(90deg,var(--success),var(--success-light)); }
+
+        .info-card-icon {
+            width:44px; height:44px; border-radius:13px;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 9px; font-size:1.1rem;
+            transition:transform 0.2s;
+        }
+        .info-card:hover .info-card-icon { transform:scale(1.1); }
+        .info-card-icon.green { background:rgba(16,185,129,0.11); color:var(--success-light); }
+        .info-card-icon.yellow { background:rgba(245,158,11,0.11); color:var(--warning-light); }
+        .info-card-icon.cyan { background:rgba(34,211,238,0.11); color:var(--accent); }
+        .info-card-icon.purple { background:rgba(99,102,241,0.11); color:var(--primary-light); }
+
+        .info-card-val { font-size:1.45rem; font-weight:900; color:#fff; }
+        .info-card-label { font-size:0.65rem; color:var(--text-dim); font-weight:700; text-transform:uppercase; letter-spacing:0.4px; margin-top:4px; }
+
+        /* Detail card */
+        .info-detail-card {
+            background:var(--glass); backdrop-filter:blur(10px);
+            border:1px solid var(--border); border-radius:18px;
+            padding:18px 20px; margin-bottom:12px;
+            position:relative;
+        }
+        .info-detail-card::before {
+            content:''; position:absolute; top:0; left:0; right:0; height:1px;
+            background:linear-gradient(90deg,transparent,rgba(99,102,241,0.25),transparent);
+        }
+        .info-detail-title {
+            font-size:0.86rem; font-weight:800; color:#fff;
+            display:flex; align-items:center; gap:8px; margin-bottom:13px;
+            padding-bottom:11px; border-bottom:1px solid rgba(99,102,241,0.07);
+        }
+        .info-detail-title i { color:var(--primary-light); }
+        .info-row {
+            display:flex; justify-content:space-between; align-items:center;
+            padding:9px 5px; border-bottom:1px solid rgba(99,102,241,0.05);
+            transition:background 0.15s; border-radius:7px;
+        }
+        .info-row:last-child { border-bottom:none; }
+        .info-row:hover { background:rgba(99,102,241,0.04); }
+        .info-row-label { font-size:0.82rem; color:var(--text-dim); font-weight:500; }
+        .info-row-val { font-size:0.89rem; font-weight:700; color:#fff; }
+
+        /* Referral stats */
+        .ref-stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-top:18px; position:relative; z-index:1; }
+        .ref-stat-box {
+            background:rgba(255,255,255,0.04); border-radius:16px;
+            padding:18px 12px; text-align:center;
+            border:1px solid rgba(255,255,255,0.06);
+            transition:background 0.2s;
+        }
+        .ref-stat-box:hover { background:rgba(255,255,255,0.07); }
+        .ref-stat-val { font-size:1.5rem; font-weight:900; color:#fff; display:block; }
+        .ref-stat-label { font-size:0.63rem; color:var(--text-dim); font-weight:700; text-transform:uppercase; margin-top:4px; display:block; letter-spacing:0.4px; }
+
+        /* Bottom nav */
+        .bottom-nav {
+            position:fixed; bottom:0; left:0; right:0;
+            background:rgba(2,5,16,0.93); backdrop-filter:blur(20px);
+            border-top:1px solid var(--border); z-index:100; padding:6px 0 8px;
+        }
+        .bottom-nav::before {
+            content:''; position:absolute; top:0; left:10%; right:10%; height:1px;
+            background:linear-gradient(90deg,transparent,var(--primary),var(--accent),var(--primary),transparent);
+            opacity:0.45;
+        }
+        .bottom-nav-inner { max-width:500px; margin:0 auto; display:flex; justify-content:space-around; }
+        .bottom-nav-item {
+            display:flex; flex-direction:column; align-items:center; gap:3px;
+            padding:7px 14px; border-radius:14px; cursor:pointer;
+            transition:all 0.2s; text-decoration:none; background:transparent; border:none;
+            font-family:'Inter',sans-serif; position:relative;
+        }
+        .bottom-nav-item i { font-size:1.05rem; color:var(--text-dim); transition:color 0.2s; }
+        .bottom-nav-item span { font-size:0.58rem; font-weight:700; color:var(--text-dim); transition:color 0.2s; text-transform:uppercase; letter-spacing:0.3px; }
+        .bottom-nav-item.active { background:rgba(99,102,241,0.09); border:1px solid rgba(99,102,241,0.16); }
+        .bottom-nav-item.active i { color:var(--primary-light); }
+        .bottom-nav-item.active span { color:var(--primary-light); }
+        .bottom-nav-item:not(.logout-btn):not(.active):hover { background:rgba(99,102,241,0.05); }
+        .bottom-nav-item:not(.logout-btn):not(.active):hover i { color:var(--primary-light); }
+        .bottom-nav-item.logout-btn i { color:var(--danger); }
+        .bottom-nav-item.logout-btn span { color:var(--danger); }
+        .bottom-nav-item.logout-btn:hover { background:rgba(239,68,68,0.07); }
+
+        /* Live dot */
+        .live-dot {
+            width:6px; height:6px; border-radius:50%; background:var(--success);
+            display:inline-block; animation:livePulse 2s ease-in-out infinite;
+        }
+        @keyframes livePulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"></div>
+    <div class="bg-grid"></div>
+
+    <div class="main-content">
+
+        <!-- HOME -->
+        <div id="page-home" class="page-section active">
+            <div class="section-header">
+                <div class="section-title"><i class="fas fa-layer-group"></i> Account History</div>
+                <span class="section-count">{{ numbers|length }} Total</span>
+            </div>
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="switchTab('processing',this)">
+                    <span class="live-dot"></span> Processing
+                    <span class="tab-count">{{ processing_count }}</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('successful',this)">
+                    <i class="fas fa-check" style="font-size:0.68rem;color:var(--success-light)"></i> Success
+                    <span class="tab-count">{{ success_count }}</span>
+                </button>
+                <button class="tab-btn" onclick="switchTab('rejected',this)">
+                    <i class="fas fa-xmark" style="font-size:0.7rem;color:var(--danger-light)"></i> Reject
+                    <span class="tab-count">{{ reject_count }}</span>
+                </button>
+            </div>
+
+            <div id="tab-processing" class="tab-panel active">
+                {% set ns = namespace(found=false) %}
+                {% for item in numbers if item.status == 'Processing' %}
+                    {% set ns.found = true %}
+                    <div class="account-card processing">
+                        <div class="card-top">
+                            <div><div class="card-number-label">Phone Number</div><div class="card-number">{{ item.number }}</div></div>
+                            <span class="status-badge processing"><i class="fas fa-hourglass-half"></i> Processing</span>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item"><span class="detail-label">Country</span><span class="detail-value">{{ item.country }}</span></div>
+                            <div class="detail-item"><span class="detail-label">Payout</span><span class="detail-value price">{{ item.price }}</span></div>
+                            <div class="detail-item"><span class="detail-label">Date</span><span class="detail-value">{{ item.date }}</span></div>
+                        </div>
+                        <div class="timer-bar">
+                            <div class="timer-label"><i class="fas fa-stopwatch"></i> Hold Timer</div>
+                            <div class="timer-value" data-timestamp="{{ item.raw_timestamp }}">--:--:--</div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if not ns.found %}
+                <div class="empty-state"><div class="empty-icon"><i class="fas fa-inbox"></i></div><div class="empty-text">No processing accounts</div><div class="empty-sub">Sell accounts via the Telegram bot to see them here</div></div>
+                {% endif %}
+            </div>
+
+            <div id="tab-successful" class="tab-panel">
+                {% set ns2 = namespace(found=false) %}
+                {% for item in numbers if item.status == 'Successful' %}
+                    {% set ns2.found = true %}
+                    <div class="account-card successful">
+                        <div class="card-top">
+                            <div><div class="card-number-label">Phone Number</div><div class="card-number">{{ item.number }}</div></div>
+                            <span class="status-badge successful"><i class="fas fa-circle-check"></i> Success</span>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item"><span class="detail-label">Country</span><span class="detail-value">{{ item.country }}</span></div>
+                            <div class="detail-item"><span class="detail-label">Earned</span><span class="detail-value price">{{ item.price }}</span></div>
+                            <div class="detail-item"><span class="detail-label">Date</span><span class="detail-value">{{ item.date }}</span></div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if not ns2.found %}
+                <div class="empty-state"><div class="empty-icon"><i class="fas fa-trophy"></i></div><div class="empty-text">No successful transfers yet</div><div class="empty-sub">Completed accounts will appear here</div></div>
+                {% endif %}
+            </div>
+
+            <div id="tab-rejected" class="tab-panel">
+                {% set ns3 = namespace(found=false) %}
+                {% for item in numbers if item.status == 'Reject' %}
+                    {% set ns3.found = true %}
+                    <div class="account-card rejected">
+                        <div class="card-top">
+                            <div><div class="card-number-label">Phone Number</div><div class="card-number">{{ item.number }}</div></div>
+                            <span class="status-badge rejected"><i class="fas fa-circle-xmark"></i> Rejected</span>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-item"><span class="detail-label">Country</span><span class="detail-value">{{ item.country }}</span></div>
+                            <div class="detail-item"><span class="detail-label">Amount</span><span class="detail-value price">{{ item.price }}</span></div>
+                            <div class="detail-item"><span class="detail-label">Date</span><span class="detail-value">{{ item.date }}</span></div>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if not ns3.found %}
+                <div class="empty-state"><div class="empty-icon"><i class="fas fa-shield-halved"></i></div><div class="empty-text">No rejected accounts</div><div class="empty-sub">Rejected accounts will show up here</div></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- REFERRAL -->
+        <div id="page-referral" class="page-section">
+            <div class="referral-hero">
+                <div class="hero-glow-1"></div>
+                <div class="hero-glow-2"></div>
+                <div class="referral-hero-icon"><i class="fas fa-gift"></i></div>
+                <div class="referral-hero-title">Referral Program</div>
+                <div class="referral-hero-sub">Invite friends and earn commissions on every sale</div>
+                <div class="ref-stats-grid">
+                    <div class="ref-stat-box">
+                        <span class="ref-stat-val">{{ referral_count }}</span>
+                        <span class="ref-stat-label">Total Referrals</span>
+                    </div>
+                    <div class="ref-stat-box">
+                        <span class="ref-stat-val" style="color:var(--success-light)">${{ "%.2f"|format(referral_earnings) }}</span>
+                        <span class="ref-stat-label">Total Earnings</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACCOUNT -->
+        <div id="page-account" class="page-section">
+            <div class="info-hero">
+                <div class="hero-glow-1"></div>
+                <div class="hero-glow-2"></div>
+                <div class="info-hero-icon"><i class="fas fa-user-circle"></i></div>
+                <div class="info-hero-title">Account Info</div>
+                <div class="info-hero-sub">Your complete account overview</div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card balance-card">
+                    <div class="info-card-icon green"><i class="fas fa-wallet"></i></div>
+                    <div class="info-card-val" style="color:var(--success-light)">${{ "%.2f"|format(balance.main) }}</div>
+                    <div class="info-card-label">Main Balance</div>
+                </div>
+                <div class="info-card hold-card">
+                    <div class="info-card-icon yellow"><i class="fas fa-lock"></i></div>
+                    <div class="info-card-val" style="color:var(--warning-light)">${{ "%.2f"|format(balance.hold) }}</div>
+                    <div class="info-card-label">Hold Balance</div>
+                </div>
+                <div class="info-card withdraw-card">
+                    <div class="info-card-icon cyan"><i class="fas fa-arrow-right-from-bracket"></i></div>
+                    <div class="info-card-val" style="color:var(--accent)">${{ "%.2f"|format(balance.withdrawal) }}</div>
+                    <div class="info-card-label">Withdrawing</div>
+                </div>
+                <div class="info-card total-card">
+                    <div class="info-card-icon purple"><i class="fas fa-coins"></i></div>
+                    <div class="info-card-val" style="color:var(--primary-light)">${{ "%.2f"|format(balance.total) }}</div>
+                    <div class="info-card-label">Total Balance</div>
+                </div>
+            </div>
+
+            <div class="info-detail-card">
+                <div class="info-detail-title"><i class="fas fa-chart-bar"></i> Account Statistics</div>
+                <div class="info-row"><span class="info-row-label">Accounts Sold</span><span class="info-row-val">{{ accounts_sold }}</span></div>
+                <div class="info-row"><span class="info-row-label">Processing</span><span class="info-row-val" style="color:var(--warning-light)">{{ processing_count }}</span></div>
+                <div class="info-row"><span class="info-row-label">Successful</span><span class="info-row-val" style="color:var(--success-light)">{{ success_count }}</span></div>
+                <div class="info-row"><span class="info-row-label">Rejected</span><span class="info-row-val" style="color:var(--danger-light)">{{ reject_count }}</span></div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card referral-card-accent">
+                    <div class="info-card-icon cyan"><i class="fas fa-user-plus"></i></div>
+                    <div class="info-card-val">{{ referral_count }}</div>
+                    <div class="info-card-label">Referrals</div>
+                </div>
+                <div class="info-card ref-earn-card">
+                    <div class="info-card-icon green"><i class="fas fa-hand-holding-dollar"></i></div>
+                    <div class="info-card-val" style="color:var(--success-light)">${{ "%.2f"|format(referral_earnings) }}</div>
+                    <div class="info-card-label">Referral Earn</div>
+                </div>
+            </div>
+
+            <div class="info-detail-card">
+                <div class="info-detail-title"><i class="fas fa-clock-rotate-left"></i> Activity</div>
+                <div class="info-row"><span class="info-row-label">Member Since</span><span class="info-row-val">{{ joined_date }}</span></div>
+                <div class="info-row"><span class="info-row-label">Last Activity</span><span class="info-row-val">{{ last_activity }}</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <button class="bottom-nav-item active" onclick="showPage('home',this)">
+                <i class="fas fa-house"></i><span>Home</span>
+            </button>
+            <button class="bottom-nav-item" onclick="showPage('referral',this)">
+                <i class="fas fa-users"></i><span>Referrals</span>
+            </button>
+            <button class="bottom-nav-item" onclick="showPage('account',this)">
+                <i class="fas fa-circle-info"></i><span>Account</span>
+            </button>
+            <a href="/logout" class="bottom-nav-item logout-btn">
+                <i class="fas fa-right-from-bracket"></i><span>Logout</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + id).classList.add('active');
+        btn.classList.add('active');
+    }
+    function showPage(id, btn) {
+        document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+        document.getElementById('page-' + id).classList.add('active');
+        btn.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function updateTimers() {
+        const now = Date.now();
+        document.querySelectorAll('.timer-value').forEach(t => {
+            const ts = t.dataset.timestamp;
+            if (!ts) return;
+            const start = new Date(ts).getTime();
+            if (isNaN(start)) return;
+            let total = 38 * 3600000, elapsed = now - start;
+            while (elapsed > total) total += 38 * 3600000;
+            let d = total - elapsed; if (d < 0) d = 0;
+            const h = Math.floor(d / 3600000), m = Math.floor((d % 3600000) / 60000), s = Math.floor((d % 60000) / 1000);
+            t.textContent = (h<10?'0'+h:h)+':'+(m<10?'0'+m:m)+':'+(s<10?'0'+s:s);
+        });
+    }
+    setInterval(updateTimers, 1000); updateTimers();
+    </script>
+</body>
+</html>

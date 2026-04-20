@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BGT Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root {
+            --bg: #020510;
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --accent: #22d3ee;
+            --accent2: #a78bfa;
+            --success: #10b981;
+            --danger: #ef4444;
+            --text: #e2e8f0;
+            --text-dim: #64748b;
+            --border: rgba(99,102,241,0.18);
+            --glass: rgba(8,12,28,0.88);
+        }
+        body {
+            font-family:'Inter',sans-serif;
+            background:var(--bg);
+            color:var(--text);
+            min-height:100vh;
+            display:flex; justify-content:center; align-items:center;
+            overflow:hidden; position:relative;
+        }
+
+        /* Simple static gradient background */
+        .bg-layer {
+            position:fixed; inset:0; z-index:0; pointer-events:none;
+            background:
+                radial-gradient(ellipse 60% 50% at 10% 10%, rgba(99,102,241,0.12) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 40% at 90% 90%, rgba(34,211,238,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 35% at 80% 20%, rgba(167,139,250,0.07) 0%, transparent 60%);
+        }
+        .bg-grid {
+            position:fixed; inset:0; z-index:0; pointer-events:none;
+            background-image:
+                linear-gradient(rgba(99,102,241,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(99,102,241,0.04) 1px, transparent 1px);
+            background-size:48px 48px;
+        }
+
+        /* Wrapper */
+        .login-wrapper {
+            position:relative; z-index:10;
+            width:100%; max-width:430px; padding:20px;
+            animation:wrapIn 0.6s cubic-bezier(0.22,1,0.36,1) both;
+        }
+        @keyframes wrapIn { from{opacity:0;transform:translateY(30px);} to{opacity:1;transform:translateY(0);} }
+
+        /* Brand */
+        .brand-section { text-align:center; margin-bottom:26px; }
+        .brand-icon-wrap { position:relative; display:inline-block; margin-bottom:18px; }
+        .brand-ring {
+            position:absolute; inset:-8px; border-radius:30px;
+            background:conic-gradient(from 0deg,#6366f1,#22d3ee,#a78bfa,#6366f1);
+            animation:ringRotate 5s linear infinite;
+            opacity:0.75;
+        }
+        .brand-ring::after {
+            content:''; position:absolute; inset:3px; border-radius:24px;
+            background:var(--bg);
+        }
+        @keyframes ringRotate { to{transform:rotate(360deg);} }
+        .brand-icon {
+            position:relative; z-index:2;
+            width:78px; height:78px; border-radius:22px;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            display:flex; align-items:center; justify-content:center;
+            font-size:2rem; color:#fff;
+            box-shadow:0 8px 32px rgba(99,102,241,0.5);
+        }
+        .brand-title {
+            font-size:2rem; font-weight:900; letter-spacing:-0.5px;
+            background:linear-gradient(135deg,#fff 20%,var(--primary-light) 60%,var(--accent));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        }
+        .brand-subtitle { font-size:0.83rem; color:var(--text-dim); margin-top:6px; }
+
+        /* Card */
+        .login-card {
+            background:var(--glass); backdrop-filter:blur(20px);
+            border:1px solid var(--border); border-radius:28px;
+            padding:36px 28px;
+            box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+            position:relative; overflow:hidden;
+        }
+        .card-top-line {
+            position:absolute; top:0; left:0; right:0; height:1.5px;
+            background:linear-gradient(90deg,transparent,var(--primary),var(--accent),transparent);
+        }
+
+        .card-title { font-size:1.15rem; font-weight:800; color:#fff; margin-bottom:4px; }
+        .card-desc { font-size:0.81rem; color:var(--text-dim); margin-bottom:26px; }
+
+        /* Input */
+        .input-group { margin-bottom:20px; }
+        .input-label { display:block; font-size:0.7rem; font-weight:700; color:var(--primary-light); text-transform:uppercase; letter-spacing:1px; margin-bottom:7px; }
+        .input-wrapper { position:relative; display:flex; align-items:center; }
+        .input-icon { position:absolute; left:16px; color:var(--text-dim); font-size:0.9rem; transition:color 0.25s; z-index:2; }
+        .input-field {
+            width:100%; padding:15px 15px 15px 47px;
+            border-radius:14px; border:1.5px solid rgba(99,102,241,0.15);
+            background:rgba(5,8,20,0.7); color:#fff;
+            font-size:0.93rem; font-family:'Inter',sans-serif; font-weight:600;
+            outline:none; transition:border-color 0.25s, box-shadow 0.25s;
+        }
+        .input-field:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(99,102,241,0.12); }
+        .input-field:focus ~ .input-icon { color:var(--primary-light); }
+        .input-field::placeholder { color:#2d3748; font-weight:400; }
+
+        /* Button */
+        .login-btn {
+            width:100%; padding:16px; border:none; border-radius:15px;
+            background:linear-gradient(135deg,#4f46e5,#7c3aed);
+            color:#fff; font-size:0.98rem; font-weight:800;
+            font-family:'Inter',sans-serif; cursor:pointer;
+            transition:transform 0.2s, box-shadow 0.2s, background 0.3s;
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            box-shadow:0 6px 24px rgba(99,102,241,0.45);
+            position:relative; overflow:hidden;
+        }
+        .login-btn:hover { transform:translateY(-2px); box-shadow:0 10px 32px rgba(99,102,241,0.55); }
+        .login-btn:active { transform:scale(0.98); }
+        .login-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+        /* Error */
+        .error-alert {
+            background:rgba(239,68,68,0.07); border:1px solid rgba(239,68,68,0.28);
+            color:#fca5a5; padding:12px 14px; border-radius:12px;
+            font-size:0.82rem; margin-bottom:18px;
+            display:none; align-items:center; gap:9px;
+        }
+        .error-alert.show { display:flex; animation:shake 0.35s ease; }
+        @keyframes shake { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+
+        /* Divider */
+        .divider {
+            display:flex; align-items:center; gap:12px;
+            margin:22px 0 16px; color:var(--text-dim);
+            font-size:0.69rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
+        }
+        .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
+
+        /* Features */
+        .features-row { display:flex; gap:9px; }
+        .feature-badge {
+            flex:1; display:flex; align-items:center; justify-content:center; gap:6px;
+            padding:10px 7px; border-radius:12px;
+            background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.1);
+            font-size:0.68rem; font-weight:700; color:var(--text-dim);
+            transition:all 0.2s;
+        }
+        .feature-badge:hover { background:rgba(99,102,241,0.1); color:var(--primary-light); transform:translateY(-1px); }
+        .feature-badge:nth-child(1) i { color:var(--primary-light); }
+        .feature-badge:nth-child(2) i { color:var(--accent); }
+        .feature-badge:nth-child(3) i { color:var(--accent2); }
+
+        /* Footer */
+        .footer-text { text-align:center; margin-top:20px; font-size:0.75rem; color:var(--text-dim); }
+        .footer-text a {
+            background:linear-gradient(90deg,var(--primary-light),var(--accent));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+            text-decoration:none; font-weight:700;
+        }
+
+        /* Spinner */
+        .spinner { width:17px;height:17px; border:2px solid rgba(255,255,255,0.25); border-top-color:#fff; border-radius:50%; animation:spin 0.6s linear infinite; display:none; }
+        @keyframes spin { to{transform:rotate(360deg);} }
+    </style>
+</head>
+<body>
+    <div class="bg-layer"></div>
+    <div class="bg-grid"></div>
+
+    <div class="login-wrapper">
+        <div class="brand-section">
+            <div class="brand-icon-wrap">
+                <div class="brand-ring"></div>
+                <div class="brand-icon"><i class="fas fa-wallet"></i></div>
+            </div>
+            <div class="brand-title">BGT Wallet</div>
+            <div class="brand-subtitle">Secure Account Trading Platform</div>
+        </div>
+
+        <div class="login-card">
+            <div class="card-top-line"></div>
+
+            <div class="card-title">Welcome Back</div>
+            <div class="card-desc">Sign in with your History ID to access your wallet</div>
+
+            <div class="error-alert" id="error-message">
+                <i class="fas fa-triangle-exclamation"></i>
+                <span id="error-text"></span>
+            </div>
+
+            <form onsubmit="return false;">
+                <div class="input-group">
+                    <label class="input-label">History ID</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="user_id" class="input-field" placeholder="Enter your History ID" required autocomplete="off">
+                        <i class="fas fa-fingerprint input-icon"></i>
+                    </div>
+                </div>
+                <button type="button" onclick="handleLogin()" class="login-btn" id="login-btn">
+                    <span id="btn-text">Sign In</span>
+                    <i class="fas fa-arrow-right" id="btn-arrow"></i>
+                    <div class="spinner" id="btn-spinner"></div>
+                </button>
+            </form>
+
+            <div class="divider">Platform Features</div>
+            <div class="features-row">
+                <div class="feature-badge"><i class="fas fa-shield-halved"></i> Secure</div>
+                <div class="feature-badge"><i class="fas fa-bolt"></i> Fast Payout</div>
+                <div class="feature-badge"><i class="fas fa-users"></i> Referrals</div>
+            </div>
+        </div>
+
+        <div class="footer-text">Powered by <a href="#">BGT Wallet</a></div>
+    </div>
+
+    <script>
+    const inp = document.getElementById('user_id');
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
+    inp.addEventListener('input', () => { document.getElementById('error-message').classList.remove('show'); });
+
+    async function handleLogin() {
+        const userId = inp.value.trim();
+        const errDiv = document.getElementById('error-message');
+        const errTxt = document.getElementById('error-text');
+        const btn = document.getElementById('login-btn');
+        const bText = document.getElementById('btn-text');
+        const bArr = document.getElementById('btn-arrow');
+        const spin = document.getElementById('btn-spinner');
+
+        if (!userId) {
+            errTxt.textContent = 'Please enter your History ID';
+            errDiv.classList.remove('show'); void errDiv.offsetWidth;
+            errDiv.classList.add('show'); return;
+        }
+        btn.disabled = true; bText.textContent = 'Signing in...';
+        bArr.style.display = 'none'; spin.style.display = 'block';
+        errDiv.classList.remove('show');
+
+        const fd = new FormData(); fd.append('user_id', userId);
+        try {
+            const res = await fetch('/login', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (data.success) {
+                bText.textContent = '✓ Welcome!'; spin.style.display = 'none';
+                btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+                setTimeout(() => { window.location.href = data.redirect || '/dashboard'; }, 400);
+            } else {
+                errTxt.textContent = data.message || 'Invalid History ID. Please try again.';
+                errDiv.classList.remove('show'); void errDiv.offsetWidth; errDiv.classList.add('show');
+                btn.disabled = false; bText.textContent = 'Sign In';
+                bArr.style.display = 'inline'; spin.style.display = 'none';
+            }
+        } catch (e) {
+            errTxt.textContent = 'Connection error. Please try again.';
+            errDiv.classList.remove('show'); void errDiv.offsetWidth; errDiv.classList.add('show');
+            btn.disabled = false; bText.textContent = 'Sign In';
+            bArr.style.display = 'inline'; spin.style.display = 'none';
+        }
+    }
+    </script>
+</body>
+</html>
