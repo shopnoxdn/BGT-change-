@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - BGT Wallet</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0e17;
+            --surface: #111827;
+            --surface-2: #1a2332;
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #3b82f6;
+            --text: #e2e8f0;
+            --text-dim: #94a3b8;
+            --border: #1e293b;
+            --glow: rgba(99, 102, 241, 0.15);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .navbar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .navbar-brand i { color: var(--primary); }
+        .navbar-actions { display: flex; gap: 12px; align-items: center; }
+        .navbar-actions a {
+            color: var(--text-dim);
+            text-decoration: none;
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .navbar-actions a:hover { background: var(--surface-2); color: #fff; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+        }
+        .stat-card.purple::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+        .stat-card.green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+        .stat-card.yellow::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+        .stat-card.blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+        .stat-card.red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+        .stat-icon.purple { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        .stat-icon.green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .stat-icon.yellow { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .stat-icon.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .stat-icon.red { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+        .stat-value { font-size: 1.75rem; font-weight: 800; color: #fff; }
+        .stat-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; font-weight: 500; }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title i { color: var(--primary-light); font-size: 0.95rem; }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 20px 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--text);
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.25s ease;
+            cursor: pointer;
+        }
+        .action-btn:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 25px var(--glow);
+        }
+        .action-btn .icon-wrap {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .card-title i { color: var(--primary-light); }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: #fff;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+            outline: none;
+        }
+        input:focus, textarea:focus { border-color: var(--primary); }
+        input::placeholder, textarea::placeholder { color: var(--text-dim); }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary { background: var(--primary); color: #fff; width: 100%; justify-content: center; }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-success { background: var(--success); color: #fff; width: 100%; justify-content: center; }
+        .btn-success:hover { background: #059669; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 100%;
+            justify-content: center;
+        }
+        .btn-outline:hover { border-color: var(--primary); color: #fff; }
+        .btn-outline.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+
+        .tab-buttons { display: flex; gap: 8px; margin-bottom: 16px; }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+        .tab-btn.active, .tab-btn:hover { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) {
+            .two-col { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .actions-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        .flash-msg {
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .flash-success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-shield-halved"></i>
+            BGT Wallet Admin
+        </div>
+        <div class="navbar-actions">
+            <a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if message %}
+        <div class="flash-msg flash-success">
+            <i class="fas fa-check-circle"></i> {{ message }}
+        </div>
+        {% endif %}
+
+        <div class="stats-grid">
+            <div class="stat-card purple">
+                <div class="stat-icon purple"><i class="fas fa-users"></i></div>
+                <div class="stat-value">{{ stats.total_users }}</div>
+                <div class="stat-label">Total Users</div>
+            </div>
+            <div class="stat-card yellow">
+                <div class="stat-icon yellow"><i class="fas fa-clock"></i></div>
+                <div class="stat-value">{{ stats.processing }}</div>
+                <div class="stat-label">Processing</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-value">{{ stats.successful }}</div>
+                <div class="stat-label">Successful</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
+                <div class="stat-value">{{ stats.rejected }}</div>
+                <div class="stat-label">Rejected</div>
+            </div>
+            <div class="stat-card blue">
+                <div class="stat-icon blue"><i class="fas fa-dollar-sign"></i></div>
+                <div class="stat-value">${{ "%.2f"|format(stats.total_balance) }}</div>
+                <div class="stat-label">Total Balance</div>
+            </div>
+        </div>
+
+        <div class="section-title"><i class="fas fa-bolt"></i> Quick Actions</div>
+        <div class="actions-grid">
+            <a href="/admin/users" class="action-btn">
+                <div class="icon-wrap" style="background: rgba(99,102,241,0.15); color: #818cf8;">
+                    <i class="fas fa-users"></i>
+                </div>
+                User List
+            </a>
+            <a href="/admin/processing" class="action-btn">
+                <div class="icon-wrap" style="background: rgba(245,158,11,0.15); color: #fbbf24;">
+                    <i class="fas fa-spinner"></i>
+                </div>
+                Processing
+            </a>
+            <a href="/admin/successful" class="action-btn">
+                <div class="icon-wrap" style="background: rgba(16,185,129,0.15); color: #34d399;">
+                    <i class="fas fa-check-double"></i>
+                </div>
+                Successful
+            </a>
+            <a href="/admin/rejected" class="action-btn">
+                <div class="icon-wrap" style="background: rgba(239,68,68,0.15); color: #f87171;">
+                    <i class="fas fa-ban"></i>
+                </div>
+                Rejected
+            </a>
+            <a href="/admin/withdrawals" class="action-btn">
+                <div class="icon-wrap" style="background: rgba(59,130,246,0.15); color: #60a5fa;">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                Withdrawals
+            </a>
+            <a href="/admin/countries" class="action-btn">
+                <div class="icon-wrap" style="background: rgba(16,185,129,0.15); color: #34d399;">
+                    <i class="fas fa-money-bill-trend-up"></i>
+                </div>
+                Country Prices
+            </a>
+            <a href="/admin" class="action-btn" onclick="location.reload(); return false;">
+                <div class="icon-wrap" style="background: rgba(148,163,184,0.15); color: #94a3b8;">
+                    <i class="fas fa-sync-alt"></i>
+                </div>
+                Refresh
+            </a>
+        </div>
+
+        <div class="two-col">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-search"></i> User Search</div>
+                </div>
+                <form action="/admin/search" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">User Chat ID</label>
+                        <input type="text" name="chat_id" placeholder="Enter Chat ID..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-eraser"></i> Reset Sold Number</div>
+                </div>
+                <form action="/admin/reset_number" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">Phone Number (with country code)</label>
+                        <input type="text" name="phone_number" placeholder="+99361991417" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-undo"></i> Reset Number</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-clock"></i> Search Processing</div>
+                </div>
+                <form action="/admin/search_processing" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">User Chat ID</label>
+                        <input type="text" name="chat_id" placeholder="Enter Chat ID..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="background: var(--warning);"><i class="fas fa-spinner"></i> Search Processing</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-wallet"></i> User Balance Check</div>
+                </div>
+                <form action="/admin/check_balance" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">User Chat ID</label>
+                        <input type="text" name="chat_id" placeholder="Enter Chat ID..." required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="background: var(--info);"><i class="fas fa-dollar-sign"></i> Check Balance</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="two-col">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-right-from-bracket"></i> Force Logout Account</div>
+                </div>
+                <form action="/admin/force_logout" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">Phone Number (with country code)</label>
+                        <input type="text" name="phone_number" placeholder="+99361991417" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="background: var(--danger);"><i class="fas fa-power-off"></i> Force Logout</button>
+                </form>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="fas fa-file-arrow-down"></i> Download Sell Price File</div>
+                </div>
+                <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 14px;">
+                    Download the saved <code>countries_data.json</code> file containing all current sell/buy prices.
+                </p>
+                <a href="/admin/download_countries" class="btn btn-primary" style="text-decoration: none;">
+                    <i class="fas fa-download"></i> Download countries_data.json
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-bell"></i> Notifications</div>
+            </div>
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('custom', this)">
+                    <i class="fas fa-user"></i> Single User
+                </button>
+                <button class="tab-btn" onclick="switchTab('all', this)">
+                    <i class="fas fa-bullhorn"></i> All Users
+                </button>
+            </div>
+
+            <div id="tab-custom">
+                <form action="/admin/notify" method="POST">
+                    <input type="hidden" name="type" value="custom">
+                    <div class="form-group">
+                        <label class="form-label">User Chat ID</label>
+                        <input type="text" name="chat_id" placeholder="Enter Chat ID..." required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Message</label>
+                        <textarea name="message" placeholder="Type your message..." rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Send</button>
+                </form>
+            </div>
+
+            <div id="tab-all" style="display: none;">
+                <form action="/admin/notify" method="POST">
+                    <input type="hidden" name="type" value="all">
+                    <div class="form-group">
+                        <label class="form-label">Broadcast Message</label>
+                        <textarea name="message" placeholder="Message for all users..." rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-bullhorn"></i> Broadcast to All</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-link"></i> Settings</div>
+            </div>
+            <form action="/admin/set_link" method="POST">
+                <div class="form-group">
+                    <label class="form-label">Dashboard Link</label>
+                    <input type="url" name="dashboard_link" placeholder="https://..." required>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Link</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tab, btn) {
+            document.getElementById('tab-custom').style.display = tab === 'custom' ? 'block' : 'none';
+            document.getElementById('tab-all').style.display = tab === 'all' ? 'block' : 'none';
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+    </script>
+</body>
+</html>
