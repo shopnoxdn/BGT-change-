@@ -1036,6 +1036,124 @@ async def admin_toggle_2fa(phone):
             await client.disconnect()
 
 
+@app.route('/admin/number/<path:phone>/auto_change_email')
+async def admin_auto_change_email(phone):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    import urllib.request as _urlreq
+    import re as _re
+
+    raw_phone = phone.replace('sell_', '').replace('+', '').strip()
+    digits_only = ''.join(c for c in raw_phone if c.isdigit())
+    last7 = digits_only[-7:] if len(digits_only) >= 7 else digits_only
+    mail_user = last7
+    mail_domain = '1secmail.com'
+    temp_email = f"{mail_user}@{mail_domain}"
+
+    async def generate():
+        yield f"data: status|📧 Temp email: {temp_email}\n\n"
+        await asyncio.sleep(0.4)
+
+        session_path = os.path.join(SESSIONS_DIR, phone)
+        client = TelegramClient(session_path, API_ID, API_HASH)
+
+        try:
+            await client.connect()
+            if not await client.is_user_authorized():
+                yield "data: error|Session not authorized\n\n"
+                return
+
+            yield "data: status|📤 Sending OTP to email...\n\n"
+            try:
+                await client(functions.account.SendVerifyEmailCodeRequest(
+                    purpose=types.EmailVerifyPurposeLoginChange(),
+                    email=temp_email
+                ))
+            except Exception as e:
+                yield f"data: error|OTP send failed: {str(e)}\n\n"
+                return
+
+            yield "data: status|⏳ OTP sent! Scanning inbox...\n\n"
+
+            otp_code = None
+            for attempt in range(25):
+                await asyncio.sleep(4)
+                yield f"data: status|🔍 Checking inbox... ({attempt+1}/25)\n\n"
+
+                try:
+                    def _fetch_list():
+                        url = f"https://www.1secmail.com/api/v1/?action=getMessages&login={mail_user}&domain={mail_domain}"
+                        req = _urlreq.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                        with _urlreq.urlopen(req, timeout=10) as r:
+                            return json.loads(r.read().decode())
+
+                    msgs = await asyncio.to_thread(_fetch_list)
+
+                    for m in msgs:
+                        mid = m['id']
+                        def _fetch_msg(mid=mid):
+                            url2 = f"https://www.1secmail.com/api/v1/?action=readMessage&login={mail_user}&domain={mail_domain}&id={mid}"
+                            req2 = _urlreq.Request(url2, headers={'User-Agent': 'Mozilla/5.0'})
+                            with _urlreq.urlopen(req2, timeout=10) as r2:
+                                return json.loads(r2.read().decode())
+
+                        detail = await asyncio.to_thread(_fetch_msg)
+                        haystack = (detail.get('subject', '') + ' '
+                                    + detail.get('textBody', '') + ' '
+                                    + detail.get('htmlBody', ''))
+                        match = _re.search(r'\b(\d{4,8})\b', haystack)
+                        if match:
+                            otp_code = match.group(1)
+                            break
+                except Exception as fe:
+                    yield f"data: status|⚠️ Inbox error: {str(fe)[:60]}\n\n"
+                    continue
+
+                if otp_code:
+                    break
+
+            if not otp_code:
+                yield "data: error|OTP not received within 100s. Try manual.\n\n"
+                return
+
+            yield f"data: status|✅ OTP found: {otp_code}\n\n"
+            yield "data: status|🔐 Verifying with Telegram...\n\n"
+
+            try:
+                await client(functions.account.VerifyEmailRequest(
+                    purpose=types.EmailVerifyPurposeLoginChange(),
+                    verification=types.EmailVerificationCode(code=otp_code)
+                ))
+            except Exception as e:
+                yield f"data: error|Verification failed: {str(e)}\n\n"
+                return
+
+            # Save email_changed flag
+            user_data_all = load_data()
+            for uid, info in user_data_all.items():
+                for detail in info.get('processing_details', []):
+                    if detail.get('number', '').replace('+', '').strip() == raw_phone:
+                        detail['email_changed'] = True
+                        break
+            with open(DATA_FILE, 'w') as fw:
+                json.dump(user_data_all, fw, indent=4)
+
+            yield f"data: success|{temp_email}|Email changed to {temp_email}!\n\n"
+
+        except Exception as e:
+            yield f"data: error|{str(e)}\n\n"
+        finally:
+            if client.is_connected():
+                await client.disconnect()
+
+    return app.response_class(
+        generate(),
+        mimetype='text/event-stream',
+        headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'}
+    )
+
+
 @app.route('/admin/number/<path:phone>/send_email_otp', methods=['POST'])
 async def admin_send_email_otp(phone):
     if 'user_id' not in session or session['user_id'] != '2876886938':

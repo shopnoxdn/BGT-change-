@@ -229,6 +229,35 @@
         .step-dot.idle{background:var(--s2);color:var(--td);border:1px solid var(--b)}
         .step-line{flex:1;height:1px;background:var(--b)}
 
+        /* ── EMAIL MODE TABS ── */
+        .email-tabs{display:flex;gap:6px;margin-bottom:16px}
+        .email-tab{
+            flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--b);
+            background:var(--s2);color:var(--td);font-size:.8rem;font-weight:700;
+            cursor:pointer;font-family:'Inter',sans-serif;transition:.2s;
+            display:flex;align-items:center;justify-content:center;gap:6px;
+        }
+        .email-tab.active{background:rgba(108,99,255,.15);color:var(--pl);border-color:rgba(108,99,255,.35)}
+        .email-tab:hover:not(.active){color:#fff;border-color:rgba(255,255,255,.15)}
+
+        /* ── AUTO PROGRESS LOG ── */
+        .auto-log{
+            background:var(--bg);border:1px solid var(--b);border-radius:12px;
+            padding:12px 14px;margin-bottom:14px;min-height:80px;max-height:220px;
+            overflow-y:auto;display:flex;flex-direction:column;gap:5px;
+        }
+        .log-line{font-size:.78rem;color:var(--td);display:flex;align-items:flex-start;gap:7px;line-height:1.5}
+        .log-line.ok{color:var(--ok)}
+        .log-line.err{color:#ff4d6d}
+        .log-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;margin-top:5px}
+
+        /* email-result chip */
+        .email-result-chip{
+            background:rgba(0,200,150,.08);border:1px solid rgba(0,200,150,.25);
+            border-radius:10px;padding:10px 14px;font-size:.82rem;color:var(--ok);
+            display:flex;align-items:center;gap:9px;font-weight:600;margin-bottom:10px;
+        }
+
         /* ── EMPTY ── */
         .empty{text-align:center;padding:28px 20px;color:var(--td)}
         .empty i{font-size:2rem;opacity:.25;display:block;margin-bottom:10px}
@@ -406,41 +435,89 @@
         </div>
         <div class="sec-body">
 
-            <!-- Step indicator -->
-            <div class="step-indicator">
-                <div class="step-dot active" id="step-dot-1">1</div>
-                <div class="step-line"></div>
-                <div class="step-dot idle" id="step-dot-2">2</div>
-            </div>
-
-            <!-- Step 1 -->
-            <div id="email-s1">
-                <div class="form-field">
-                    <label class="form-label">New Email Address</label>
-                    <input type="email" id="new-email" placeholder="example@gmail.com">
-                </div>
-                <button class="btn btn-primary btn-full" id="send-otp-btn" onclick="sendEmailOTP()">
-                    <i class="fas fa-paper-plane"></i> Send OTP to Email
+            <!-- Mode Tabs -->
+            <div class="email-tabs">
+                <button class="email-tab" id="tab-auto" onclick="switchEmailTab('auto')">
+                    <i class="fas fa-robot"></i> Auto
+                </button>
+                <button class="email-tab" id="tab-manual" onclick="switchEmailTab('manual')">
+                    <i class="fas fa-pen"></i> Manual
                 </button>
             </div>
 
-            <!-- Step 2 -->
-            <div id="email-s2" style="display:none">
-                <div class="alert alert-info" id="otp-info">
-                    <i class="fas fa-envelope-open-text"></i> OTP sent! Check your email inbox.
-                </div>
-                <div class="form-field">
-                    <label class="form-label">OTP Code</label>
-                    <input type="text" id="otp-code" placeholder="Enter the OTP code…"
-                        maxlength="8" style="text-align:center;font-size:1.4rem;font-weight:800;letter-spacing:6px">
-                </div>
-                <div style="display:flex;gap:8px">
-                    <button class="btn btn-success" style="flex:1;justify-content:center" onclick="verifyEmailOTP()">
-                        <i class="fas fa-check"></i> Verify & Change
+            <!-- AUTO PANEL -->
+            <div id="email-auto">
+                <div id="auto-idle">
+                    <div class="alert alert-info" style="margin-bottom:14px">
+                        <i class="fas fa-circle-info"></i>
+                        Email will be auto-created using last 7 digits of this number.
+                    </div>
+                    <button class="btn btn-primary btn-full" id="auto-start-btn" onclick="startAutoEmail()">
+                        <i class="fas fa-wand-magic-sparkles"></i> Start Auto Change
                     </button>
-                    <button class="btn btn-ghost" onclick="resetEmail()">
-                        <i class="fas fa-arrow-left"></i>
+                </div>
+                <div id="auto-running" style="display:none">
+                    <div class="auto-log" id="auto-log"></div>
+                    <button class="btn btn-ghost btn-full" id="auto-stop-btn" onclick="stopAutoEmail()">
+                        <i class="fas fa-stop"></i> Cancel
                     </button>
+                </div>
+                <div id="auto-done" style="display:none">
+                    <div class="email-result-chip" id="auto-result-chip">
+                        <i class="fas fa-circle-check"></i> <span id="auto-result-text"></span>
+                    </div>
+                    <button class="btn btn-ghost btn-full" onclick="resetAutoEmail()">
+                        <i class="fas fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+                <div id="auto-error" style="display:none">
+                    <div class="alert alert-err" id="auto-error-msg">
+                        <i class="fas fa-circle-exclamation"></i> <span></span>
+                    </div>
+                    <button class="btn btn-ghost btn-full" onclick="resetAutoEmail()">
+                        <i class="fas fa-rotate-left"></i> Try Again
+                    </button>
+                </div>
+            </div>
+
+            <!-- MANUAL PANEL -->
+            <div id="email-manual" style="display:none">
+                <!-- Step indicator -->
+                <div class="step-indicator">
+                    <div class="step-dot active" id="step-dot-1">1</div>
+                    <div class="step-line"></div>
+                    <div class="step-dot idle" id="step-dot-2">2</div>
+                </div>
+
+                <!-- Step 1 -->
+                <div id="email-s1">
+                    <div class="form-field">
+                        <label class="form-label">New Email Address</label>
+                        <input type="email" id="new-email" placeholder="example@gmail.com">
+                    </div>
+                    <button class="btn btn-primary btn-full" id="send-otp-btn" onclick="sendEmailOTP()">
+                        <i class="fas fa-paper-plane"></i> Send OTP to Email
+                    </button>
+                </div>
+
+                <!-- Step 2 -->
+                <div id="email-s2" style="display:none">
+                    <div class="alert alert-info" id="otp-info">
+                        <i class="fas fa-envelope-open-text"></i> OTP sent! Check your email inbox.
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">OTP Code</label>
+                        <input type="text" id="otp-code" placeholder="Enter the OTP code…"
+                            maxlength="8" style="text-align:center;font-size:1.4rem;font-weight:800;letter-spacing:6px">
+                    </div>
+                    <div style="display:flex;gap:8px">
+                        <button class="btn btn-success" style="flex:1;justify-content:center" onclick="verifyEmailOTP()">
+                            <i class="fas fa-check"></i> Verify & Change
+                        </button>
+                        <button class="btn btn-ghost" onclick="resetEmail()">
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -539,6 +616,91 @@ async function toggle2FA(action){
         if(d.success){ toast(d.message,'ok'); setTimeout(()=>location.reload(),1800); }
         else toast(d.message,'err');
     } catch(e){ toast('Failed: '+e.message,'err'); }
+}
+
+/* ── EMAIL TAB SWITCH ── */
+let _activeEmailTab = 'auto';
+function switchEmailTab(tab){
+    _activeEmailTab = tab;
+    document.getElementById('email-auto').style.display   = tab==='auto'   ? 'block' : 'none';
+    document.getElementById('email-manual').style.display = tab==='manual' ? 'block' : 'none';
+    document.getElementById('tab-auto').classList.toggle('active',   tab==='auto');
+    document.getElementById('tab-manual').classList.toggle('active', tab==='manual');
+}
+// Default: auto tab active on load
+switchEmailTab('auto');
+
+/* ── AUTO EMAIL CHANGE (SSE) ── */
+let _autoEs = null;
+
+function startAutoEmail(){
+    document.getElementById('auto-idle').style.display    = 'none';
+    document.getElementById('auto-running').style.display = 'block';
+    document.getElementById('auto-done').style.display    = 'none';
+    document.getElementById('auto-error').style.display   = 'none';
+    const log = document.getElementById('auto-log');
+    log.innerHTML = '';
+
+    function addLog(text, cls=''){
+        const line = document.createElement('div');
+        line.className = 'log-line' + (cls ? ' '+cls : '');
+        line.innerHTML = `<span class="log-dot"></span><span>${text}</span>`;
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    _autoEs = new EventSource(`/admin/number/${PHONE}/auto_change_email`);
+
+    _autoEs.onmessage = function(e){
+        const raw = e.data;
+        const parts = raw.split('|');
+        const type = parts[0];
+        if(type === 'status'){
+            addLog(parts.slice(1).join('|'));
+        } else if(type === 'success'){
+            const email = parts[1];
+            const msg   = parts.slice(2).join('|');
+            addLog('🎉 ' + msg, 'ok');
+            _autoEs.close(); _autoEs = null;
+            setTimeout(()=>{
+                document.getElementById('auto-running').style.display = 'none';
+                document.getElementById('auto-done').style.display    = 'block';
+                document.getElementById('auto-result-text').textContent = email;
+            }, 800);
+        } else if(type === 'error'){
+            addLog('❌ ' + parts.slice(1).join('|'), 'err');
+            _autoEs.close(); _autoEs = null;
+            setTimeout(()=>{
+                document.getElementById('auto-running').style.display = 'none';
+                document.getElementById('auto-error').style.display   = 'block';
+                document.getElementById('auto-error-msg').querySelector('span').textContent = parts.slice(1).join('|');
+            }, 800);
+        }
+    };
+
+    _autoEs.onerror = function(){
+        addLog('Connection closed.', 'err');
+        if(_autoEs){ _autoEs.close(); _autoEs = null; }
+        setTimeout(()=>{
+            document.getElementById('auto-running').style.display = 'none';
+            document.getElementById('auto-error').style.display   = 'block';
+            document.getElementById('auto-error-msg').querySelector('span').textContent = 'Stream disconnected unexpectedly.';
+        }, 800);
+    };
+}
+
+function stopAutoEmail(){
+    if(_autoEs){ _autoEs.close(); _autoEs = null; }
+    resetAutoEmail();
+    toast('Auto change cancelled','info');
+}
+
+function resetAutoEmail(){
+    if(_autoEs){ _autoEs.close(); _autoEs = null; }
+    document.getElementById('auto-idle').style.display    = 'block';
+    document.getElementById('auto-running').style.display = 'none';
+    document.getElementById('auto-done').style.display    = 'none';
+    document.getElementById('auto-error').style.display   = 'none';
 }
 
 /* ── EMAIL OTP ── */
