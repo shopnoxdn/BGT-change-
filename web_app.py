@@ -7,7 +7,14 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from telethon import TelegramClient, errors, functions, types
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.secret_key = os.environ.get('SESSION_SECRET', 'bgt-wallet-admin-2026-fixed-key')
+
+@app.after_request
+def no_cache(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
 
 # Telegram API for UserSession
 API_ID = 31955122
