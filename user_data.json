@@ -89464,13 +89464,14 @@
     },
     "1041119928": {
         "main_balance_usdt": 1.1600000000000004,
-        "hold_balance_usdt": 0.51,
+        "hold_balance_usdt": 1.02,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 2,
+        "accounts_sold": 3,
         "sold_numbers": [
             "+880177 3294461",
-            "+880186 8575087"
+            "+880186 8575087",
+            "+88014011 13358"
         ],
         "referrer_id": null,
         "referrals": [
@@ -89516,6 +89517,13 @@
                 "price": 0.51,
                 "status": "Processing",
                 "timestamp": "2026-07-02T15:25:09.663467",
+                "country": "Bangladesh \ud83c\udde7\ud83c\udde9"
+            },
+            {
+                "number": "+88014011 13358",
+                "price": 0.51,
+                "status": "Processing",
+                "timestamp": "2026-07-02T15:39:14.902183",
                 "country": "Bangladesh \ud83c\udde7\ud83c\udde9"
             }
         ],

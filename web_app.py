@@ -50,9 +50,9 @@ async def _auto_email_logic(task_id, phone, raw_phone,
 
         log('⏳ OTP sent! Scanning inbox…')
         otp_code = None
-        for attempt in range(25):
-            await asyncio.sleep(4)
-            log(f'🔍 Checking inbox… ({attempt+1}/25)')
+        for attempt in range(30):
+            await asyncio.sleep(5)
+            log(f'🔍 Checking inbox… ({attempt+1}/30)')
             try:
                 def _list():
                     url = (f'https://www.1secmail.com/api/v1/'
@@ -62,8 +62,11 @@ async def _auto_email_logic(task_id, phone, raw_phone,
                         return json.loads(r.read().decode())
 
                 msgs = await asyncio.to_thread(_list)
+                log(f'📬 {len(msgs)} message(s) in inbox')
+
                 for m in msgs:
                     mid = m['id']
+                    log(f'📩 Reading msg #{mid}: {m.get("subject","(no subject)")}')
                     def _read(mid=mid):
                         url2 = (f'https://www.1secmail.com/api/v1/'
                                 f'?action=readMessage&login={mail_user}'
@@ -73,10 +76,11 @@ async def _auto_email_logic(task_id, phone, raw_phone,
                             return json.loads(r2.read().decode())
 
                     detail = await asyncio.to_thread(_read)
-                    # Search subject first, then text body, then html body
                     subject  = detail.get('subject', '')
                     textBody = detail.get('textBody', '')
                     htmlBody = _re.sub(r'<[^>]+>', ' ', detail.get('htmlBody', ''))
+                    log(f'📝 Subject: {subject[:80]}')
+                    log(f'📝 Body preview: {textBody[:120]}')
                     for part in (subject, textBody, htmlBody):
                         match = _re.search(r'\b(\d{6})\b', part)
                         if match:
@@ -84,8 +88,8 @@ async def _auto_email_logic(task_id, phone, raw_phone,
                             break
                     if otp_code:
                         break
-            except Exception:
-                pass
+            except Exception as exc:
+                log(f'⚠️ Inbox error: {exc}')
             if otp_code:
                 break
 
