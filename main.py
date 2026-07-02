@@ -241,7 +241,7 @@ TELEGRAM_API_ID = int(os.environ.get("TELEGRAM_API_ID", "31955122"))
 TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH", "4f3e7f6d8250dc14c21ae58642fcbcc9")
 
 # Bot Token
-BOT_TOKEN = "8198086071:AAGW-ujHtCy0NUgB7xxwTIvossosGoK5KJM"
+BOT_TOKEN = "8467555740:AAEqBWpnxN7aQrc0TgD15W_LDeiDSOllMcY"
 
 # Required channel for all users
 REQUIRED_CHANNEL = "@BGTUpdate"
