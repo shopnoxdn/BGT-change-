@@ -13,23 +13,65 @@ from telethon import TelegramClient, errors, functions, types
 # ── Background auto-email tasks ──────────────────────────────────────────────
 auto_tasks: dict = {}   # task_id -> {status, logs, result, email}
 
-def _auto_email_thread(task_id: str, phone: str, raw_phone: str,
-                        mail_user: str, mail_domain: str, temp_email: str):
+def _auto_email_thread(task_id: str, phone: str, raw_phone: str, mail_user: str):
     """Runs in a daemon thread with its own asyncio event loop."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
         loop.run_until_complete(
-            _auto_email_logic(task_id, phone, raw_phone,
-                              mail_user, mail_domain, temp_email))
+            _auto_email_logic(task_id, phone, raw_phone, mail_user))
     finally:
         loop.close()
 
-async def _auto_email_logic(task_id, phone, raw_phone,
-                             mail_user, mail_domain, temp_email):
+async def _auto_email_logic(task_id, phone, raw_phone, mail_user):
     def log(msg):
         auto_tasks[task_id]['logs'].append(msg)
 
+    # ── Step 0: create mail.tm account ──────────────────────────────────────
+    def _mailtm_request(method, path, data=None, token=None):
+        url = 'https://api.mail.tm' + path
+        body = json.dumps(data).encode() if data else None
+        headers = {'Content-Type': 'application/json', 'Accept': 'application/json',
+                   'User-Agent': 'Mozilla/5.0'}
+        if token:
+            headers['Authorization'] = 'Bearer ' + token
+        req = _urlreq.Request(url, data=body, headers=headers, method=method)
+        with _urlreq.urlopen(req, timeout=15) as r:
+            return json.loads(r.read().decode())
+
+    try:
+        log('🌐 Getting available domains from mail.tm…')
+        domains_resp = await asyncio.to_thread(_mailtm_request, 'GET', '/domains')
+        domain = domains_resp['hydra:member'][0]['domain']
+        log(f'✅ Domain: {domain}')
+    except Exception as e:
+        auto_tasks[task_id].update(status='error', result=f'mail.tm domain fetch failed: {e}')
+        return
+
+    # Unique address per task to avoid mailbox collision across accounts
+    rand_suffix = uuid.uuid4().hex[:6]
+    address = f'{mail_user}{rand_suffix}@{domain}'
+    password = uuid.uuid4().hex  # random password, never reused
+    auto_tasks[task_id]['email'] = address
+
+    try:
+        log(f'📧 Creating mailbox: {address}')
+        await asyncio.to_thread(_mailtm_request, 'POST', '/accounts',
+                                 {'address': address, 'password': password})
+    except Exception as e:
+        auto_tasks[task_id].update(status='error', result=f'Mailbox create failed: {e}')
+        return
+
+    try:
+        log('🔑 Getting inbox token…')
+        tok_resp = await asyncio.to_thread(_mailtm_request, 'POST', '/token',
+                                            {'address': address, 'password': password})
+        inbox_token = tok_resp['token']
+    except Exception as e:
+        auto_tasks[task_id].update(status='error', result=f'Token fetch failed: {e}')
+        return
+
+    # ── Step 1: send OTP via Telegram ────────────────────────────────────────
     session_path = os.path.join(SESSIONS_DIR, phone)
     client = TelegramClient(session_path, API_ID, API_HASH)
     try:
@@ -38,11 +80,11 @@ async def _auto_email_logic(task_id, phone, raw_phone,
             auto_tasks[task_id].update(status='error', result='Session not authorized')
             return
 
-        log('📤 Sending OTP to ' + temp_email)
+        log(f'📤 Sending OTP to {address}')
         try:
             await client(functions.account.SendVerifyEmailCodeRequest(
                 purpose=types.EmailVerifyPurposeLoginChange(),
-                email=temp_email
+                email=address
             ))
         except Exception as e:
             auto_tasks[task_id].update(status='error', result=f'OTP send failed: {e}')
@@ -54,33 +96,33 @@ async def _auto_email_logic(task_id, phone, raw_phone,
             await asyncio.sleep(5)
             log(f'🔍 Checking inbox… ({attempt+1}/30)')
             try:
-                def _list():
-                    url = (f'https://www.1secmail.com/api/v1/'
-                           f'?action=getMessages&login={mail_user}&domain={mail_domain}')
-                    req = _urlreq.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                    with _urlreq.urlopen(req, timeout=10) as r:
-                        return json.loads(r.read().decode())
+                msgs = await asyncio.to_thread(
+                    _mailtm_request, 'GET', '/messages', None, inbox_token)
+                items = msgs.get('hydra:member', [])
+                log(f'📬 {len(items)} message(s) in inbox')
 
-                msgs = await asyncio.to_thread(_list)
-                log(f'📬 {len(msgs)} message(s) in inbox')
-
-                for m in msgs:
+                for m in items:
                     mid = m['id']
-                    log(f'📩 Reading msg #{mid}: {m.get("subject","(no subject)")}')
-                    def _read(mid=mid):
-                        url2 = (f'https://www.1secmail.com/api/v1/'
-                                f'?action=readMessage&login={mail_user}'
-                                f'&domain={mail_domain}&id={mid}')
-                        req2 = _urlreq.Request(url2, headers={'User-Agent': 'Mozilla/5.0'})
-                        with _urlreq.urlopen(req2, timeout=10) as r2:
-                            return json.loads(r2.read().decode())
-
-                    detail = await asyncio.to_thread(_read)
+                    subj = m.get('subject', '') or ''
+                    sender_name = (m.get('from', {}) or {}).get('name', '') or ''
+                    sender_addr = (m.get('from', {}) or {}).get('address', '') or ''
+                    log(f'📩 From: {sender_name} <{sender_addr}> | {subj}')
+                    # Only consider messages that look like they're from Telegram
+                    is_telegram = ('telegram' in sender_name.lower()
+                                   or 'telegram' in sender_addr.lower()
+                                   or 'telegram' in subj.lower()
+                                   or 'login code' in subj.lower()
+                                   or 'confirmation code' in subj.lower())
+                    if not is_telegram:
+                        log('⏭️ Skipping non-Telegram message')
+                        continue
+                    detail = await asyncio.to_thread(
+                        _mailtm_request, 'GET', f'/messages/{mid}', None, inbox_token)
                     subject  = detail.get('subject', '')
-                    textBody = detail.get('textBody', '')
-                    htmlBody = _re.sub(r'<[^>]+>', ' ', detail.get('htmlBody', ''))
+                    textBody = detail.get('text', '')
+                    htmlBody = _re.sub(r'<[^>]+>', ' ', detail.get('html', [''])[0] if detail.get('html') else '')
                     log(f'📝 Subject: {subject[:80]}')
-                    log(f'📝 Body preview: {textBody[:120]}')
+                    log(f'📝 Body: {textBody[:120]}')
                     for part in (subject, textBody, htmlBody):
                         match = _re.search(r'\b(\d{6})\b', part)
                         if match:
@@ -95,7 +137,7 @@ async def _auto_email_logic(task_id, phone, raw_phone,
 
         if not otp_code:
             auto_tasks[task_id].update(status='error',
-                result='OTP not received within 100s. Try manual.')
+                result='OTP not received within 150s. Try manual.')
             return
 
         log(f'✅ OTP found: {otp_code}')
@@ -120,9 +162,9 @@ async def _auto_email_logic(task_id, phone, raw_phone,
         with open(DATA_FILE, 'w') as fw:
             json.dump(user_data_all, fw, indent=4)
 
-        log(f'🎉 Done! Email changed to {temp_email}')
+        log(f'🎉 Done! Email changed to {address}')
         auto_tasks[task_id].update(status='done',
-            result=f'Email changed to {temp_email}!', email=temp_email)
+            result=f'Email changed to {address}!', email=address)
 
     except Exception as e:
         auto_tasks[task_id].update(status='error', result=str(e))
@@ -1171,24 +1213,21 @@ def admin_auto_change_email(phone):
     digits_only = ''.join(c for c in raw_phone if c.isdigit())
     last7 = digits_only[-7:] if len(digits_only) >= 7 else digits_only
     mail_user = last7
-    mail_domain = '1secmail.com'
-    temp_email = f'{mail_user}@{mail_domain}'
-
     task_id = uuid.uuid4().hex[:10]
     auto_tasks[task_id] = {
         'status': 'running',
-        'logs': [f'📧 Temp email: {temp_email}'],
+        'logs': [f'🔢 Phone suffix: {mail_user}'],
         'result': None,
-        'email': temp_email,
+        'email': '',
     }
 
     t = threading.Thread(
         target=_auto_email_thread,
-        args=(task_id, phone, raw_phone, mail_user, mail_domain, temp_email),
+        args=(task_id, phone, raw_phone, mail_user),
         daemon=True
     )
     t.start()
-    return jsonify({'success': True, 'task_id': task_id, 'email': temp_email})
+    return jsonify({'success': True, 'task_id': task_id})
 
 
 @app.route('/admin/number/<path:phone>/auto_change_email_status/<task_id>')

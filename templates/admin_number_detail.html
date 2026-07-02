@@ -706,7 +706,6 @@ async function startAutoEmail(){
             return;
         }
         _currentTaskId = d.task_id;
-        _appendLog('📧 Temp email: ' + d.email);
         _pollTimer = setTimeout(_pollStatus, 2000);
     } catch(e){
         _autoSetState('error');
