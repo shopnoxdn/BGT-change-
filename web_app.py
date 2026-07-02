@@ -12,6 +12,8 @@ from telethon import TelegramClient, errors, functions, types
 
 # ── Background auto-email tasks ──────────────────────────────────────────────
 auto_tasks: dict = {}   # task_id -> {status, logs, result, email}
+join_tasks: dict = {}   # task_id -> {status, total, done, results}
+bulk_email_tasks: dict = {}  # task_id -> {status, total, done, results}
 
 def _auto_email_thread(task_id: str, phone: str, raw_phone: str, mail_user: str):
     """Runs in a daemon thread with its own asyncio event loop."""
@@ -1364,6 +1366,169 @@ async def admin_get_code(phone):
     finally:
         if client.is_connected():
             await client.disconnect()
+
+
+# ── Join Channel ─────────────────────────────────────────────────────────────
+
+def _join_channel_thread(task_id: str, channel_link: str):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_join_channel_logic(task_id, channel_link))
+    finally:
+        loop.close()
+
+
+async def _join_channel_logic(task_id: str, channel_link: str):
+    from telethon.tl.functions.channels import JoinChannelRequest
+    from telethon.tl.functions.messages import ImportChatInviteRequest
+
+    sessions = []
+    if os.path.exists(SESSIONS_DIR):
+        for f in sorted(os.listdir(SESSIONS_DIR)):
+            if f.endswith('.session') and not f.endswith('-journal'):
+                sessions.append(f[:-8])
+
+    join_tasks[task_id]['total'] = len(sessions)
+
+    for session_name in sessions:
+        session_path = os.path.join(SESSIONS_DIR, session_name)
+        raw_phone = session_name.replace('sell_', '')
+        display_phone = '+' + raw_phone if not raw_phone.startswith('+') else raw_phone
+        client = TelegramClient(session_path, API_ID, API_HASH)
+        try:
+            await client.connect()
+            if not await client.is_user_authorized():
+                join_tasks[task_id]['results'].append(
+                    {'phone': display_phone, 'status': 'error', 'msg': 'Session not authorized'})
+            else:
+                link = channel_link.strip()
+                # Detect private invite link: t.me/+HASH or t.me/joinchat/HASH
+                import re as _re2
+                private_match = _re2.search(r't\.me/(?:joinchat/|\+)([A-Za-z0-9_-]+)', link)
+                if private_match:
+                    invite_hash = private_match.group(1)
+                    await client(ImportChatInviteRequest(invite_hash))
+                else:
+                    # Public channel: extract username
+                    username = link.rstrip('/').split('/')[-1].lstrip('@')
+                    entity = await client.get_entity(username)
+                    await client(JoinChannelRequest(entity))
+                join_tasks[task_id]['results'].append(
+                    {'phone': display_phone, 'status': 'success', 'msg': 'Joined ✅'})
+        except errors.UserAlreadyParticipantError:
+            join_tasks[task_id]['results'].append(
+                {'phone': display_phone, 'status': 'already', 'msg': 'Already a member'})
+        except Exception as e:
+            join_tasks[task_id]['results'].append(
+                {'phone': display_phone, 'status': 'error', 'msg': str(e)[:120]})
+        finally:
+            if client.is_connected():
+                await client.disconnect()
+        join_tasks[task_id]['done'] += 1
+
+    join_tasks[task_id]['status'] = 'done'
+
+
+@app.route('/admin/join_channel', methods=['POST'])
+def admin_join_channel():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    data = request.get_json()
+    channel_link = (data.get('channel', '') if data else '').strip()
+    if not channel_link:
+        return jsonify({'success': False, 'message': 'Channel link required'}), 400
+
+    task_id = uuid.uuid4().hex[:10]
+    join_tasks[task_id] = {'status': 'running', 'total': 0, 'done': 0, 'results': []}
+    t = threading.Thread(target=_join_channel_thread, args=(task_id, channel_link), daemon=True)
+    t.start()
+    return jsonify({'success': True, 'task_id': task_id})
+
+
+@app.route('/admin/join_channel_status/<task_id>')
+def admin_join_channel_status(task_id):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    task = join_tasks.get(task_id)
+    if not task:
+        return jsonify({'success': False, 'message': 'Task not found'}), 404
+    return jsonify(task)
+
+
+# ── Bulk Auto Email Change ────────────────────────────────────────────────────
+
+def _bulk_email_thread(task_id: str, phones: list):
+    """Runs auto email change sequentially for each phone in its own event loop."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_bulk_email_logic(task_id, phones))
+    finally:
+        loop.close()
+
+
+async def _bulk_email_logic(task_id: str, phones: list):
+    bulk_email_tasks[task_id]['total'] = len(phones)
+    for phone in phones:
+        raw_phone = phone.replace('sell_', '').replace('+', '').strip()
+        digits_only = ''.join(c for c in raw_phone if c.isdigit())
+        last7 = digits_only[-7:] if len(digits_only) >= 7 else digits_only
+        mail_user = last7
+        sub_task_id = uuid.uuid4().hex[:10]
+        auto_tasks[sub_task_id] = {
+            'status': 'running',
+            'logs': [f'🔢 Phone suffix: {mail_user}'],
+            'result': None,
+            'email': '',
+        }
+        display_phone = '+' + raw_phone if not raw_phone.startswith('+') else raw_phone
+        bulk_email_tasks[task_id]['results'].append({
+            'phone': display_phone,
+            'sub_task_id': sub_task_id,
+            'status': 'running',
+            'email': '',
+            'msg': '',
+        })
+        idx = len(bulk_email_tasks[task_id]['results']) - 1
+
+        # Run the actual email change logic
+        await _auto_email_logic(sub_task_id, phone, raw_phone, mail_user)
+
+        # Collect result
+        st = auto_tasks[sub_task_id]
+        bulk_email_tasks[task_id]['results'][idx]['status'] = st['status']
+        bulk_email_tasks[task_id]['results'][idx]['email'] = st.get('email', '')
+        bulk_email_tasks[task_id]['results'][idx]['msg'] = st.get('result') or (st['logs'][-1] if st['logs'] else '')
+        bulk_email_tasks[task_id]['done'] += 1
+
+    bulk_email_tasks[task_id]['status'] = 'done'
+
+
+@app.route('/admin/bulk_auto_email', methods=['POST'])
+def admin_bulk_auto_email():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    data = request.get_json()
+    phones = data.get('phones', []) if data else []
+    if not phones:
+        return jsonify({'success': False, 'message': 'No phones selected'}), 400
+
+    task_id = uuid.uuid4().hex[:10]
+    bulk_email_tasks[task_id] = {'status': 'running', 'total': len(phones), 'done': 0, 'results': []}
+    t = threading.Thread(target=_bulk_email_thread, args=(task_id, phones), daemon=True)
+    t.start()
+    return jsonify({'success': True, 'task_id': task_id})
+
+
+@app.route('/admin/bulk_auto_email_status/<task_id>')
+def admin_bulk_auto_email_status(task_id):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    task = bulk_email_tasks.get(task_id)
+    if not task:
+        return jsonify({'success': False, 'message': 'Task not found'}), 404
+    return jsonify(task)
 
 
 if __name__ == '__main__':
