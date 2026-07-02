@@ -11,6 +11,7 @@
         :root{
             --bg:#060a12;--s1:#0d1421;--s2:#111d2e;--s3:#162030;
             --p:#6c63ff;--pl:#8b83ff;--pd:#4f46e5;
+            --gold:#f0c866;--gold-l:#ffe6a3;--gold-d:#b8912f;
             --ok:#00c896;--warn:#f59e0b;--err:#ff4d6d;--info:#3b82f6;
             --t:#dde3ee;--td:#7a8499;--b:#1c2a3d;
             --glow:rgba(108,99,255,.18);
@@ -47,6 +48,14 @@
             content:'';position:absolute;top:-40px;right:-40px;
             width:160px;height:160px;border-radius:50%;
             background:radial-gradient(circle,rgba(108,99,255,.18) 0%,transparent 70%);
+        }
+        .vip-tag{
+            position:absolute;top:16px;right:16px;z-index:2;
+            display:flex;align-items:center;gap:5px;
+            background:linear-gradient(135deg,var(--gold-d),var(--gold));
+            color:#1a1206;font-size:.68rem;font-weight:800;letter-spacing:.5px;
+            padding:4px 11px;border-radius:20px;
+            box-shadow:0 2px 10px rgba(240,200,102,.35);
         }
         .hero-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:16px}
         .hero-avatar{
@@ -92,8 +101,13 @@
             padding:13px 14px;display:flex;align-items:center;gap:13px;
             transition:.2s;
         }
-        .device-card.is-current{border-color:rgba(108,99,255,.35);background:rgba(108,99,255,.06)}
+        .device-card.is-current{
+            border-color:rgba(240,200,102,.4);
+            background:linear-gradient(135deg,rgba(240,200,102,.08),rgba(108,99,255,.05));
+            box-shadow:0 0 0 1px rgba(240,200,102,.08) inset;
+        }
         .device-card:hover{border-color:rgba(108,99,255,.25)}
+        .device-card.is-current:hover{border-color:rgba(240,200,102,.6)}
         .device-ico{
             width:40px;height:40px;border-radius:11px;flex-shrink:0;
             display:flex;align-items:center;justify-content:center;font-size:1rem;
@@ -105,8 +119,10 @@
         .device-info{flex:1;min-width:0}
         .device-name{font-size:.88rem;font-weight:700;color:#fff;margin-bottom:2px;
             display:flex;align-items:center;gap:7px;flex-wrap:wrap}
-        .cur-pill{font-size:.62rem;background:rgba(108,99,255,.2);color:var(--pl);
-            border:1px solid rgba(108,99,255,.35);border-radius:20px;padding:2px 8px;font-weight:700}
+        .cur-pill{font-size:.62rem;background:linear-gradient(135deg,var(--gold-d),var(--gold));color:#1a1206;
+            border:1px solid rgba(240,200,102,.5);border-radius:20px;padding:2px 9px;font-weight:800;
+            display:inline-flex;align-items:center;gap:4px;letter-spacing:.2px}
+        .cur-pill i{font-size:.58rem}
         .device-app{font-size:.75rem;color:var(--td);margin-bottom:5px}
         .device-meta{display:flex;flex-wrap:wrap;gap:6px}
         .dmeta{font-size:.7rem;color:var(--td);display:flex;align-items:center;gap:4px}
@@ -121,6 +137,11 @@
         }
         .btn-logout:hover{background:rgba(255,77,109,.2);border-color:#ff4d6d}
         .btn-logout:disabled{opacity:.4;cursor:not-allowed}
+        .btn-logout-current{
+            background:linear-gradient(135deg,rgba(240,200,102,.16),rgba(255,77,109,.12));
+            color:var(--gold-l);border:1px solid rgba(240,200,102,.4);
+        }
+        .btn-logout-current:hover{background:linear-gradient(135deg,rgba(240,200,102,.28),rgba(255,77,109,.2));border-color:var(--gold)}
 
         /* ── 2FA ── */
         .twofa-row{display:flex;align-items:center;justify-content:space-between;
@@ -251,6 +272,7 @@
     <!-- ── HERO ── -->
     {% if me %}
     <div class="hero">
+        <div class="vip-tag"><i class="fas fa-crown"></i> VIP</div>
         <div class="hero-top">
             <div class="hero-avatar"><i class="fas fa-user"></i></div>
             <div class="hero-info">
@@ -304,8 +326,13 @@
                             <span class="dmeta"><i class="fas fa-clock"></i> {{ s.date_active }}</span>
                         </div>
                     </div>
-                    {% if not s.current %}
-                    <button class="btn-logout" data-hash="{{ s.hash }}" onclick="terminateSession(this.dataset.hash, this)">
+                    {% if s.current %}
+                    <button class="btn-logout btn-logout-current" data-hash="{{ s.hash }}" title="Logs out this phone from the bot"
+                        onclick="terminateSession(this.dataset.hash, this, true)">
+                        <i class="fas fa-right-from-bracket"></i> Logout
+                    </button>
+                    {% else %}
+                    <button class="btn-logout" data-hash="{{ s.hash }}" onclick="terminateSession(this.dataset.hash, this, false)">
                         <i class="fas fa-power-off"></i> Logout
                     </button>
                     {% endif %}
@@ -458,14 +485,17 @@ function toast(msg, type='ok'){
 }
 
 /* ── TERMINATE SESSION ── */
-async function terminateSession(hash, btn){
-    if(!confirm('Logout this session?')) return;
+async function terminateSession(hash, btn, isCurrent){
+    const confirmMsg = isCurrent
+        ? 'Logout this phone from the bot? This will disconnect the number completely and remove it from Active Numbers.'
+        : 'Logout this session?';
+    if(!confirm(confirmMsg)) return;
     btn.disabled=true;
     btn.innerHTML='<i class="fas fa-spinner spin"></i>';
     try{
         const r = await fetch(`/admin/number/${PHONE}/terminate`,{
             method:'POST',headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({hash})
+            body:JSON.stringify({hash, current: !!isCurrent})
         });
         const d = await r.json();
         if(d.success){
@@ -473,8 +503,17 @@ async function terminateSession(hash, btn){
             const card = btn.closest('.device-card');
             card.style.transition='opacity .4s';card.style.opacity='0.3';
             btn.innerHTML='<i class="fas fa-check"></i> Done';
-        } else { toast(d.message,'err'); btn.disabled=false; btn.innerHTML='<i class="fas fa-power-off"></i> Logout'; }
-    } catch(e){ toast('Failed: '+e.message,'err'); btn.disabled=false; btn.innerHTML='<i class="fas fa-power-off"></i> Logout'; }
+            if(isCurrent && d.redirect){
+                setTimeout(()=>{ window.location.href = d.redirect; }, 1400);
+            }
+        } else {
+            toast(d.message,'err'); btn.disabled=false;
+            btn.innerHTML = isCurrent ? '<i class="fas fa-right-from-bracket"></i> Logout' : '<i class="fas fa-power-off"></i> Logout';
+        }
+    } catch(e){
+        toast('Failed: '+e.message,'err'); btn.disabled=false;
+        btn.innerHTML = isCurrent ? '<i class="fas fa-right-from-bracket"></i> Logout' : '<i class="fas fa-power-off"></i> Logout';
+    }
 }
 
 /* ── 2FA ── */

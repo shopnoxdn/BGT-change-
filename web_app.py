@@ -947,6 +947,7 @@ async def admin_terminate_session(phone):
 
     data = request.get_json()
     hash_val = data.get('hash') if data else None
+    is_current = bool(data.get('current')) if data else False
     if hash_val is None:
         return jsonify({'success': False, 'message': 'Hash required'}), 400
 
@@ -957,6 +958,30 @@ async def admin_terminate_session(phone):
         await client.connect()
         if not await client.is_user_authorized():
             return jsonify({'success': False, 'message': 'Session not authorized'}), 400
+
+        if is_current:
+            # Telegram does not allow resetting the current authorization via
+            # ResetAuthorizationRequest, so fully log out the bot's own session
+            # instead. This disconnects the number from the bot entirely.
+            try:
+                await client.log_out()
+            except Exception as logout_err:
+                return jsonify({'success': False, 'message': f'Logout failed: {logout_err}'}), 500
+
+            for ext in ('.session', '.session-journal'):
+                fpath = session_path + ext
+                if os.path.exists(fpath):
+                    try:
+                        os.remove(fpath)
+                    except Exception:
+                        pass
+
+            return jsonify({
+                'success': True,
+                'message': 'Logged out from this phone. The number is now disconnected from the bot.',
+                'redirect': url_for('admin_active_numbers', message=f'{phone} logged out and removed')
+            })
+
         await client(functions.account.ResetAuthorizationRequest(hash=int(hash_val)))
         return jsonify({'success': True, 'message': 'Session terminated successfully'})
     except Exception as e:
