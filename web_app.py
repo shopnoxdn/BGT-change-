@@ -1082,15 +1082,24 @@ async def admin_get_code(phone):
         if not await client.is_user_authorized():
             return jsonify({'success': False, 'message': 'Session not authorized'}), 400
 
+        import re as _re
         # 777000 is Telegram's official service account that sends OTPs
-        messages = await client.get_messages(777000, limit=10)
+        messages = await client.get_messages(777000, limit=20)
         msgs = []
         for msg in messages:
-            if msg.message:
-                msgs.append({
-                    'text': msg.message,
-                    'date': msg.date.strftime('%Y-%m-%d %H:%M:%S') if msg.date else 'N/A'
-                })
+            text = msg.message or ''
+            # Only include login/OTP code messages, skip 2FA change notifications
+            lower = text.lower()
+            if 'login code' not in lower and 'your code' not in lower and 'verification code' not in lower:
+                continue
+            # Extract the numeric code (5-6 digits typically)
+            code_match = _re.search(r'\b(\d{5,6})\b', text)
+            code = code_match.group(1) if code_match else None
+            msgs.append({
+                'text': text,
+                'code': code,
+                'date': msg.date.strftime('%Y-%m-%d %H:%M:%S') if msg.date else 'N/A'
+            })
 
         return jsonify({'success': True, 'messages': msgs})
     except Exception as e:
