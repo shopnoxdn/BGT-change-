@@ -88833,11 +88833,13 @@
     },
     "1041119928": {
         "main_balance_usdt": 0.64,
-        "hold_balance_usdt": 0.0,
+        "hold_balance_usdt": 0.51,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 0,
-        "sold_numbers": [],
+        "accounts_sold": 1,
+        "sold_numbers": [
+            "+88019358 79089"
+        ],
         "referrer_id": null,
         "referrals": [
             "8288201947",
@@ -88859,9 +88861,17 @@
         ],
         "referral_earnings": 0.64,
         "created_at": "2026-06-25T09:16:47.413634",
-        "last_activity": "2026-06-27T20:43:32.109746",
+        "last_activity": "2026-07-02T10:36:15.103457",
         "language": null,
-        "processing_details": [],
+        "processing_details": [
+            {
+                "number": "+88019358 79089",
+                "price": 0.51,
+                "status": "Processing",
+                "timestamp": "2026-07-02T10:45:32.159944",
+                "country": "Bangladesh \ud83c\udde7\ud83c\udde9"
+            }
+        ],
         "withdrawal_processing_balance": 0.0
     },
     "8877512241": {

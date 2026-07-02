@@ -14,3 +14,5 @@ gunicorn
 psycopg2-binary
 python-telegram-bot[job-queue]
 telethon
+asgiref
+flask[async]
