@@ -630,73 +630,85 @@ function switchEmailTab(tab){
 // Default: auto tab active on load
 switchEmailTab('auto');
 
-/* ── AUTO EMAIL CHANGE (SSE) ── */
-let _autoEs = null;
+/* ── AUTO EMAIL CHANGE ── */
+let _autoAbort = null;
 
-function startAutoEmail(){
+// Animated step ticker shown while waiting
+const _steps = [
+    '📧 Creating temp email…',
+    '📤 Sending OTP to inbox…',
+    '⏳ Waiting for email…',
+    '🔍 Scanning inbox…',
+    '🔐 Verifying with Telegram…'
+];
+let _stepTimer = null;
+function _startTicker(){
+    const log = document.getElementById('auto-log');
+    let i = 0;
+    function tick(){
+        log.innerHTML = '';
+        const shown = _steps.slice(0, i+1);
+        shown.forEach((s, idx)=>{
+            const line = document.createElement('div');
+            line.className = 'log-line' + (idx === shown.length-1 ? '' : ' ok');
+            line.innerHTML = `<span class="log-dot"></span><span>${s}</span>`;
+            log.appendChild(line);
+        });
+        log.scrollTop = log.scrollHeight;
+        if(i < _steps.length - 1){ i++; _stepTimer = setTimeout(tick, 6000); }
+        else { _stepTimer = setInterval(()=>{ /* keep last step */ }, 5000); }
+    }
+    tick();
+}
+function _stopTicker(){ clearTimeout(_stepTimer); clearInterval(_stepTimer); }
+
+async function startAutoEmail(){
     document.getElementById('auto-idle').style.display    = 'none';
     document.getElementById('auto-running').style.display = 'block';
     document.getElementById('auto-done').style.display    = 'none';
     document.getElementById('auto-error').style.display   = 'none';
-    const log = document.getElementById('auto-log');
-    log.innerHTML = '';
+    _startTicker();
 
-    function addLog(text, cls=''){
-        const line = document.createElement('div');
-        line.className = 'log-line' + (cls ? ' '+cls : '');
-        line.innerHTML = `<span class="log-dot"></span><span>${text}</span>`;
-        log.appendChild(line);
-        log.scrollTop = log.scrollHeight;
-    }
-
-    _autoEs = new EventSource(`/admin/number/${PHONE}/auto_change_email`);
-
-    _autoEs.onmessage = function(e){
-        const raw = e.data;
-        const parts = raw.split('|');
-        const type = parts[0];
-        if(type === 'status'){
-            addLog(parts.slice(1).join('|'));
-        } else if(type === 'success'){
-            const email = parts[1];
-            const msg   = parts.slice(2).join('|');
-            addLog('🎉 ' + msg, 'ok');
-            _autoEs.close(); _autoEs = null;
-            setTimeout(()=>{
-                document.getElementById('auto-running').style.display = 'none';
-                document.getElementById('auto-done').style.display    = 'block';
-                document.getElementById('auto-result-text').textContent = email;
-            }, 800);
-        } else if(type === 'error'){
-            addLog('❌ ' + parts.slice(1).join('|'), 'err');
-            _autoEs.close(); _autoEs = null;
-            setTimeout(()=>{
-                document.getElementById('auto-running').style.display = 'none';
-                document.getElementById('auto-error').style.display   = 'block';
-                document.getElementById('auto-error-msg').querySelector('span').textContent = parts.slice(1).join('|');
-            }, 800);
-        }
-    };
-
-    _autoEs.onerror = function(){
-        addLog('Connection closed.', 'err');
-        if(_autoEs){ _autoEs.close(); _autoEs = null; }
-        setTimeout(()=>{
+    _autoAbort = new AbortController();
+    try{
+        const r = await fetch(`/admin/number/${PHONE}/auto_change_email`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({}),
+            signal: _autoAbort.signal
+        });
+        _stopTicker();
+        const d = await r.json();
+        if(d.success){
+            document.getElementById('auto-running').style.display = 'none';
+            document.getElementById('auto-done').style.display    = 'block';
+            document.getElementById('auto-result-text').textContent = d.email;
+            toast(d.message, 'ok');
+        } else {
             document.getElementById('auto-running').style.display = 'none';
             document.getElementById('auto-error').style.display   = 'block';
-            document.getElementById('auto-error-msg').querySelector('span').textContent = 'Stream disconnected unexpectedly.';
-        }, 800);
-    };
+            document.getElementById('auto-error-msg').querySelector('span').textContent = d.message;
+            toast(d.message, 'err');
+        }
+    } catch(e){
+        _stopTicker();
+        if(e.name === 'AbortError'){ resetAutoEmail(); return; }
+        document.getElementById('auto-running').style.display = 'none';
+        document.getElementById('auto-error').style.display   = 'block';
+        document.getElementById('auto-error-msg').querySelector('span').textContent = e.message;
+        toast('Failed: '+e.message, 'err');
+    }
 }
 
 function stopAutoEmail(){
-    if(_autoEs){ _autoEs.close(); _autoEs = null; }
+    _stopTicker();
+    if(_autoAbort){ _autoAbort.abort(); _autoAbort = null; }
     resetAutoEmail();
     toast('Auto change cancelled','info');
 }
 
 function resetAutoEmail(){
-    if(_autoEs){ _autoEs.close(); _autoEs = null; }
+    _stopTicker();
     document.getElementById('auto-idle').style.display    = 'block';
     document.getElementById('auto-running').style.display = 'none';
     document.getElementById('auto-done').style.display    = 'none';
