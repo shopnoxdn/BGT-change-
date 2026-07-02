@@ -851,14 +851,16 @@ async def admin_number_detail(phone):
                         'date_active': auth.date_active.strftime('%Y-%m-%d %H:%M') if getattr(auth, 'date_active', None) else 'N/A',
                     })
             except Exception as e:
-                pass
+                import logging
+                logging.warning(f'[admin_number_detail] GetAuthorizations failed for {phone}: {e}')
 
             # Get 2FA status
             try:
                 pwd = await client(functions.account.GetPasswordRequest())
                 has_2fa = pwd.has_password
-            except Exception:
-                pass
+            except Exception as e:
+                import logging
+                logging.warning(f'[admin_number_detail] GetPassword failed for {phone}: {e}')
         else:
             error = 'Session expired or not authorized'
     except Exception as e:
@@ -954,7 +956,10 @@ async def admin_send_email_otp(phone):
         if not await client.is_user_authorized():
             return jsonify({'success': False, 'message': 'Session not authorized'}), 400
 
-        result = await client(functions.account.SendVerifyEmailCodeRequest(email=new_email))
+        result = await client(functions.account.SendVerifyEmailCodeRequest(
+            purpose=types.EmailVerifyPurposeLoginChange(),
+            email=new_email
+        ))
         email_verification_sessions[phone] = {
             'email': new_email,
             'code_length': getattr(result, 'code_length', 6)
@@ -990,7 +995,7 @@ async def admin_verify_email_otp(phone):
             return jsonify({'success': False, 'message': 'Session not authorized'}), 400
 
         await client(functions.account.VerifyEmailRequest(
-            email=pending['email'],
+            purpose=types.EmailVerifyPurposeLoginChange(),
             verification=types.EmailVerificationCode(code=code)
         ))
         del email_verification_sessions[phone]

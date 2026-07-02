@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Number Detail - Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0e17; --surface: #111827; --surface-2: #1a2332;
+            --primary: #6366f1; --primary-light: #818cf8;
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --info: #3b82f6; --text: #e2e8f0; --text-dim: #94a3b8;
+            --border: #1e293b; --glow: rgba(99,102,241,0.15);
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        .navbar {
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            padding: 16px 24px; display: flex; align-items: center;
+            justify-content: space-between; position: sticky; top: 0; z-index: 100;
+        }
+        .navbar-brand { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #fff; }
+        .navbar-brand i { color: var(--primary); }
+        .navbar-actions { display: flex; gap: 10px; }
+        .navbar-actions a {
+            color: var(--text-dim); text-decoration: none; font-size: 0.85rem;
+            padding: 8px 16px; border-radius: 8px; transition: all 0.2s;
+        }
+        .navbar-actions a:hover { background: var(--surface-2); color: #fff; }
+        .container { max-width: 900px; margin: 0 auto; padding: 24px; }
+
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 20px; }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+        .card-title { font-size: 1rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .card-title i { color: var(--primary-light); }
+
+        /* Account Info */
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+        .info-item { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+        .info-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        .info-value { font-size: 0.95rem; color: #fff; font-weight: 600; word-break: break-all; }
+
+        /* Sessions */
+        .session-item {
+            background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 16px; margin-bottom: 10px; display: flex; align-items: flex-start;
+            justify-content: space-between; gap: 12px;
+        }
+        .session-item.current { border-color: rgba(99,102,241,0.4); background: rgba(99,102,241,0.05); }
+        .session-left { flex: 1; min-width: 0; }
+        .session-device { font-size: 0.95rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .session-device .current-badge { font-size: 0.7rem; background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); border-radius: 20px; padding: 2px 8px; font-weight: 600; }
+        .session-meta { font-size: 0.78rem; color: var(--text-dim); display: flex; flex-wrap: wrap; gap: 8px; }
+        .session-meta span { display: flex; align-items: center; gap: 4px; }
+        .btn-terminate {
+            padding: 8px 14px; background: rgba(239,68,68,0.1); color: #f87171;
+            border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; cursor: pointer;
+            font-size: 0.8rem; font-weight: 600; font-family: 'Inter', sans-serif;
+            transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 6px;
+            flex-shrink: 0;
+        }
+        .btn-terminate:hover { background: rgba(239,68,68,0.2); border-color: #ef4444; }
+        .btn-terminate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* 2FA */
+        .twofa-status {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px; background: var(--bg); border: 1px solid var(--border);
+            border-radius: 12px; margin-bottom: 16px;
+        }
+        .twofa-left { display: flex; align-items: center; gap: 12px; }
+        .twofa-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .twofa-icon.on { background: rgba(16,185,129,0.15); color: #34d399; }
+        .twofa-icon.off { background: rgba(148,163,184,0.1); color: var(--text-dim); }
+        .twofa-label { font-weight: 600; color: #fff; }
+        .twofa-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+        .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+        .status-dot.on { background: #10b981; }
+        .status-dot.off { background: var(--text-dim); }
+
+        /* Forms */
+        .form-group { margin-bottom: 14px; }
+        .form-label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 6px; font-weight: 500; }
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border);
+            color: #fff; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem;
+            transition: border-color 0.2s; outline: none;
+        }
+        input:focus { border-color: var(--primary); }
+        input::placeholder { color: var(--text-dim); }
+
+        .btn { padding: 11px 20px; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-info { background: var(--info); color: #fff; }
+        .btn-info:hover { background: #2563eb; }
+        .btn-warning { background: var(--warning); color: #000; }
+        .btn-warning:hover { background: #d97706; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn-full { width: 100%; justify-content: center; }
+
+        /* Get Code */
+        .code-box { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+        .code-msg { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+        .code-msg:last-child { border-bottom: none; }
+        .code-msg-date { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 6px; }
+        .code-msg-text { font-size: 0.9rem; color: #fff; line-height: 1.5; white-space: pre-wrap; }
+        .otp-highlight { display: inline-block; background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.4); border-radius: 6px; padding: 2px 8px; font-size: 1.1rem; font-weight: 800; letter-spacing: 2px; }
+
+        /* Alert */
+        .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 0.9rem; font-weight: 500; display: flex; align-items: flex-start; gap: 10px; }
+        .alert-danger { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .alert-success { background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+        .alert-info { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+
+        /* Toast */
+        #toast {
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            padding: 14px 20px; border-radius: 12px; font-size: 0.9rem; font-weight: 600;
+            display: none; align-items: center; gap: 10px; max-width: 360px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4); animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { transform: translateX(100px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-success { background: #064e3b; color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+        .toast-error { background: #450a0a; color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+        .toast-info { background: #1e3a5f; color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+
+        /* Divider */
+        .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+        /* Loading spinner */
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .two-col-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 600px) { .two-col-form { grid-template-columns: 1fr; } }
+
+        .empty-sessions { text-align: center; padding: 30px; color: var(--text-dim); }
+        .empty-sessions i { font-size: 2rem; margin-bottom: 10px; display: block; }
+
+        /* Section label */
+        .section-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 4px 10px; border-radius: 20px; }
+        .tag-blue { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .tag-green { background: rgba(16,185,129,0.15); color: #34d399; }
+        .tag-purple { background: rgba(99,102,241,0.15); color: #818cf8; }
+        .tag-yellow { background: rgba(245,158,11,0.15); color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-sim-card"></i> {{ phone }}
+        </div>
+        <div class="navbar-actions">
+            <a href="/admin/active_numbers"><i class="fas fa-arrow-left"></i> Back</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div id="toast"></div>
+
+    <div class="container">
+
+        {% if error %}
+        <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+        {% endif %}
+
+        <!-- Account Info -->
+        {% if me %}
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-user-circle"></i> Account Info</div>
+                <span class="section-tag tag-purple"><i class="fas fa-telegram"></i> Telegram</span>
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Phone</div>
+                    <div class="info-value">+{{ me.phone }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">User ID</div>
+                    <div class="info-value">{{ me.id }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Name</div>
+                    <div class="info-value">{{ me.first_name }} {{ me.last_name }}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Username</div>
+                    <div class="info-value">{{ '@' + me.username if me.username else '—' }}</div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Active Sessions -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-mobile-screen-button"></i> Active Sessions</div>
+                <span class="section-tag tag-blue">{{ sessions|length }} device{{ 's' if sessions|length != 1 else '' }}</span>
+            </div>
+
+            {% if sessions %}
+            {% for s in sessions %}
+            <div class="session-item{% if s.current %} current{% endif %}">
+                <div class="session-left">
+                    <div class="session-device">
+                        <i class="fas fa-{% if 'iPhone' in s.device or 'iOS' in s.platform %}apple{% elif 'Android' in s.platform %}android{% elif 'Windows' in s.platform %}windows{% else %}desktop{% endif %}"></i>
+                        {{ s.device or 'Unknown Device' }}
+                        {% if s.current %}<span class="current-badge">Current</span>{% endif %}
+                    </div>
+                    <div class="session-meta">
+                        <span><i class="fas fa-layers"></i> {{ s.app_name or 'Unknown App' }}</span>
+                        {% if s.ip %}<span><i class="fas fa-network-wired"></i> {{ s.ip }}</span>{% endif %}
+                        {% if s.country %}<span><i class="fas fa-location-dot"></i> {{ s.country }}{% if s.region %}, {{ s.region }}{% endif %}</span>{% endif %}
+                        <span><i class="fas fa-clock"></i> Active: {{ s.date_active }}</span>
+                        <span><i class="fas fa-calendar"></i> Created: {{ s.date_created }}</span>
+                    </div>
+                </div>
+                {% if not s.current %}
+                <button class="btn-terminate" data-hash="{{ s.hash }}" onclick="terminateSession(this.dataset.hash, this)">
+                    <i class="fas fa-power-off"></i> Logout
+                </button>
+                {% else %}
+                <span style="font-size:0.75rem; color: var(--text-dim); white-space:nowrap;"><i class="fas fa-lock"></i> This session</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="empty-sessions">
+                <i class="fas fa-inbox"></i>
+                <p>No active sessions found</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 2FA Toggle -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-shield-halved"></i> Two-Factor Authentication</div>
+                <span class="section-tag {% if has_2fa %}tag-green{% else %}tag-yellow{% endif %}">
+                    <span class="status-dot {% if has_2fa %}on{% else %}off{% endif %}"></span>
+                    {% if has_2fa %}Enabled{% else %}Disabled{% endif %}
+                </span>
+            </div>
+
+            <div class="twofa-status">
+                <div class="twofa-left">
+                    <div class="twofa-icon {% if has_2fa %}on{% else %}off{% endif %}">
+                        <i class="fas fa-{% if has_2fa %}lock{% else %}lock-open{% endif %}"></i>
+                    </div>
+                    <div>
+                        <div class="twofa-label">2FA is currently <strong>{% if has_2fa %}ON{% else %}OFF{% endif %}</strong></div>
+                        <div class="twofa-sub">{% if has_2fa %}Account is protected with a password{% else %}No password protection active{% endif %}</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if has_2fa %}
+            <!-- Disable 2FA -->
+            <div id="disable-2fa-form">
+                <div class="form-group">
+                    <label class="form-label">Current 2FA Password</label>
+                    <input type="password" id="current-password" placeholder="Enter current password to disable 2FA...">
+                </div>
+                <button class="btn btn-danger" onclick="toggle2FA('disable')">
+                    <i class="fas fa-lock-open"></i> Disable 2FA
+                </button>
+            </div>
+            {% else %}
+            <!-- Enable 2FA -->
+            <div id="enable-2fa-form">
+                <div class="two-col-form">
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" id="new-password" placeholder="Set a new password...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hint (optional)</label>
+                        <input type="text" id="password-hint" placeholder="Password hint...">
+                    </div>
+                </div>
+                <button class="btn btn-success" onclick="toggle2FA('enable')">
+                    <i class="fas fa-lock"></i> Enable 2FA
+                </button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Email Change -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-envelope"></i> Change Linked Email</div>
+                <span class="section-tag tag-purple">OTP Verification</span>
+            </div>
+
+            <div id="email-step-1">
+                <div class="form-group">
+                    <label class="form-label">New Email Address</label>
+                    <input type="email" id="new-email" placeholder="Enter new email address...">
+                </div>
+                <button class="btn btn-primary" id="send-email-otp-btn" onclick="sendEmailOTP()">
+                    <i class="fas fa-paper-plane"></i> Send OTP to Email
+                </button>
+            </div>
+
+            <div id="email-step-2" style="display:none;">
+                <div class="alert alert-info" id="email-otp-info">
+                    <i class="fas fa-envelope-open-text"></i> OTP sent! Check your email inbox.
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Enter OTP Code</label>
+                    <input type="text" id="email-otp-code" placeholder="Enter the OTP code..." maxlength="10" style="letter-spacing: 3px; font-size: 1.1rem; font-weight: 700; text-align:center;">
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-success" onclick="verifyEmailOTP()">
+                        <i class="fas fa-check"></i> Verify & Change Email
+                    </button>
+                    <button class="btn" style="background: var(--surface-2); color: var(--text-dim);" onclick="resetEmailForm()">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Get Code (Telegram OTP) -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-key"></i> Get Telegram Codes</div>
+                <span class="section-tag tag-yellow"><i class="fas fa-telegram"></i> From Telegram Official</span>
+            </div>
+            <p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: 16px;">
+                Shows the latest OTP/login codes sent by Telegram to this number. Use these codes to log in on another device.
+            </p>
+            <button class="btn btn-warning" id="get-code-btn" onclick="getCode()">
+                <i class="fas fa-download"></i> Get Latest Codes
+            </button>
+
+            <div id="codes-container" style="margin-top: 16px; display:none;">
+                <div class="code-box" id="codes-list"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const PHONE = {{ phone | tojson }};
+
+        function showToast(msg, type='success') {
+            const t = document.getElementById('toast');
+            t.className = 'toast-' + type;
+            t.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':'info-circle'}"></i> ${msg}`;
+            t.style.display = 'flex';
+            clearTimeout(t._timer);
+            t._timer = setTimeout(() => { t.style.display = 'none'; }, 4000);
+        }
+
+        async function terminateSession(hash, btn) {
+            if (!confirm('Logout this session?')) return;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner spin"></i> Logging out...';
+            try {
+                const r = await fetch(`/admin/number/${PHONE}/terminate`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({hash: hash})
+                });
+                const d = await r.json();
+                if (d.success) {
+                    showToast(d.message, 'success');
+                    btn.closest('.session-item').style.opacity = '0.4';
+                    btn.innerHTML = '<i class="fas fa-check"></i> Done';
+                } else {
+                    showToast(d.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-power-off"></i> Logout';
+                }
+            } catch(e) {
+                showToast('Request failed: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-power-off"></i> Logout';
+            }
+        }
+
+        async function toggle2FA(action) {
+            let body = {action};
+            if (action === 'disable') {
+                const p = document.getElementById('current-password').value.trim();
+                if (!p) { showToast('Please enter the current password', 'error'); return; }
+                body.password = p;
+            } else {
+                const np = document.getElementById('new-password').value.trim();
+                const hint = document.getElementById('password-hint').value.trim();
+                if (!np) { showToast('Please enter a new password', 'error'); return; }
+                body.new_password = np;
+                body.hint = hint;
+            }
+            showToast('Processing...', 'info');
+            try {
+                const r = await fetch(`/admin/number/${PHONE}/toggle_2fa`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                });
+                const d = await r.json();
+                if (d.success) {
+                    showToast(d.message, 'success');
+                    setTimeout(() => location.reload(), 1800);
+                } else {
+                    showToast(d.message, 'error');
+                }
+            } catch(e) {
+                showToast('Request failed: ' + e.message, 'error');
+            }
+        }
+
+        async function sendEmailOTP() {
+            const email = document.getElementById('new-email').value.trim();
+            if (!email) { showToast('Please enter an email address', 'error'); return; }
+            const btn = document.getElementById('send-email-otp-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner spin"></i> Sending...';
+            try {
+                const r = await fetch(`/admin/number/${PHONE}/send_email_otp`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({email})
+                });
+                const d = await r.json();
+                if (d.success) {
+                    document.getElementById('email-otp-info').innerHTML = `<i class="fas fa-envelope-open-text"></i> OTP sent to <strong>${email}</strong>. Check your inbox.`;
+                    document.getElementById('email-step-1').style.display = 'none';
+                    document.getElementById('email-step-2').style.display = 'block';
+                    showToast(d.message, 'success');
+                } else {
+                    showToast(d.message, 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP to Email';
+                }
+            } catch(e) {
+                showToast('Request failed: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP to Email';
+            }
+        }
+
+        async function verifyEmailOTP() {
+            const code = document.getElementById('email-otp-code').value.trim();
+            if (!code) { showToast('Please enter the OTP code', 'error'); return; }
+            showToast('Verifying...', 'info');
+            try {
+                const r = await fetch(`/admin/number/${PHONE}/verify_email_otp`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({code})
+                });
+                const d = await r.json();
+                if (d.success) {
+                    showToast(d.message, 'success');
+                    document.getElementById('email-step-2').style.display = 'none';
+                    document.getElementById('email-step-1').style.display = 'block';
+                    document.getElementById('new-email').value = '';
+                    document.getElementById('send-email-otp-btn').disabled = false;
+                    document.getElementById('send-email-otp-btn').innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP to Email';
+                } else {
+                    showToast(d.message, 'error');
+                }
+            } catch(e) {
+                showToast('Request failed: ' + e.message, 'error');
+            }
+        }
+
+        function resetEmailForm() {
+            document.getElementById('email-step-2').style.display = 'none';
+            document.getElementById('email-step-1').style.display = 'block';
+            document.getElementById('send-email-otp-btn').disabled = false;
+            document.getElementById('send-email-otp-btn').innerHTML = '<i class="fas fa-paper-plane"></i> Send OTP to Email';
+        }
+
+        async function getCode() {
+            const btn = document.getElementById('get-code-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner spin"></i> Loading...';
+            try {
+                const r = await fetch(`/admin/number/${PHONE}/get_code`);
+                const d = await r.json();
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-refresh"></i> Refresh Codes';
+                const container = document.getElementById('codes-container');
+                const list = document.getElementById('codes-list');
+                if (d.success) {
+                    if (d.messages && d.messages.length > 0) {
+                        list.innerHTML = d.messages.map(m => {
+                            // Try to highlight OTP codes (4-8 digit numbers)
+                            const highlighted = m.text.replace(/\b(\d{4,8})\b/g, '<span class="otp-highlight">$1</span>');
+                            return `<div class="code-msg">
+                                <div class="code-msg-date"><i class="fas fa-clock"></i> ${m.date}</div>
+                                <div class="code-msg-text">${highlighted}</div>
+                            </div>`;
+                        }).join('');
+                        container.style.display = 'block';
+                    } else {
+                        list.innerHTML = '<div class="code-msg"><div class="code-msg-text" style="color: var(--text-dim);">No messages from Telegram found.</div></div>';
+                        container.style.display = 'block';
+                    }
+                } else {
+                    showToast(d.message, 'error');
+                }
+            } catch(e) {
+                showToast('Request failed: ' + e.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-download"></i> Get Latest Codes';
+            }
+        }
+    </script>
+</body>
+</html>
