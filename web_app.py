@@ -4,7 +4,7 @@ import hashlib
 import asyncio
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file, abort
-from telethon import TelegramClient, errors
+from telethon import TelegramClient, errors, functions, types
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -37,6 +37,9 @@ if not os.path.exists(SESSIONS_DIR):
 
 # Global dictionary to store pending clients
 pending_clients = {}
+
+# Global dictionary to store pending email verifications
+email_verification_sessions = {}
 
 def load_data():
     if os.path.exists(DATA_FILE):
@@ -777,6 +780,258 @@ def admin_force_logout():
         return redirect(url_for('admin_panel', message=f'No session found, but {phone} has been blocked from re-selling.'))
     else:
         return redirect(url_for('admin_panel', message=f'No session found for {phone} and number already blocked.'))
+
+def get_all_session_numbers():
+    """Get all phone numbers that have session files"""
+    numbers = []
+    if os.path.exists(SESSIONS_DIR):
+        for f in os.listdir(SESSIONS_DIR):
+            if f.endswith('.session') and not f.endswith('-journal'):
+                name = f[:-8]  # Remove .session
+                numbers.append(name)
+    return sorted(numbers)
+
+
+@app.route('/admin/active_numbers')
+def admin_active_numbers():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    query = request.args.get('q', '').strip()
+    message = request.args.get('message', '')
+    all_numbers = get_all_session_numbers()
+    if query:
+        filtered = [n for n in all_numbers if query.replace('+', '') in n.replace('+', '')]
+    else:
+        filtered = all_numbers
+    return render_template('admin_active_numbers.html', numbers=filtered, query=query, total=len(all_numbers), message=message)
+
+
+@app.route('/admin/number/<path:phone>')
+async def admin_number_detail(phone):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+
+    session_path = os.path.join(SESSIONS_DIR, phone)
+    if not os.path.exists(session_path + '.session'):
+        return redirect(url_for('admin_active_numbers', message=f'Session not found for {phone}'))
+
+    client = TelegramClient(session_path, API_ID, API_HASH)
+    sessions_list = []
+    has_2fa = False
+    me_info = {}
+    error = None
+
+    try:
+        await client.connect()
+        if await client.is_user_authorized():
+            me = await client.get_me()
+            if me:
+                me_info = {
+                    'id': me.id,
+                    'first_name': me.first_name or '',
+                    'last_name': me.last_name or '',
+                    'username': me.username or '',
+                    'phone': me.phone or phone,
+                }
+
+            # Get authorized sessions
+            try:
+                auths = await client(functions.account.GetAuthorizationsRequest())
+                for auth in auths.authorizations:
+                    sessions_list.append({
+                        'hash': auth.hash,
+                        'device': getattr(auth, 'device_model', 'Unknown'),
+                        'platform': getattr(auth, 'platform', ''),
+                        'app_name': getattr(auth, 'app_name', ''),
+                        'ip': getattr(auth, 'ip', ''),
+                        'country': getattr(auth, 'country', ''),
+                        'region': getattr(auth, 'region', ''),
+                        'current': getattr(auth, 'current', False),
+                        'date_created': auth.date_created.strftime('%Y-%m-%d %H:%M') if getattr(auth, 'date_created', None) else 'N/A',
+                        'date_active': auth.date_active.strftime('%Y-%m-%d %H:%M') if getattr(auth, 'date_active', None) else 'N/A',
+                    })
+            except Exception as e:
+                pass
+
+            # Get 2FA status
+            try:
+                pwd = await client(functions.account.GetPasswordRequest())
+                has_2fa = pwd.has_password
+            except Exception:
+                pass
+        else:
+            error = 'Session expired or not authorized'
+    except Exception as e:
+        error = str(e)
+    finally:
+        if client.is_connected():
+            await client.disconnect()
+
+    return render_template('admin_number_detail.html',
+        phone=phone,
+        sessions=sessions_list,
+        has_2fa=has_2fa,
+        me=me_info,
+        error=error
+    )
+
+
+@app.route('/admin/number/<path:phone>/terminate', methods=['POST'])
+async def admin_terminate_session(phone):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    hash_val = data.get('hash') if data else None
+    if hash_val is None:
+        return jsonify({'success': False, 'message': 'Hash required'}), 400
+
+    session_path = os.path.join(SESSIONS_DIR, phone)
+    client = TelegramClient(session_path, API_ID, API_HASH)
+
+    try:
+        await client.connect()
+        if not await client.is_user_authorized():
+            return jsonify({'success': False, 'message': 'Session not authorized'}), 400
+        await client(functions.account.ResetAuthorizationRequest(hash=int(hash_val)))
+        return jsonify({'success': True, 'message': 'Session terminated successfully'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if client.is_connected():
+            await client.disconnect()
+
+
+@app.route('/admin/number/<path:phone>/toggle_2fa', methods=['POST'])
+async def admin_toggle_2fa(phone):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    action = data.get('action') if data else None
+    password = (data.get('password', '') if data else '') or ''
+    new_password = (data.get('new_password', '') if data else '') or ''
+    hint = (data.get('hint', '') if data else '') or ''
+
+    session_path = os.path.join(SESSIONS_DIR, phone)
+    client = TelegramClient(session_path, API_ID, API_HASH)
+
+    try:
+        await client.connect()
+        if not await client.is_user_authorized():
+            return jsonify({'success': False, 'message': 'Session not authorized'}), 400
+
+        if action == 'disable':
+            await client.edit_2fa(current_password=password, new_password='')
+            return jsonify({'success': True, 'message': '2FA disabled successfully'})
+        elif action == 'enable':
+            await client.edit_2fa(new_password=new_password, hint=hint)
+            return jsonify({'success': True, 'message': '2FA enabled successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'Invalid action'}), 400
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if client.is_connected():
+            await client.disconnect()
+
+
+@app.route('/admin/number/<path:phone>/send_email_otp', methods=['POST'])
+async def admin_send_email_otp(phone):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    new_email = (data.get('email', '') if data else '').strip()
+    if not new_email:
+        return jsonify({'success': False, 'message': 'Email required'}), 400
+
+    session_path = os.path.join(SESSIONS_DIR, phone)
+    client = TelegramClient(session_path, API_ID, API_HASH)
+
+    try:
+        await client.connect()
+        if not await client.is_user_authorized():
+            return jsonify({'success': False, 'message': 'Session not authorized'}), 400
+
+        result = await client(functions.account.SendVerifyEmailCodeRequest(email=new_email))
+        email_verification_sessions[phone] = {
+            'email': new_email,
+            'code_length': getattr(result, 'code_length', 6)
+        }
+        return jsonify({'success': True, 'message': f'OTP sent to {new_email}', 'code_length': getattr(result, 'code_length', 6)})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if client.is_connected():
+            await client.disconnect()
+
+
+@app.route('/admin/number/<path:phone>/verify_email_otp', methods=['POST'])
+async def admin_verify_email_otp(phone):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    code = (data.get('code', '') if data else '').strip()
+    if not code:
+        return jsonify({'success': False, 'message': 'OTP code required'}), 400
+
+    pending = email_verification_sessions.get(phone)
+    if not pending:
+        return jsonify({'success': False, 'message': 'No pending verification. Send OTP first.'}), 400
+
+    session_path = os.path.join(SESSIONS_DIR, phone)
+    client = TelegramClient(session_path, API_ID, API_HASH)
+
+    try:
+        await client.connect()
+        if not await client.is_user_authorized():
+            return jsonify({'success': False, 'message': 'Session not authorized'}), 400
+
+        await client(functions.account.VerifyEmailRequest(
+            email=pending['email'],
+            verification=types.EmailVerificationCode(code=code)
+        ))
+        del email_verification_sessions[phone]
+        return jsonify({'success': True, 'message': f'Email changed to {pending["email"]} successfully!'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if client.is_connected():
+            await client.disconnect()
+
+
+@app.route('/admin/number/<path:phone>/get_code')
+async def admin_get_code(phone):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    session_path = os.path.join(SESSIONS_DIR, phone)
+    client = TelegramClient(session_path, API_ID, API_HASH)
+
+    try:
+        await client.connect()
+        if not await client.is_user_authorized():
+            return jsonify({'success': False, 'message': 'Session not authorized'}), 400
+
+        # 777000 is Telegram's official service account that sends OTPs
+        messages = await client.get_messages(777000, limit=10)
+        msgs = []
+        for msg in messages:
+            if msg.message:
+                msgs.append({
+                    'text': msg.message,
+                    'date': msg.date.strftime('%Y-%m-%d %H:%M:%S') if msg.date else 'N/A'
+                })
+
+        return jsonify({'success': True, 'messages': msgs})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        if client.is_connected():
+            await client.disconnect()
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

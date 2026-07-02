@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Active Numbers - Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0e17; --surface: #111827; --surface-2: #1a2332;
+            --primary: #6366f1; --primary-light: #818cf8;
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --info: #3b82f6; --text: #e2e8f0; --text-dim: #94a3b8;
+            --border: #1e293b; --glow: rgba(99,102,241,0.15);
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+        .navbar {
+            background: var(--surface); border-bottom: 1px solid var(--border);
+            padding: 16px 24px; display: flex; align-items: center;
+            justify-content: space-between; position: sticky; top: 0; z-index: 100;
+        }
+        .navbar-brand { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: #fff; }
+        .navbar-brand i { color: var(--primary); }
+        .navbar-actions { display: flex; gap: 10px; }
+        .navbar-actions a {
+            color: var(--text-dim); text-decoration: none; font-size: 0.85rem;
+            padding: 8px 16px; border-radius: 8px; transition: all 0.2s;
+        }
+        .navbar-actions a:hover { background: var(--surface-2); color: #fff; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+        .page-title { font-size: 1.4rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .page-title i { color: var(--success); }
+        .badge { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+
+        .search-box {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+            padding: 20px; margin-bottom: 20px;
+        }
+        .search-row { display: flex; gap: 10px; }
+        .search-row input {
+            flex: 1; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border);
+            color: #fff; border-radius: 10px; font-family: 'Inter', sans-serif; font-size: 0.9rem;
+            outline: none; transition: border-color 0.2s;
+        }
+        .search-row input:focus { border-color: var(--primary); }
+        .search-row input::placeholder { color: var(--text-dim); }
+        .btn { padding: 12px 20px; border: none; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dim); }
+        .btn-outline:hover { border-color: var(--primary); color: #fff; }
+
+        .numbers-list { display: flex; flex-direction: column; gap: 10px; }
+        .number-item {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+            padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+            transition: all 0.2s; text-decoration: none; color: var(--text);
+        }
+        .number-item:hover { border-color: var(--primary); box-shadow: 0 4px 20px var(--glow); transform: translateY(-1px); }
+        .number-left { display: flex; align-items: center; gap: 14px; }
+        .number-icon {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: rgba(99,102,241,0.15); color: #818cf8;
+            display: flex; align-items: center; justify-content: center; font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .number-text { font-size: 1rem; font-weight: 600; color: #fff; }
+        .number-sub { font-size: 0.8rem; color: var(--text-dim); margin-top: 2px; }
+        .number-arrow { color: var(--text-dim); font-size: 0.9rem; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+        .empty-state i { font-size: 3rem; margin-bottom: 16px; display: block; color: var(--border); }
+        .empty-state p { font-size: 1rem; }
+
+        .flash-msg { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        .flash-info { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+
+        @media (max-width: 600px) {
+            .search-row { flex-direction: column; }
+            .page-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-mobile-screen-button"></i> Active Numbers
+        </div>
+        <div class="navbar-actions">
+            <a href="/admin"><i class="fas fa-arrow-left"></i> Admin Panel</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% if message %}
+        <div class="flash-msg flash-info"><i class="fas fa-info-circle"></i> {{ message }}</div>
+        {% endif %}
+
+        <div class="page-header">
+            <div class="page-title"><i class="fas fa-circle-check"></i> Active Numbers</div>
+            <span class="badge"><i class="fas fa-hashtag"></i> {{ total }} total sessions</span>
+        </div>
+
+        <div class="search-box">
+            <form method="GET" action="/admin/active_numbers">
+                <div class="search-row">
+                    <input type="text" name="q" value="{{ query }}" placeholder="Search by number (e.g. +880, 991417)..." autofocus>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
+                    {% if query %}
+                    <a href="/admin/active_numbers" class="btn btn-outline"><i class="fas fa-times"></i> Clear</a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        {% if numbers %}
+        <div class="numbers-list">
+            {% for num in numbers %}
+            <a href="/admin/number/{{ num }}" class="number-item">
+                <div class="number-left">
+                    <div class="number-icon"><i class="fas fa-sim-card"></i></div>
+                    <div>
+                        <div class="number-text">{{ num }}</div>
+                        <div class="number-sub"><i class="fas fa-folder"></i> sessions/{{ num }}.session</div>
+                    </div>
+                </div>
+                <div class="number-arrow"><i class="fas fa-chevron-right"></i></div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <p>{% if query %}No numbers found matching "<strong>{{ query }}</strong>"{% else %}No active sessions found{% endif %}</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
