@@ -45,7 +45,7 @@
         }
 
         /* Search */
-        .search-wrap { margin-bottom: 18px; }
+        .search-wrap { margin-bottom: 14px; }
         .search-inner { display: flex; gap: 8px; }
         .search-input {
             flex: 1; padding: 11px 16px; background: var(--surface);
@@ -71,15 +71,34 @@
         }
         .btn-clear:hover { border-color: var(--danger); color: #f87171; }
 
+        /* Bulk Actions Bar */
+        .bulk-bar {
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+            padding: 12px 16px; background: var(--surface); border: 1px solid var(--border);
+            border-radius: 14px; margin-bottom: 14px;
+        }
+        .bulk-bar label { font-size: 0.85rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+        .bulk-bar label input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
+        .bulk-count { font-size: 0.82rem; color: #818cf8; font-weight: 700; }
+        .bulk-actions { margin-left: auto; display: flex; gap: 8px; }
+        .btn-bulk-email {
+            padding: 9px 18px; background: var(--success); color: #fff;
+            border: none; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
+            cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
+            display: flex; align-items: center; gap: 7px;
+        }
+        .btn-bulk-email:hover { background: #059669; }
+        .btn-bulk-email:disabled { opacity: 0.5; cursor: not-allowed; }
+
         /* Number Cards */
         .numbers-list { display: flex; flex-direction: column; gap: 10px; }
 
         .number-card {
             background: var(--surface); border: 1px solid var(--border);
             border-radius: 16px; padding: 16px 18px;
-            text-decoration: none; color: var(--text);
-            transition: all 0.22s ease; display: block;
+            color: var(--text); transition: all 0.22s ease;
             position: relative; overflow: hidden;
+            display: flex; align-items: flex-start; gap: 14px;
         }
         .number-card::before {
             content: ''; position: absolute; left: 0; top: 0; bottom: 0;
@@ -88,7 +107,17 @@
         }
         .number-card:hover { border-color: rgba(99,102,241,0.4); box-shadow: 0 4px 24px var(--glow); transform: translateY(-1px); }
         .number-card:hover::before { opacity: 1; }
+        .number-card.selected { border-color: rgba(99,102,241,0.5); background: rgba(99,102,241,0.05); }
 
+        /* Checkbox inside card */
+        .card-check { padding-top: 2px; flex-shrink: 0; }
+        .card-check input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+
+        /* Card body (link portion) */
+        .card-body-link {
+            flex: 1; text-decoration: none; color: inherit;
+            display: block;
+        }
         .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
         .card-left { display: flex; align-items: center; gap: 13px; }
 
@@ -144,9 +173,51 @@
         .flash-msg { padding: 11px 16px; border-radius: 10px; margin-bottom: 14px; font-size: 0.88rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
         .flash-info { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
 
+        /* Bulk Email Modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 200;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 20px; padding: 28px; width: 100%; max-width: 560px;
+            max-height: 88vh; overflow-y: auto; margin: 16px;
+        }
+        .modal-title {
+            font-size: 1.05rem; font-weight: 800; color: #fff;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+        }
+        .modal-title i { color: #10b981; }
+        .progress-bar-wrap { height: 8px; background: var(--surface-2); border-radius: 8px; overflow: hidden; margin-bottom: 6px; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg,#6366f1,#10b981); border-radius: 8px; transition: width 0.4s; }
+        .progress-label { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 16px; }
+        .result-row {
+            display: flex; align-items: flex-start; gap: 10px;
+            padding: 10px 14px; border-radius: 12px; background: var(--surface-2);
+            border: 1px solid var(--border); margin-bottom: 8px;
+        }
+        .result-row .r-icon { font-size: 0.9rem; padding-top: 2px; flex-shrink: 0; }
+        .result-row .r-phone { font-size: 0.88rem; font-weight: 700; color: #fff; }
+        .result-row .r-email { font-size: 0.78rem; color: #818cf8; margin-top: 2px; }
+        .result-row .r-msg { font-size: 0.78rem; margin-top: 2px; }
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .modal-close-btn {
+            width: 100%; margin-top: 16px; padding: 11px;
+            background: var(--surface-2); border: 1px solid var(--border);
+            color: var(--text); border-radius: 12px; font-weight: 600;
+            font-size: 0.9rem; cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+        .modal-close-btn:hover { border-color: var(--primary); color: #fff; }
+
         @media (max-width: 480px) {
             .phone-number { font-size: 0.95rem; }
             .card-meta { gap: 6px; }
+            .bulk-actions { margin-left: 0; width: 100%; }
+            .btn-bulk-email { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -188,51 +259,72 @@
         </div>
 
         {% if numbers %}
-        <div class="numbers-list">
+        <!-- Bulk actions bar -->
+        <div class="bulk-bar">
+            <label>
+                <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+                Select All
+            </label>
+            <span class="bulk-count" id="sel-count" style="display:none;">0 selected</span>
+            <div class="bulk-actions">
+                <button class="btn-bulk-email" id="bulk-email-btn" disabled onclick="startBulkEmail()">
+                    <i class="fas fa-envelope"></i> Change Email (Selected)
+                </button>
+            </div>
+        </div>
+
+        <div class="numbers-list" id="numbers-list">
             {% for num in numbers %}
-            <a href="/admin/number/{{ num.session_name }}" class="number-card">
-                <div class="card-top">
-                    <div class="card-left">
-                        <div class="serial-badge">#{{ num.serial }}</div>
-                        <div class="phone-icon"><i class="fas fa-sim-card"></i></div>
-                        <div>
-                            <div class="phone-number">{{ num.display_phone }}</div>
-                            <div class="country-label">
-                                <i class="fas fa-earth-asia"></i>
-                                {{ num.country }}
+            <div class="number-card" id="card-{{ num.session_name }}">
+                <div class="card-check">
+                    <input type="checkbox" class="num-check"
+                        value="{{ num.session_name }}"
+                        onchange="onCheckChange()">
+                </div>
+                <a href="/admin/number/{{ num.session_name }}" class="card-body-link" onclick="return !isCheckMode()">
+                    <div class="card-top">
+                        <div class="card-left">
+                            <div class="serial-badge">#{{ num.serial }}</div>
+                            <div class="phone-icon"><i class="fas fa-sim-card"></i></div>
+                            <div>
+                                <div class="phone-number">{{ num.display_phone }}</div>
+                                <div class="country-label">
+                                    <i class="fas fa-earth-asia"></i>
+                                    {{ num.country }}
+                                </div>
                             </div>
                         </div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            {% if num.email_changed %}
+                            <span class="email-badge"><i class="fas fa-envelope-circle-check"></i> Email Changed</span>
+                            {% endif %}
+                            <div class="arrow-icon"><i class="fas fa-chevron-right"></i></div>
+                        </div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        {% if num.email_changed %}
-                        <span class="email-badge"><i class="fas fa-envelope-circle-check"></i> Email Changed</span>
+                    <div class="card-meta">
+                        {% if num.user_id != 'N/A' %}
+                        <span class="meta-chip user">
+                            <i class="fas fa-user"></i> {{ num.user_id }}
+                        </span>
                         {% endif %}
-                        <div class="arrow-icon"><i class="fas fa-chevron-right"></i></div>
+                        {% if num.price is not none %}
+                        <span class="meta-chip price">
+                            <i class="fas fa-dollar-sign"></i> {{ "%.2f"|format(num.price) }} USD
+                        </span>
+                        {% endif %}
+                        {% if num.login_date != 'N/A' %}
+                        <span class="meta-chip date">
+                            <i class="fas fa-calendar"></i> {{ num.login_date }}
+                        </span>
+                        {% endif %}
+                        {% if num.duration != 'N/A' %}
+                        <span class="meta-chip dur">
+                            <i class="fas fa-clock"></i> {{ num.duration }} ago
+                        </span>
+                        {% endif %}
                     </div>
-                </div>
-                <div class="card-meta">
-                    {% if num.user_id != 'N/A' %}
-                    <span class="meta-chip user">
-                        <i class="fas fa-user"></i> {{ num.user_id }}
-                    </span>
-                    {% endif %}
-                    {% if num.price is not none %}
-                    <span class="meta-chip price">
-                        <i class="fas fa-dollar-sign"></i> {{ "%.2f"|format(num.price) }} USD
-                    </span>
-                    {% endif %}
-                    {% if num.login_date != 'N/A' %}
-                    <span class="meta-chip date">
-                        <i class="fas fa-calendar"></i> {{ num.login_date }}
-                    </span>
-                    {% endif %}
-                    {% if num.duration != 'N/A' %}
-                    <span class="meta-chip dur">
-                        <i class="fas fa-clock"></i> {{ num.duration }} ago
-                    </span>
-                    {% endif %}
-                </div>
-            </a>
+                </a>
+            </div>
             {% endfor %}
         </div>
 
@@ -243,5 +335,138 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Bulk Email Progress Modal -->
+    <div class="modal-overlay" id="bulk-modal">
+        <div class="modal-box">
+            <div class="modal-title"><i class="fas fa-envelope-open-text"></i> Bulk Email Change</div>
+            <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" id="bulk-bar" style="width:0%"></div>
+            </div>
+            <div class="progress-label" id="bulk-progress-label">Starting…</div>
+            <div id="bulk-results-list"></div>
+            <button class="modal-close-btn" id="bulk-close-btn" onclick="closeBulkModal()" style="display:none;">
+                <i class="fas fa-check"></i> Done — Close
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ── Selection helpers ──────────────────────────────────────────────────
+        function getChecked() {
+            return [...document.querySelectorAll('.num-check:checked')].map(c => c.value);
+        }
+        function isCheckMode() {
+            return getChecked().length > 0;
+        }
+        function onCheckChange() {
+            const checked = getChecked();
+            const total = document.querySelectorAll('.num-check').length;
+            const btn = document.getElementById('bulk-email-btn');
+            const countEl = document.getElementById('sel-count');
+            const selectAll = document.getElementById('select-all');
+
+            if (checked.length > 0) {
+                btn.disabled = false;
+                countEl.style.display = 'inline';
+                countEl.textContent = checked.length + ' selected';
+            } else {
+                btn.disabled = true;
+                countEl.style.display = 'none';
+            }
+            selectAll.indeterminate = checked.length > 0 && checked.length < total;
+            selectAll.checked = checked.length === total;
+
+            // Highlight selected cards
+            document.querySelectorAll('.number-card').forEach(card => {
+                const cb = card.querySelector('.num-check');
+                if (cb && cb.checked) card.classList.add('selected');
+                else card.classList.remove('selected');
+            });
+        }
+        function toggleSelectAll(cb) {
+            document.querySelectorAll('.num-check').forEach(c => c.checked = cb.checked);
+            onCheckChange();
+        }
+
+        // ── Bulk Email ─────────────────────────────────────────────────────────
+        let bulkPollTimer = null;
+
+        function startBulkEmail() {
+            const phones = getChecked();
+            if (!phones.length) return;
+            if (!confirm(`Change email for ${phones.length} account(s) one by one?`)) return;
+
+            document.getElementById('bulk-modal').classList.add('open');
+            document.getElementById('bulk-results-list').innerHTML = '';
+            document.getElementById('bulk-bar').style.width = '0%';
+            document.getElementById('bulk-progress-label').textContent = 'Starting…';
+            document.getElementById('bulk-close-btn').style.display = 'none';
+
+            fetch('/admin/bulk_auto_email', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({phones: phones})
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (!d.success) { alert(d.message); closeBulkModal(); return; }
+                if (bulkPollTimer) clearInterval(bulkPollTimer);
+                bulkPollTimer = setInterval(() => pollBulkStatus(d.task_id), 2000);
+            })
+            .catch(e => { alert('Error: ' + e); closeBulkModal(); });
+        }
+
+        function pollBulkStatus(taskId) {
+            fetch('/admin/bulk_auto_email_status/' + taskId)
+            .then(r => r.json())
+            .then(d => {
+                const total = d.total || 0;
+                const done = d.done || 0;
+                const pct = total > 0 ? Math.round(done / total * 100) : 0;
+                document.getElementById('bulk-bar').style.width = pct + '%';
+                document.getElementById('bulk-progress-label').textContent =
+                    `${done} / ${total} accounts processed`;
+
+                // Render results
+                const list = document.getElementById('bulk-results-list');
+                list.innerHTML = '';
+                (d.results || []).forEach(r => {
+                    let iconHtml, msgColor;
+                    if (r.status === 'done') {
+                        iconHtml = '<i class="fas fa-check-circle r-icon" style="color:#10b981"></i>';
+                        msgColor = '#10b981';
+                    } else if (r.status === 'error') {
+                        iconHtml = '<i class="fas fa-times-circle r-icon" style="color:#ef4444"></i>';
+                        msgColor = '#ef4444';
+                    } else {
+                        iconHtml = '<i class="fas fa-spinner spin r-icon" style="color:#fbbf24"></i>';
+                        msgColor = '#fbbf24';
+                    }
+                    list.innerHTML += `
+                        <div class="result-row">
+                            ${iconHtml}
+                            <div style="flex:1;min-width:0;">
+                                <div class="r-phone">${r.phone}</div>
+                                ${r.email ? `<div class="r-email"><i class="fas fa-envelope" style="font-size:0.7rem;"></i> ${r.email}</div>` : ''}
+                                <div class="r-msg" style="color:${msgColor};">${r.msg || ''}</div>
+                            </div>
+                        </div>`;
+                });
+
+                if (d.status === 'done') {
+                    clearInterval(bulkPollTimer);
+                    document.getElementById('bulk-progress-label').textContent =
+                        `✅ All ${total} accounts processed!`;
+                    document.getElementById('bulk-close-btn').style.display = 'block';
+                }
+            });
+        }
+
+        function closeBulkModal() {
+            if (bulkPollTimer) clearInterval(bulkPollTimer);
+            document.getElementById('bulk-modal').classList.remove('open');
+        }
+    </script>
 </body>
 </html>
