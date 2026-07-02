@@ -782,14 +782,68 @@ def admin_force_logout():
         return redirect(url_for('admin_panel', message=f'No session found for {phone} and number already blocked.'))
 
 def get_all_session_numbers():
-    """Get all phone numbers that have session files"""
-    numbers = []
+    """Get all phone numbers that have session files, enriched with user data"""
+    data = load_data()
+
+    # Build lookup: normalized_phone -> {user_id, country, timestamp, status}
+    lookup = {}
+    for uid, info in data.items():
+        for d in info.get('processing_details', []):
+            num = d.get('number', '').replace('+', '').strip()
+            if num and num not in lookup:
+                lookup[num] = {
+                    'user_id': uid,
+                    'country': d.get('country', 'N/A'),
+                    'timestamp': d.get('timestamp', ''),
+                    'status': d.get('status', ''),
+                }
+
+    results = []
+    now = datetime.now()
+
     if os.path.exists(SESSIONS_DIR):
-        for f in os.listdir(SESSIONS_DIR):
-            if f.endswith('.session') and not f.endswith('-journal'):
-                name = f[:-8]  # Remove .session
-                numbers.append(name)
-    return sorted(numbers)
+        for f in sorted(os.listdir(SESSIONS_DIR)):
+            if not f.endswith('.session') or f.endswith('-journal'):
+                continue
+            session_name = f[:-8]
+            # Strip sell_ prefix to get raw phone
+            raw_phone = session_name.replace('sell_', '')
+            display_phone = '+' + raw_phone if not raw_phone.startswith('+') else raw_phone
+
+            info = lookup.get(raw_phone, {})
+
+            # Duration since timestamp
+            ts_str = info.get('timestamp', '')
+            login_date = 'N/A'
+            duration_str = 'N/A'
+            if ts_str:
+                try:
+                    ts = datetime.fromisoformat(ts_str)
+                    login_date = ts.strftime('%Y-%m-%d %H:%M')
+                    diff = now - ts
+                    total_s = int(diff.total_seconds())
+                    days = total_s // 86400
+                    hours = (total_s % 86400) // 3600
+                    minutes = (total_s % 3600) // 60
+                    if days > 0:
+                        duration_str = f"{days}d {hours}h {minutes}m"
+                    elif hours > 0:
+                        duration_str = f"{hours}h {minutes}m"
+                    else:
+                        duration_str = f"{minutes}m"
+                except Exception:
+                    pass
+
+            results.append({
+                'session_name': session_name,
+                'display_phone': display_phone,
+                'country': info.get('country', 'N/A'),
+                'user_id': info.get('user_id', 'N/A'),
+                'login_date': login_date,
+                'duration': duration_str,
+            })
+
+    return results
 
 
 @app.route('/admin/active_numbers')
@@ -800,7 +854,8 @@ def admin_active_numbers():
     message = request.args.get('message', '')
     all_numbers = get_all_session_numbers()
     if query:
-        filtered = [n for n in all_numbers if query.replace('+', '') in n.replace('+', '')]
+        q = query.replace('+', '')
+        filtered = [n for n in all_numbers if q in n['display_phone'].replace('+', '') or q.lower() in n['country'].lower()]
     else:
         filtered = all_numbers
     return render_template('admin_active_numbers.html', numbers=filtered, query=query, total=len(all_numbers), message=message)
