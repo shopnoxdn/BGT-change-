@@ -102,7 +102,7 @@ async def _auto_email_logic(task_id, phone, raw_phone, mail_user):
             try:
                 msgs = await asyncio.to_thread(
                     _mailtm_request, 'GET', '/messages', None, inbox_token)
-                items = msgs.get('hydra:member', [])
+                items = msgs if isinstance(msgs, list) else msgs.get('hydra:member', [])
                 log(f'📬 {len(items)} message(s) in inbox')
 
                 for m in items:
