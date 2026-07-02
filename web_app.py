@@ -2,9 +2,126 @@ import os
 import json
 import hashlib
 import asyncio
+import threading
+import uuid
+import urllib.request as _urlreq
+import re as _re
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file, abort
 from telethon import TelegramClient, errors, functions, types
+
+# ── Background auto-email tasks ──────────────────────────────────────────────
+auto_tasks: dict = {}   # task_id -> {status, logs, result, email}
+
+def _auto_email_thread(task_id: str, phone: str, raw_phone: str,
+                        mail_user: str, mail_domain: str, temp_email: str):
+    """Runs in a daemon thread with its own asyncio event loop."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(
+            _auto_email_logic(task_id, phone, raw_phone,
+                              mail_user, mail_domain, temp_email))
+    finally:
+        loop.close()
+
+async def _auto_email_logic(task_id, phone, raw_phone,
+                             mail_user, mail_domain, temp_email):
+    def log(msg):
+        auto_tasks[task_id]['logs'].append(msg)
+
+    session_path = os.path.join(SESSIONS_DIR, phone)
+    client = TelegramClient(session_path, API_ID, API_HASH)
+    try:
+        await client.connect()
+        if not await client.is_user_authorized():
+            auto_tasks[task_id].update(status='error', result='Session not authorized')
+            return
+
+        log('📤 Sending OTP to ' + temp_email)
+        try:
+            await client(functions.account.SendVerifyEmailCodeRequest(
+                purpose=types.EmailVerifyPurposeLoginChange(),
+                email=temp_email
+            ))
+        except Exception as e:
+            auto_tasks[task_id].update(status='error', result=f'OTP send failed: {e}')
+            return
+
+        log('⏳ OTP sent! Scanning inbox…')
+        otp_code = None
+        for attempt in range(25):
+            await asyncio.sleep(4)
+            log(f'🔍 Checking inbox… ({attempt+1}/25)')
+            try:
+                def _list():
+                    url = (f'https://www.1secmail.com/api/v1/'
+                           f'?action=getMessages&login={mail_user}&domain={mail_domain}')
+                    req = _urlreq.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+                    with _urlreq.urlopen(req, timeout=10) as r:
+                        return json.loads(r.read().decode())
+
+                msgs = await asyncio.to_thread(_list)
+                for m in msgs:
+                    mid = m['id']
+                    def _read(mid=mid):
+                        url2 = (f'https://www.1secmail.com/api/v1/'
+                                f'?action=readMessage&login={mail_user}'
+                                f'&domain={mail_domain}&id={mid}')
+                        req2 = _urlreq.Request(url2, headers={'User-Agent': 'Mozilla/5.0'})
+                        with _urlreq.urlopen(req2, timeout=10) as r2:
+                            return json.loads(r2.read().decode())
+
+                    detail = await asyncio.to_thread(_read)
+                    haystack = (detail.get('subject', '') + ' '
+                                + detail.get('textBody', '') + ' '
+                                + detail.get('htmlBody', ''))
+                    match = _re.search(r'\b(\d{4,8})\b', haystack)
+                    if match:
+                        otp_code = match.group(1)
+                        break
+            except Exception:
+                pass
+            if otp_code:
+                break
+
+        if not otp_code:
+            auto_tasks[task_id].update(status='error',
+                result='OTP not received within 100s. Try manual.')
+            return
+
+        log(f'✅ OTP found: {otp_code}')
+        log('🔐 Verifying with Telegram…')
+        try:
+            await client(functions.account.VerifyEmailRequest(
+                purpose=types.EmailVerifyPurposeLoginChange(),
+                verification=types.EmailVerificationCode(code=otp_code)
+            ))
+        except Exception as e:
+            auto_tasks[task_id].update(status='error',
+                result=f'Verification failed: {e}')
+            return
+
+        # Save email_changed flag
+        user_data_all = json.load(open(DATA_FILE)) if os.path.exists(DATA_FILE) else {}
+        for uid, info in user_data_all.items():
+            for detail in info.get('processing_details', []):
+                if detail.get('number', '').replace('+', '').strip() == raw_phone:
+                    detail['email_changed'] = True
+                    break
+        with open(DATA_FILE, 'w') as fw:
+            json.dump(user_data_all, fw, indent=4)
+
+        log(f'🎉 Done! Email changed to {temp_email}')
+        auto_tasks[task_id].update(status='done',
+            result=f'Email changed to {temp_email}!', email=temp_email)
+
+    except Exception as e:
+        auto_tasks[task_id].update(status='error', result=str(e))
+    finally:
+        if client.is_connected():
+            await client.disconnect()
+# ─────────────────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SESSION_SECRET', 'bgt-wallet-admin-2026-fixed-key')
@@ -1037,101 +1154,44 @@ async def admin_toggle_2fa(phone):
 
 
 @app.route('/admin/number/<path:phone>/auto_change_email', methods=['POST'])
-async def admin_auto_change_email(phone):
+def admin_auto_change_email(phone):
+    """Starts background email-change task, returns task_id immediately."""
     if 'user_id' not in session or session['user_id'] != '2876886938':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-
-    import urllib.request as _urlreq
-    import re as _re
 
     raw_phone = phone.replace('sell_', '').replace('+', '').strip()
     digits_only = ''.join(c for c in raw_phone if c.isdigit())
     last7 = digits_only[-7:] if len(digits_only) >= 7 else digits_only
     mail_user = last7
     mail_domain = '1secmail.com'
-    temp_email = f"{mail_user}@{mail_domain}"
+    temp_email = f'{mail_user}@{mail_domain}'
 
-    session_path = os.path.join(SESSIONS_DIR, phone)
-    client = TelegramClient(session_path, API_ID, API_HASH)
+    task_id = uuid.uuid4().hex[:10]
+    auto_tasks[task_id] = {
+        'status': 'running',
+        'logs': [f'📧 Temp email: {temp_email}'],
+        'result': None,
+        'email': temp_email,
+    }
 
-    try:
-        await client.connect()
-        if not await client.is_user_authorized():
-            return jsonify({'success': False, 'message': 'Session not authorized', 'step': 'connect'})
+    t = threading.Thread(
+        target=_auto_email_thread,
+        args=(task_id, phone, raw_phone, mail_user, mail_domain, temp_email),
+        daemon=True
+    )
+    t.start()
+    return jsonify({'success': True, 'task_id': task_id, 'email': temp_email})
 
-        # Step 1: Send OTP to temp email
-        try:
-            await client(functions.account.SendVerifyEmailCodeRequest(
-                purpose=types.EmailVerifyPurposeLoginChange(),
-                email=temp_email
-            ))
-        except Exception as e:
-            return jsonify({'success': False, 'message': f'OTP send failed: {e}', 'step': 'send_otp'})
 
-        # Step 2: Poll inbox for OTP (max 25 × 4s = 100s)
-        otp_code = None
-        for _ in range(25):
-            await asyncio.sleep(4)
-            try:
-                def _list():
-                    url = f"https://www.1secmail.com/api/v1/?action=getMessages&login={mail_user}&domain={mail_domain}"
-                    req = _urlreq.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                    with _urlreq.urlopen(req, timeout=10) as r:
-                        return json.loads(r.read().decode())
-
-                msgs = await asyncio.to_thread(_list)
-
-                for m in msgs:
-                    mid = m['id']
-                    def _read(mid=mid):
-                        url2 = f"https://www.1secmail.com/api/v1/?action=readMessage&login={mail_user}&domain={mail_domain}&id={mid}"
-                        req2 = _urlreq.Request(url2, headers={'User-Agent': 'Mozilla/5.0'})
-                        with _urlreq.urlopen(req2, timeout=10) as r2:
-                            return json.loads(r2.read().decode())
-
-                    detail = await asyncio.to_thread(_read)
-                    haystack = (detail.get('subject', '') + ' '
-                                + detail.get('textBody', '') + ' '
-                                + detail.get('htmlBody', ''))
-                    match = _re.search(r'\b(\d{4,8})\b', haystack)
-                    if match:
-                        otp_code = match.group(1)
-                        break
-            except Exception:
-                continue
-
-            if otp_code:
-                break
-
-        if not otp_code:
-            return jsonify({'success': False, 'message': 'OTP not received within 100s. Try manual.', 'step': 'poll'})
-
-        # Step 3: Verify OTP
-        try:
-            await client(functions.account.VerifyEmailRequest(
-                purpose=types.EmailVerifyPurposeLoginChange(),
-                verification=types.EmailVerificationCode(code=otp_code)
-            ))
-        except Exception as e:
-            return jsonify({'success': False, 'message': f'Verification failed: {e}', 'step': 'verify'})
-
-        # Step 4: Save email_changed flag
-        user_data_all = load_data()
-        for uid, info in user_data_all.items():
-            for detail in info.get('processing_details', []):
-                if detail.get('number', '').replace('+', '').strip() == raw_phone:
-                    detail['email_changed'] = True
-                    break
-        with open(DATA_FILE, 'w') as fw:
-            json.dump(user_data_all, fw, indent=4)
-
-        return jsonify({'success': True, 'message': f'Email changed to {temp_email}!', 'email': temp_email})
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e), 'step': 'unknown'})
-    finally:
-        if client.is_connected():
-            await client.disconnect()
+@app.route('/admin/number/<path:phone>/auto_change_email_status/<task_id>')
+def admin_auto_change_email_status(phone, task_id):
+    """Frontend polls this every 2 s to get live logs + final status."""
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    task = auto_tasks.get(task_id)
+    if not task:
+        return jsonify({'success': False, 'message': 'Task not found'}), 404
+    return jsonify(task)
 
 
 @app.route('/admin/number/<path:phone>/send_email_otp', methods=['POST'])

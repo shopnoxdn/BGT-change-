@@ -630,89 +630,103 @@ function switchEmailTab(tab){
 // Default: auto tab active on load
 switchEmailTab('auto');
 
-/* ── AUTO EMAIL CHANGE ── */
-let _autoAbort = null;
+/* ── AUTO EMAIL CHANGE (background task + polling) ── */
+let _pollTimer = null;
+let _currentTaskId = null;
+let _shownLogs = 0;
 
-// Animated step ticker shown while waiting
-const _steps = [
-    '📧 Creating temp email…',
-    '📤 Sending OTP to inbox…',
-    '⏳ Waiting for email…',
-    '🔍 Scanning inbox…',
-    '🔐 Verifying with Telegram…'
-];
-let _stepTimer = null;
-function _startTicker(){
-    const log = document.getElementById('auto-log');
-    let i = 0;
-    function tick(){
-        log.innerHTML = '';
-        const shown = _steps.slice(0, i+1);
-        shown.forEach((s, idx)=>{
-            const line = document.createElement('div');
-            line.className = 'log-line' + (idx === shown.length-1 ? '' : ' ok');
-            line.innerHTML = `<span class="log-dot"></span><span>${s}</span>`;
-            log.appendChild(line);
-        });
-        log.scrollTop = log.scrollHeight;
-        if(i < _steps.length - 1){ i++; _stepTimer = setTimeout(tick, 6000); }
-        else { _stepTimer = setInterval(()=>{ /* keep last step */ }, 5000); }
-    }
-    tick();
+function _autoSetState(state){
+    document.getElementById('auto-idle').style.display    = state==='idle'    ? 'block' : 'none';
+    document.getElementById('auto-running').style.display = state==='running' ? 'block' : 'none';
+    document.getElementById('auto-done').style.display    = state==='done'    ? 'block' : 'none';
+    document.getElementById('auto-error').style.display   = state==='error'   ? 'block' : 'none';
 }
-function _stopTicker(){ clearTimeout(_stepTimer); clearInterval(_stepTimer); }
+
+function _appendLog(text, cls=''){
+    const log = document.getElementById('auto-log');
+    const line = document.createElement('div');
+    line.className = 'log-line' + (cls ? ' '+cls : '');
+    line.innerHTML = `<span class="log-dot"></span><span>${text}</span>`;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+}
+
+async function _pollStatus(){
+    if(!_currentTaskId) return;
+    try{
+        const r = await fetch(`/admin/number/${PHONE}/auto_change_email_status/${_currentTaskId}`);
+        const d = await r.json();
+
+        // Append any new log lines
+        if(d.logs){
+            d.logs.slice(_shownLogs).forEach(l => _appendLog(l));
+            _shownLogs = d.logs.length;
+        }
+
+        if(d.status === 'running'){
+            _pollTimer = setTimeout(_pollStatus, 2000);
+        } else if(d.status === 'done'){
+            _appendLog('🎉 ' + d.result, 'ok');
+            clearTimeout(_pollTimer);
+            setTimeout(()=>{
+                _autoSetState('done');
+                document.getElementById('auto-result-text').textContent = d.email || '';
+                toast(d.result, 'ok');
+            }, 600);
+        } else {
+            _appendLog('❌ ' + d.result, 'err');
+            clearTimeout(_pollTimer);
+            setTimeout(()=>{
+                _autoSetState('error');
+                document.getElementById('auto-error-msg').querySelector('span').textContent = d.result;
+                toast(d.result, 'err');
+            }, 600);
+        }
+    } catch(e){
+        _pollTimer = setTimeout(_pollStatus, 3000); // retry on network hiccup
+    }
+}
 
 async function startAutoEmail(){
-    document.getElementById('auto-idle').style.display    = 'none';
-    document.getElementById('auto-running').style.display = 'block';
-    document.getElementById('auto-done').style.display    = 'none';
-    document.getElementById('auto-error').style.display   = 'none';
-    _startTicker();
+    _autoSetState('running');
+    document.getElementById('auto-log').innerHTML = '';
+    _shownLogs = 0;
+    _currentTaskId = null;
 
-    _autoAbort = new AbortController();
     try{
         const r = await fetch(`/admin/number/${PHONE}/auto_change_email`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({}),
-            signal: _autoAbort.signal
+            body: JSON.stringify({})
         });
-        _stopTicker();
         const d = await r.json();
-        if(d.success){
-            document.getElementById('auto-running').style.display = 'none';
-            document.getElementById('auto-done').style.display    = 'block';
-            document.getElementById('auto-result-text').textContent = d.email;
-            toast(d.message, 'ok');
-        } else {
-            document.getElementById('auto-running').style.display = 'none';
-            document.getElementById('auto-error').style.display   = 'block';
+        if(!d.success){
+            _autoSetState('error');
             document.getElementById('auto-error-msg').querySelector('span').textContent = d.message;
-            toast(d.message, 'err');
+            return;
         }
+        _currentTaskId = d.task_id;
+        _appendLog('📧 Temp email: ' + d.email);
+        _pollTimer = setTimeout(_pollStatus, 2000);
     } catch(e){
-        _stopTicker();
-        if(e.name === 'AbortError'){ resetAutoEmail(); return; }
-        document.getElementById('auto-running').style.display = 'none';
-        document.getElementById('auto-error').style.display   = 'block';
-        document.getElementById('auto-error-msg').querySelector('span').textContent = e.message;
+        _autoSetState('error');
+        document.getElementById('auto-error-msg').querySelector('span').textContent = 'Failed to start: ' + e.message;
         toast('Failed: '+e.message, 'err');
     }
 }
 
 function stopAutoEmail(){
-    _stopTicker();
-    if(_autoAbort){ _autoAbort.abort(); _autoAbort = null; }
+    clearTimeout(_pollTimer);
+    _currentTaskId = null;
     resetAutoEmail();
     toast('Auto change cancelled','info');
 }
 
 function resetAutoEmail(){
-    _stopTicker();
-    document.getElementById('auto-idle').style.display    = 'block';
-    document.getElementById('auto-running').style.display = 'none';
-    document.getElementById('auto-done').style.display    = 'none';
-    document.getElementById('auto-error').style.display   = 'none';
+    clearTimeout(_pollTimer);
+    _currentTaskId = null;
+    _shownLogs = 0;
+    _autoSetState('idle');
 }
 
 /* ── EMAIL OTP ── */
