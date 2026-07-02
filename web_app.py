@@ -73,12 +73,16 @@ async def _auto_email_logic(task_id, phone, raw_phone,
                             return json.loads(r2.read().decode())
 
                     detail = await asyncio.to_thread(_read)
-                    haystack = (detail.get('subject', '') + ' '
-                                + detail.get('textBody', '') + ' '
-                                + detail.get('htmlBody', ''))
-                    match = _re.search(r'\b(\d{4,8})\b', haystack)
-                    if match:
-                        otp_code = match.group(1)
+                    # Search subject first, then text body, then html body
+                    subject  = detail.get('subject', '')
+                    textBody = detail.get('textBody', '')
+                    htmlBody = _re.sub(r'<[^>]+>', ' ', detail.get('htmlBody', ''))
+                    for part in (subject, textBody, htmlBody):
+                        match = _re.search(r'\b(\d{6})\b', part)
+                        if match:
+                            otp_code = match.group(1)
+                            break
+                    if otp_code:
                         break
             except Exception:
                 pass
