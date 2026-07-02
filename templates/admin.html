@@ -496,6 +496,34 @@
                 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Link</button>
             </form>
         </div>
+
+        <!-- Join Channel Card -->
+        <div class="card" id="join-channel-card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-right-to-bracket"></i> Join Channel</div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Channel Link (public or private invite)</label>
+                <input type="text" id="join-channel-input" placeholder="https://t.me/channel or https://t.me/+InviteHash">
+            </div>
+            <button class="btn btn-success" id="join-all-btn" onclick="startJoinChannel()">
+                <i class="fas fa-users"></i> Join All
+            </button>
+
+            <!-- Progress area -->
+            <div id="join-progress" style="display:none; margin-top:18px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                    <div style="font-size:0.85rem; color:var(--text-dim);">
+                        Progress: <span id="join-done">0</span> / <span id="join-total">0</span>
+                    </div>
+                    <div style="flex:1; height:6px; background:var(--surface-2); border-radius:6px; overflow:hidden;">
+                        <div id="join-bar" style="height:100%; width:0%; background:linear-gradient(90deg,#6366f1,#10b981); border-radius:6px; transition:width 0.4s;"></div>
+                    </div>
+                    <span id="join-status-badge" style="font-size:0.75rem; font-weight:700; color:#fbbf24;">Running…</span>
+                </div>
+                <div id="join-results-list" style="display:flex; flex-direction:column; gap:7px; max-height:320px; overflow-y:auto;"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -504,6 +532,76 @@
             document.getElementById('tab-all').style.display = tab === 'all' ? 'block' : 'none';
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+        }
+
+        // ── Join Channel ──────────────────────────────────────────────────────
+        let joinPollTimer = null;
+
+        function startJoinChannel() {
+            const link = document.getElementById('join-channel-input').value.trim();
+            if (!link) { alert('Please enter a channel link.'); return; }
+
+            const btn = document.getElementById('join-all-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Starting…';
+
+            document.getElementById('join-progress').style.display = 'block';
+            document.getElementById('join-results-list').innerHTML = '';
+            document.getElementById('join-done').textContent = '0';
+            document.getElementById('join-total').textContent = '…';
+            document.getElementById('join-bar').style.width = '0%';
+            document.getElementById('join-status-badge').textContent = 'Running…';
+            document.getElementById('join-status-badge').style.color = '#fbbf24';
+
+            fetch('/admin/join_channel', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({channel: link})
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (!d.success) { alert(d.message); btn.disabled = false; btn.innerHTML = '<i class="fas fa-users"></i> Join All'; return; }
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running…';
+                if (joinPollTimer) clearInterval(joinPollTimer);
+                joinPollTimer = setInterval(() => pollJoinStatus(d.task_id), 1500);
+            })
+            .catch(e => { alert('Error: ' + e); btn.disabled = false; btn.innerHTML = '<i class="fas fa-users"></i> Join All'; });
+        }
+
+        function pollJoinStatus(taskId) {
+            fetch('/admin/join_channel_status/' + taskId)
+            .then(r => r.json())
+            .then(d => {
+                const total = d.total || 0;
+                const done = d.done || 0;
+                document.getElementById('join-done').textContent = done;
+                document.getElementById('join-total').textContent = total;
+                const pct = total > 0 ? Math.round(done / total * 100) : 0;
+                document.getElementById('join-bar').style.width = pct + '%';
+
+                // Render results
+                const list = document.getElementById('join-results-list');
+                list.innerHTML = '';
+                (d.results || []).forEach(r => {
+                    const color = r.status === 'success' ? '#10b981' : r.status === 'already' ? '#60a5fa' : '#ef4444';
+                    const icon  = r.status === 'success' ? 'fa-check-circle' : r.status === 'already' ? 'fa-info-circle' : 'fa-times-circle';
+                    list.innerHTML += `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--surface-2);border-radius:10px;border:1px solid var(--border);">
+                        <i class="fas ${icon}" style="color:${color};font-size:0.85rem;"></i>
+                        <span style="font-size:0.85rem;font-weight:600;color:#fff;flex:1;">${r.phone}</span>
+                        <span style="font-size:0.78rem;color:${color};">${r.msg}</span>
+                    </div>`;
+                });
+
+                if (d.status === 'done') {
+                    clearInterval(joinPollTimer);
+                    const badge = document.getElementById('join-status-badge');
+                    badge.textContent = 'Done ✅';
+                    badge.style.color = '#10b981';
+                    const btn = document.getElementById('join-all-btn');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-users"></i> Join All';
+                }
+            });
         }
     </script>
 </body>
