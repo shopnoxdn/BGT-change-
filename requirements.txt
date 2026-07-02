@@ -16,3 +16,8 @@ python-telegram-bot[job-queue]
 telethon
 asgiref
 flask[async]
+email_validator
+flask
+flask-sqlalchemy
+gunicorn
+psycopg2-binary

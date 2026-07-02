@@ -17,6 +17,7 @@ deploymentTarget = "autoscale"
 
 [agent]
 expertMode = true
+stack = "FLASK_VANILLA_JS"
 
 [workflows]
 runButton = "Project"
@@ -32,26 +33,22 @@ args = "Web App Dashboard"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Telegram Bot (Updated)"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Web App Dashboard (Updated)"
+args = "Telegram Bot"
 
 [[workflows.workflow]]
 name = "Web App Dashboard"
 author = "agent"
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python web_app.py"
 waitForPort = 5000
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow]]
-name = "Telegram Bot (Updated)"
+name = "Telegram Bot"
 author = "agent"
 
 [[workflows.workflow.tasks]]
@@ -60,18 +57,6 @@ args = "python main.py"
 
 [workflows.workflow.metadata]
 outputType = "console"
-
-[[workflows.workflow]]
-name = "Web App Dashboard (Updated)"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python web_app.py"
-waitForPort = 5000
-
-[workflows.workflow.metadata]
-outputType = "webview"
 
 [[ports]]
 localPort = 5000
