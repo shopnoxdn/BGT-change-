@@ -492,17 +492,31 @@
                 const list = document.getElementById('codes-list');
                 if (d.success) {
                     if (d.messages && d.messages.length > 0) {
-                        list.innerHTML = d.messages.map(m => {
-                            // Try to highlight OTP codes (4-8 digit numbers)
-                            const highlighted = m.text.replace(/\b(\d{4,8})\b/g, '<span class="otp-highlight">$1</span>');
-                            return `<div class="code-msg">
-                                <div class="code-msg-date"><i class="fas fa-clock"></i> ${m.date}</div>
-                                <div class="code-msg-text">${highlighted}</div>
+                        list.innerHTML = d.messages.map((m, i) => {
+                            const codeBig = m.code
+                                ? `<div style="text-align:center;margin:10px 0 6px;">
+                                     <span style="font-size:2.2rem;font-weight:900;letter-spacing:8px;color:#818cf8;
+                                       background:rgba(99,102,241,0.15);border:2px solid rgba(99,102,241,0.4);
+                                       border-radius:12px;padding:10px 24px;display:inline-block;">${m.code}</span>
+                                   </div>
+                                   <div style="text-align:center;margin-bottom:10px;">
+                                     <button onclick="navigator.clipboard.writeText('${m.code}').then(()=>this.textContent='✅ Copied!')"
+                                       style="padding:6px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;
+                                       font-weight:700;font-size:0.82rem;cursor:pointer;font-family:Inter,sans-serif;">
+                                       📋 Copy Code
+                                     </button>
+                                   </div>`
+                                : '';
+                            const preview = m.text.length > 80 ? m.text.slice(0,80)+'…' : m.text;
+                            return `<div class="code-msg" style="${i===0?'border-left:3px solid #818cf8;padding-left:12px;':''}">
+                                <div class="code-msg-date"><i class="fas fa-clock"></i> ${m.date}${i===0?' &nbsp;<span style="font-size:0.7rem;background:rgba(99,102,241,0.2);color:#818cf8;padding:2px 8px;border-radius:10px;font-weight:700;">LATEST</span>':''}</div>
+                                ${codeBig}
+                                <div class="code-msg-text" style="font-size:0.82rem;color:var(--text-dim);">${preview}</div>
                             </div>`;
                         }).join('');
                         container.style.display = 'block';
                     } else {
-                        list.innerHTML = '<div class="code-msg"><div class="code-msg-text" style="color: var(--text-dim);">No messages from Telegram found.</div></div>';
+                        list.innerHTML = '<div class="code-msg"><div class="code-msg-text" style="color: var(--text-dim);text-align:center;padding:10px 0;"><i class="fas fa-inbox" style="font-size:1.5rem;display:block;margin-bottom:8px;opacity:0.4;"></i>No login codes found in recent messages.</div></div>';
                         container.style.display = 'block';
                     }
                 } else {
