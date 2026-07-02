@@ -42,7 +42,11 @@ async def _auto_email_logic(task_id, phone, raw_phone, mail_user):
     try:
         log('🌐 Getting available domains from mail.tm…')
         domains_resp = await asyncio.to_thread(_mailtm_request, 'GET', '/domains')
-        domain = domains_resp['hydra:member'][0]['domain']
+        # API returns either a list or a hydra collection dict
+        if isinstance(domains_resp, list):
+            domain = domains_resp[0]['domain']
+        else:
+            domain = domains_resp['hydra:member'][0]['domain']
         log(f'✅ Domain: {domain}')
     except Exception as e:
         auto_tasks[task_id].update(status='error', result=f'mail.tm domain fetch failed: {e}')
