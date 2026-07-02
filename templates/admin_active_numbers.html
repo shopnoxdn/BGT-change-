@@ -114,6 +114,26 @@
         .meta-chip.user   { color: #818cf8; border-color: rgba(99,102,241,0.2); background: rgba(99,102,241,0.07); }
         .meta-chip.date   { color: #60a5fa; border-color: rgba(59,130,246,0.2); background: rgba(59,130,246,0.07); }
         .meta-chip.dur    { color: #fbbf24; border-color: rgba(245,158,11,0.2); background: rgba(245,158,11,0.07); }
+        .meta-chip.price  { color: #34d399; border-color: rgba(52,211,153,0.2); background: rgba(52,211,153,0.07); }
+
+        /* Serial badge */
+        .serial-badge {
+            min-width: 30px; height: 30px; border-radius: 8px;
+            background: rgba(99,102,241,0.12); color: #818cf8;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.78rem; font-weight: 800; flex-shrink: 0;
+            border: 1px solid rgba(99,102,241,0.2);
+        }
+
+        /* Email changed badge */
+        .email-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(16,185,129,0.1); color: #10b981;
+            border: 1px solid rgba(16,185,129,0.3);
+            border-radius: 8px; padding: 5px 10px;
+            font-size: 0.76rem; font-weight: 600;
+        }
+        .email-badge i { font-size: 0.7rem; }
 
         /* Empty */
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
@@ -173,6 +193,7 @@
             <a href="/admin/number/{{ num.session_name }}" class="number-card">
                 <div class="card-top">
                     <div class="card-left">
+                        <div class="serial-badge">#{{ num.serial }}</div>
                         <div class="phone-icon"><i class="fas fa-sim-card"></i></div>
                         <div>
                             <div class="phone-number">{{ num.display_phone }}</div>
@@ -182,12 +203,22 @@
                             </div>
                         </div>
                     </div>
-                    <div class="arrow-icon"><i class="fas fa-chevron-right"></i></div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        {% if num.email_changed %}
+                        <span class="email-badge"><i class="fas fa-envelope-circle-check"></i> Email Changed</span>
+                        {% endif %}
+                        <div class="arrow-icon"><i class="fas fa-chevron-right"></i></div>
+                    </div>
                 </div>
                 <div class="card-meta">
                     {% if num.user_id != 'N/A' %}
                     <span class="meta-chip user">
                         <i class="fas fa-user"></i> {{ num.user_id }}
+                    </span>
+                    {% endif %}
+                    {% if num.price is not none %}
+                    <span class="meta-chip price">
+                        <i class="fas fa-dollar-sign"></i> {{ "%.2f"|format(num.price) }} USD
                     </span>
                     {% endif %}
                     {% if num.login_date != 'N/A' %}

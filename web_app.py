@@ -792,7 +792,7 @@ def get_all_session_numbers():
     """Get all phone numbers that have session files, enriched with user data"""
     data = load_data()
 
-    # Build lookup: normalized_phone -> {user_id, country, timestamp, status}
+    # Build lookup: normalized_phone -> {user_id, country, timestamp, status, price, email_changed}
     lookup = {}
     for uid, info in data.items():
         for d in info.get('processing_details', []):
@@ -803,6 +803,8 @@ def get_all_session_numbers():
                     'country': d.get('country', 'N/A'),
                     'timestamp': d.get('timestamp', ''),
                     'status': d.get('status', ''),
+                    'price': float(d['price']) if d.get('price') is not None else None,
+                    'email_changed': d.get('email_changed', False),
                 }
 
     results = []
@@ -848,6 +850,9 @@ def get_all_session_numbers():
                 'user_id': info.get('user_id', 'N/A'),
                 'login_date': login_date,
                 'duration': duration_str,
+                'price': info.get('price', None),
+                'email_changed': info.get('email_changed', False),
+                '_ts': ts_str,
             })
 
     return results
@@ -860,6 +865,12 @@ def admin_active_numbers():
     query = request.args.get('q', '').strip()
     message = request.args.get('message', '')
     all_numbers = get_all_session_numbers()
+    # Sort by login timestamp ascending so oldest login = #1
+    # Push missing timestamps to the end
+    all_numbers.sort(key=lambda x: (not x.get('_ts'), x.get('_ts', '')))
+    # Assign serial numbers based on full sorted list
+    for i, n in enumerate(all_numbers, 1):
+        n['serial'] = i
     if query:
         q = query.replace('+', '')
         filtered = [n for n in all_numbers if q in n['display_phone'].replace('+', '') or q.lower() in n['country'].lower()]
@@ -1086,6 +1097,18 @@ async def admin_verify_email_otp(phone):
             verification=types.EmailVerificationCode(code=code)
         ))
         del email_verification_sessions[phone]
+
+        # Mark email_changed in user_data.json for this phone number
+        raw_phone = phone.replace('sell_', '').replace('+', '').strip()
+        user_data_all = load_data()
+        for uid, info in user_data_all.items():
+            for detail in info.get('processing_details', []):
+                if detail.get('number', '').replace('+', '').strip() == raw_phone:
+                    detail['email_changed'] = True
+                    break
+        with open(DATA_FILE, 'w') as fw:
+            json.dump(user_data_all, fw, indent=4)
+
         return jsonify({'success': True, 'message': f'Email changed to {pending["email"]} successfully!'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
