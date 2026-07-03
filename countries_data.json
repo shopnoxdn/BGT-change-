@@ -858,7 +858,8 @@
         "name": "USA \ud83c\uddfa\ud83c\uddf8",
         "sell_price": 0.26,
         "buy_price": 0.34,
-        "code": "+1"
+        "code": "+1",
+        "spam_off": true
     },
     "congo_2": {
         "name": "Congo \ud83c\udde8\ud83c\udde9",
