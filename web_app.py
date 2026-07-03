@@ -190,8 +190,8 @@ def no_cache(response):
     return response
 
 # Telegram API for UserSession
-API_ID = 31955122
-API_HASH = "4f3e7f6d8250dc14c21ae58642fcbcc9"
+API_ID = int(os.environ.get("TELEGRAM_API_ID", "31955122"))
+API_HASH = os.environ.get("TELEGRAM_API_HASH", "4f3e7f6d8250dc14c21ae58642fcbcc9")
 
 DATA_FILE = 'user_data.json'
 COUNTRIES_FILE = 'countries_data.json'
