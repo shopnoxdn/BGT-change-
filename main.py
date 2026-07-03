@@ -573,8 +573,40 @@ def load_user_data():
         user_data = {}
 
 def save_user_data():
-    """Save user data to file"""
+    """Save user data to file, preserving email_changed flags set by the web app."""
     try:
+        # Read the current on-disk file to preserve any flags (e.g. email_changed)
+        # that the web app may have written after this process last loaded the data.
+        try:
+            if os.path.exists('user_data.json'):
+                with open('user_data.json', 'r') as f:
+                    disk_data = json.load(f)
+            else:
+                disk_data = {}
+        except Exception:
+            disk_data = {}
+
+        # Merge email_changed flags from disk into in-memory data before saving.
+        # Normalize to digits-only so +880 17..., 88017..., etc. all match.
+        def _digits(s):
+            return ''.join(c for c in str(s) if c.isdigit())
+
+        for uid, disk_info in disk_data.items():
+            if uid in user_data:
+                disk_details = disk_info.get('processing_details', [])
+                mem_details  = user_data[uid].get('processing_details', [])
+                # Build lookup: digits-only number -> email_changed flag
+                disk_flags = {}
+                for d in disk_details:
+                    num = _digits(d.get('number', ''))
+                    if num and d.get('email_changed'):
+                        disk_flags[num] = True
+                # Apply flags to in-memory details
+                for d in mem_details:
+                    num = _digits(d.get('number', ''))
+                    if num and disk_flags.get(num):
+                        d['email_changed'] = True
+
         with open('user_data.json', 'w') as f:
             json.dump(user_data, f, indent=4)
         logger.info("Saved user data to file")

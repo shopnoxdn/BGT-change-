@@ -19,181 +19,163 @@
 
         .navbar {
             background: var(--surface); border-bottom: 1px solid var(--border);
-            padding: 14px 20px; display: flex; align-items: center;
+            padding: 10px 16px; display: flex; align-items: center;
             justify-content: space-between; position: sticky; top: 0; z-index: 100;
             backdrop-filter: blur(12px);
         }
-        .navbar-brand { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: #fff; }
-        .navbar-brand i { color: var(--primary); font-size: 1rem; }
-        .navbar-actions { display: flex; gap: 8px; }
+        .navbar-brand { display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 700; color: #fff; }
+        .navbar-brand i { color: var(--primary); font-size: 0.9rem; }
+        .navbar-actions { display: flex; gap: 6px; }
         .navbar-actions a {
-            color: var(--text-dim); text-decoration: none; font-size: 0.82rem;
-            padding: 7px 14px; border-radius: 8px; transition: all 0.2s;
-            display: flex; align-items: center; gap: 6px;
+            color: var(--text-dim); text-decoration: none; font-size: 0.78rem;
+            padding: 6px 12px; border-radius: 8px; transition: all 0.2s;
+            display: flex; align-items: center; gap: 5px;
         }
         .navbar-actions a:hover { background: var(--surface-2); color: #fff; }
 
-        .container { max-width: 820px; margin: 0 auto; padding: 20px 16px; }
+        .container { max-width: 900px; margin: 0 auto; padding: 14px 12px; }
 
-        /* Header */
-        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
-        .page-title { font-size: 1.25rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .page-title { font-size: 1.1rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px; }
         .count-badge {
             background: rgba(99,102,241,0.15); color: #818cf8;
             border: 1px solid rgba(99,102,241,0.3);
-            padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+            padding: 3px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
         }
 
-        /* Search */
-        .search-wrap { margin-bottom: 14px; }
-        .search-inner { display: flex; gap: 8px; }
+        .search-wrap { margin-bottom: 10px; }
+        .search-inner { display: flex; gap: 6px; }
         .search-input {
-            flex: 1; padding: 11px 16px; background: var(--surface);
-            border: 1px solid var(--border); color: #fff; border-radius: 12px;
-            font-family: 'Inter', sans-serif; font-size: 0.9rem; outline: none;
+            flex: 1; padding: 9px 14px; background: var(--surface);
+            border: 1px solid var(--border); color: #fff; border-radius: 10px;
+            font-family: 'Inter', sans-serif; font-size: 0.85rem; outline: none;
             transition: border-color 0.2s;
         }
         .search-input:focus { border-color: var(--primary); }
         .search-input::placeholder { color: var(--text-dim); }
         .btn-search {
-            padding: 11px 18px; background: var(--primary); color: #fff;
-            border: none; border-radius: 12px; font-weight: 600; font-size: 0.88rem;
+            padding: 9px 14px; background: var(--primary); color: #fff;
+            border: none; border-radius: 10px; font-weight: 600; font-size: 0.82rem;
             cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
-            display: flex; align-items: center; gap: 7px;
+            display: flex; align-items: center; gap: 6px;
         }
         .btn-search:hover { background: var(--primary-light); }
         .btn-clear {
-            padding: 11px 14px; background: transparent; color: var(--text-dim);
-            border: 1px solid var(--border); border-radius: 12px; font-weight: 600;
-            font-size: 0.88rem; cursor: pointer; font-family: 'Inter', sans-serif;
-            transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+            padding: 9px 12px; background: transparent; color: var(--text-dim);
+            border: 1px solid var(--border); border-radius: 10px; font-weight: 600;
+            font-size: 0.82rem; cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: all 0.2s; display: flex; align-items: center; gap: 5px;
             text-decoration: none;
         }
         .btn-clear:hover { border-color: var(--danger); color: #f87171; }
 
         /* Bulk Actions Bar */
         .bulk-bar {
-            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-            padding: 12px 16px; background: var(--surface); border: 1px solid var(--border);
-            border-radius: 14px; margin-bottom: 14px;
+            display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+            padding: 9px 14px; background: var(--surface); border: 1px solid var(--border);
+            border-radius: 12px; margin-bottom: 10px;
         }
-        .bulk-bar label { font-size: 0.85rem; color: var(--text-dim); display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
-        .bulk-bar label input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--primary); cursor: pointer; }
-        .bulk-count { font-size: 0.82rem; color: #818cf8; font-weight: 700; }
+        .bulk-bar label { font-size: 0.82rem; color: var(--text-dim); display: flex; align-items: center; gap: 7px; cursor: pointer; user-select: none; }
+        .bulk-bar label input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+        .bulk-count { font-size: 0.78rem; color: #818cf8; font-weight: 700; }
         .bulk-actions { margin-left: auto; display: flex; gap: 8px; }
         .btn-bulk-email {
-            padding: 9px 18px; background: var(--success); color: #fff;
-            border: none; border-radius: 10px; font-weight: 600; font-size: 0.85rem;
+            padding: 7px 14px; background: var(--success); color: #fff;
+            border: none; border-radius: 8px; font-weight: 600; font-size: 0.8rem;
             cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
-            display: flex; align-items: center; gap: 7px;
+            display: flex; align-items: center; gap: 6px;
         }
         .btn-bulk-email:hover { background: #059669; }
         .btn-bulk-email:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* Number Cards */
-        .numbers-list { display: flex; flex-direction: column; gap: 10px; }
+        /* ── COMPACT NUMBER GRID ── */
+        .numbers-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 7px;
+        }
 
         .number-card {
             background: var(--surface); border: 1px solid var(--border);
-            border-radius: 16px; padding: 16px 18px;
-            color: var(--text); transition: all 0.22s ease;
+            border-radius: 12px; padding: 10px 12px;
+            color: var(--text); transition: all 0.18s ease;
             position: relative; overflow: hidden;
-            display: flex; align-items: flex-start; gap: 14px;
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer;
         }
         .number-card::before {
             content: ''; position: absolute; left: 0; top: 0; bottom: 0;
             width: 3px; background: linear-gradient(180deg, var(--primary), var(--primary-light));
-            border-radius: 3px 0 0 3px; opacity: 0; transition: opacity 0.2s;
+            border-radius: 3px 0 0 3px; opacity: 0; transition: opacity 0.18s;
         }
-        .number-card:hover { border-color: rgba(99,102,241,0.4); box-shadow: 0 4px 24px var(--glow); transform: translateY(-1px); }
+        .number-card:hover { border-color: rgba(99,102,241,0.4); box-shadow: 0 2px 16px var(--glow); transform: translateY(-1px); }
         .number-card:hover::before { opacity: 1; }
         .number-card.selected { border-color: rgba(99,102,241,0.5); background: rgba(99,102,241,0.05); }
 
-        /* Checkbox inside card */
-        .card-check { padding-top: 2px; flex-shrink: 0; }
-        .card-check input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer; }
+        .card-check { flex-shrink: 0; }
+        .card-check input[type=checkbox] { width: 15px; height: 15px; accent-color: var(--primary); cursor: pointer; }
 
-        /* Card body (link portion) */
-        .card-body-link {
-            flex: 1; text-decoration: none; color: inherit;
-            display: block;
-        }
-        .card-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-        .card-left { display: flex; align-items: center; gap: 13px; }
-
-        .phone-icon {
-            width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+        .card-main { flex: 1; min-width: 0; }
+        .card-row1 { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+        .serial-badge {
+            min-width: 24px; height: 24px; border-radius: 6px;
             background: rgba(99,102,241,0.12); color: #818cf8;
-            display: flex; align-items: center; justify-content: center; font-size: 1.05rem;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.68rem; font-weight: 800; flex-shrink: 0;
+            border: 1px solid rgba(99,102,241,0.2);
         }
-        .phone-number { font-size: 1.05rem; font-weight: 700; color: #fff; letter-spacing: 0.3px; }
-        .country-label { font-size: 0.8rem; color: var(--text-dim); margin-top: 3px; display: flex; align-items: center; gap: 5px; }
-
-        .arrow-icon { color: var(--text-dim); font-size: 0.85rem; }
-
-        /* Meta row */
-        .card-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+        .phone-number { font-size: 0.88rem; font-weight: 700; color: #fff; letter-spacing: 0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-row2 { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
         .meta-chip {
-            display: inline-flex; align-items: center; gap: 5px;
+            display: inline-flex; align-items: center; gap: 4px;
             background: var(--surface-2); border: 1px solid var(--border);
-            border-radius: 8px; padding: 5px 10px;
-            font-size: 0.76rem; color: var(--text-dim); font-weight: 500;
+            border-radius: 6px; padding: 3px 7px;
+            font-size: 0.68rem; color: var(--text-dim); font-weight: 500;
         }
-        .meta-chip i { font-size: 0.7rem; }
+        .meta-chip i { font-size: 0.62rem; }
         .meta-chip.user   { color: #818cf8; border-color: rgba(99,102,241,0.2); background: rgba(99,102,241,0.07); }
         .meta-chip.date   { color: #60a5fa; border-color: rgba(59,130,246,0.2); background: rgba(59,130,246,0.07); }
         .meta-chip.dur    { color: #fbbf24; border-color: rgba(245,158,11,0.2); background: rgba(245,158,11,0.07); }
         .meta-chip.price  { color: #34d399; border-color: rgba(52,211,153,0.2); background: rgba(52,211,153,0.07); }
+        .meta-chip.country { color: #a78bfa; border-color: rgba(167,139,250,0.2); background: rgba(167,139,250,0.07); }
 
-        /* Serial badge */
-        .serial-badge {
-            min-width: 30px; height: 30px; border-radius: 8px;
-            background: rgba(99,102,241,0.12); color: #818cf8;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 0.78rem; font-weight: 800; flex-shrink: 0;
-            border: 1px solid rgba(99,102,241,0.2);
-        }
-
-        /* Email changed badge */
         .email-badge {
-            display: inline-flex; align-items: center; gap: 5px;
+            display: inline-flex; align-items: center; gap: 4px;
             background: rgba(16,185,129,0.1); color: #10b981;
             border: 1px solid rgba(16,185,129,0.3);
-            border-radius: 8px; padding: 5px 10px;
-            font-size: 0.76rem; font-weight: 600;
+            border-radius: 6px; padding: 3px 7px;
+            font-size: 0.66rem; font-weight: 700;
         }
-        .email-badge i { font-size: 0.7rem; }
 
-        /* N/A Logout button */
+        .card-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
         .btn-na-logout {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 6px 12px; background: rgba(239,68,68,0.1);
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 5px 9px; background: rgba(239,68,68,0.1);
             color: #f87171; border: 1px solid rgba(239,68,68,0.3);
-            border-radius: 8px; font-size: 0.76rem; font-weight: 600;
+            border-radius: 7px; font-size: 0.7rem; font-weight: 600;
             cursor: pointer; font-family: 'Inter', sans-serif;
             transition: all 0.18s; flex-shrink: 0;
         }
         .btn-na-logout:hover { background: rgba(239,68,68,0.22); color: #fff; border-color: #ef4444; }
         .btn-na-logout:disabled { opacity: 0.5; cursor: not-allowed; }
+        .arrow-icon { color: var(--text-dim); font-size: 0.78rem; }
 
         /* Toast notification */
         .toast {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             background: var(--surface); border: 1px solid var(--border);
-            color: var(--text); border-radius: 12px; padding: 12px 20px;
-            font-size: 0.88rem; font-weight: 600; z-index: 999;
+            color: var(--text); border-radius: 12px; padding: 10px 18px;
+            font-size: 0.85rem; font-weight: 600; z-index: 9999;
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-            display: none; align-items: center; gap: 8px;
+            display: none; align-items: center; gap: 8px; white-space: nowrap;
         }
         .toast.show { display: flex; }
 
-        /* Empty */
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
-        .empty-state i { font-size: 2.8rem; margin-bottom: 14px; display: block; opacity: 0.3; }
-        .empty-state p { font-size: 0.95rem; }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 12px; display: block; opacity: 0.3; }
+        .empty-state p { font-size: 0.9rem; }
 
-        /* Flash */
-        .flash-msg { padding: 11px 16px; border-radius: 10px; margin-bottom: 14px; font-size: 0.88rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        .flash-msg { padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
         .flash-info { background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); }
 
         /* Bulk Email Modal */
@@ -205,40 +187,76 @@
         .modal-overlay.open { display: flex; }
         .modal-box {
             background: var(--surface); border: 1px solid var(--border);
-            border-radius: 20px; padding: 28px; width: 100%; max-width: 560px;
+            border-radius: 18px; padding: 24px; width: 100%; max-width: 520px;
             max-height: 88vh; overflow-y: auto; margin: 16px;
         }
         .modal-title {
-            font-size: 1.05rem; font-weight: 800; color: #fff;
-            display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+            font-size: 1rem; font-weight: 800; color: #fff;
+            display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
         }
         .modal-title i { color: #10b981; }
-        .progress-bar-wrap { height: 8px; background: var(--surface-2); border-radius: 8px; overflow: hidden; margin-bottom: 6px; }
+        .progress-bar-wrap { height: 7px; background: var(--surface-2); border-radius: 8px; overflow: hidden; margin-bottom: 6px; }
         .progress-bar-fill { height: 100%; background: linear-gradient(90deg,#6366f1,#10b981); border-radius: 8px; transition: width 0.4s; }
-        .progress-label { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 16px; }
+        .progress-label { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 14px; }
         .result-row {
-            display: flex; align-items: flex-start; gap: 10px;
-            padding: 10px 14px; border-radius: 12px; background: var(--surface-2);
-            border: 1px solid var(--border); margin-bottom: 8px;
+            display: flex; align-items: flex-start; gap: 9px;
+            padding: 9px 12px; border-radius: 10px; background: var(--surface-2);
+            border: 1px solid var(--border); margin-bottom: 7px;
         }
-        .result-row .r-icon { font-size: 0.9rem; padding-top: 2px; flex-shrink: 0; }
-        .result-row .r-phone { font-size: 0.88rem; font-weight: 700; color: #fff; }
-        .result-row .r-email { font-size: 0.78rem; color: #818cf8; margin-top: 2px; }
-        .result-row .r-msg { font-size: 0.78rem; margin-top: 2px; }
+        .result-row .r-icon { font-size: 0.85rem; padding-top: 2px; flex-shrink: 0; }
+        .result-row .r-phone { font-size: 0.85rem; font-weight: 700; color: #fff; }
+        .result-row .r-email { font-size: 0.75rem; color: #818cf8; margin-top: 2px; }
+        .result-row .r-msg { font-size: 0.75rem; margin-top: 2px; }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .modal-close-btn {
-            width: 100%; margin-top: 16px; padding: 11px;
+            width: 100%; margin-top: 14px; padding: 10px;
             background: var(--surface-2); border: 1px solid var(--border);
-            color: var(--text); border-radius: 12px; font-weight: 600;
-            font-size: 0.9rem; cursor: pointer; font-family: 'Inter', sans-serif;
+            color: var(--text); border-radius: 10px; font-weight: 600;
+            font-size: 0.88rem; cursor: pointer; font-family: 'Inter', sans-serif;
             transition: all 0.2s;
         }
         .modal-close-btn:hover { border-color: var(--primary); color: #fff; }
 
+        /* ── DETAIL DRAWER ── */
+        .drawer-overlay {
+            display: none; position: fixed; inset: 0; z-index: 500;
+            background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+        }
+        .drawer-overlay.open { display: block; }
+        .drawer-panel {
+            position: fixed; top: 0; right: 0; bottom: 0;
+            width: min(520px, 100vw);
+            background: #060a12; border-left: 1px solid var(--border);
+            z-index: 501; display: flex; flex-direction: column;
+            transform: translateX(100%); transition: transform 0.28s cubic-bezier(.4,0,.2,1);
+        }
+        .drawer-panel.open { transform: translateX(0); }
+        .drawer-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; border-bottom: 1px solid var(--border);
+            background: #0d1421; flex-shrink: 0;
+        }
+        .drawer-title { font-size: 0.95rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+        .drawer-close {
+            width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+            background: transparent; color: var(--text-dim); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+            transition: all 0.18s; font-family: 'Inter', sans-serif;
+        }
+        .drawer-close:hover { background: var(--surface-2); color: #fff; }
+        .drawer-loading {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 12px; color: var(--text-dim); font-size: 0.85rem;
+        }
+        .drawer-loading i { font-size: 1.5rem; opacity: 0.4; }
+        .drawer-iframe {
+            flex: 1; border: none; width: 100%;
+            display: none; background: #060a12;
+        }
+
         @media (max-width: 480px) {
-            .phone-number { font-size: 0.95rem; }
-            .card-meta { gap: 6px; }
+            .numbers-list { grid-template-columns: 1fr; }
             .bulk-actions { margin-left: 0; width: 100%; }
             .btn-bulk-email { width: 100%; justify-content: center; }
         }
@@ -262,7 +280,7 @@
 
         <div class="page-header">
             <div class="page-title">
-                <i class="fas fa-circle-dot" style="color: #10b981; font-size: 0.9rem;"></i>
+                <i class="fas fa-circle-dot" style="color: #10b981; font-size: 0.85rem;"></i>
                 Active Numbers
             </div>
             <span class="count-badge">{{ total }} numbers</span>
@@ -273,7 +291,7 @@
                 <div class="search-inner">
                     <input class="search-input" type="text" name="q" value="{{ query }}"
                         placeholder="Search by number or country..." autofocus>
-                    <button type="submit" class="btn-search"><i class="fas fa-search"></i> Search</button>
+                    <button type="submit" class="btn-search"><i class="fas fa-search"></i></button>
                     {% if query %}
                     <a href="/admin/active_numbers" class="btn-clear"><i class="fas fa-xmark"></i></a>
                     {% endif %}
@@ -298,63 +316,47 @@
 
         <div class="numbers-list" id="numbers-list">
             {% for num in numbers %}
-            <div class="number-card" id="card-{{ num.session_name }}">
-                <div class="card-check">
+            <div class="number-card" id="card-{{ num.session_name }}"
+                onclick="openDrawer('{{ num.session_name }}', '{{ num.display_phone }}')">
+                <div class="card-check" onclick="event.stopPropagation()">
                     <input type="checkbox" class="num-check"
                         value="{{ num.session_name }}"
                         onchange="onCheckChange()">
                 </div>
-                <a href="/admin/number/{{ num.session_name }}" class="card-body-link" onclick="return !isCheckMode()">
-                    <div class="card-top">
-                        <div class="card-left">
-                            <div class="serial-badge">#{{ num.serial }}</div>
-                            <div class="phone-icon"><i class="fas fa-sim-card"></i></div>
-                            <div>
-                                <div class="phone-number">{{ num.display_phone }}</div>
-                                <div class="country-label">
-                                    <i class="fas fa-earth-asia"></i>
-                                    {{ num.country }}
-                                </div>
-                            </div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:10px;">
-                            {% if num.email_changed %}
-                            <span class="email-badge"><i class="fas fa-envelope-circle-check"></i> Email Changed</span>
-                            {% endif %}
-                            {% if num.country == 'N/A' %}
-                            <button class="btn-na-logout" id="logout-btn-{{ num.session_name }}"
-                                onclick="quickLogout(event, '{{ num.session_name }}')"
-                                title="Logout this number from the bot">
-                                <i class="fas fa-right-from-bracket"></i> Logout
-                            </button>
-                            {% else %}
-                            <div class="arrow-icon"><i class="fas fa-chevron-right"></i></div>
-                            {% endif %}
-                        </div>
+                <div class="card-main">
+                    <div class="card-row1">
+                        <div class="serial-badge">#{{ num.serial }}</div>
+                        <div class="phone-number">{{ num.display_phone }}</div>
+                        {% if num.email_changed %}
+                        <span class="email-badge"><i class="fas fa-envelope-circle-check"></i> Email Changed</span>
+                        {% endif %}
                     </div>
-                    <div class="card-meta">
+                    <div class="card-row2">
+                        {% if num.country != 'N/A' %}
+                        <span class="meta-chip country"><i class="fas fa-earth-asia"></i> {{ num.country }}</span>
+                        {% endif %}
                         {% if num.user_id != 'N/A' %}
-                        <span class="meta-chip user">
-                            <i class="fas fa-user"></i> {{ num.user_id }}
-                        </span>
+                        <span class="meta-chip user"><i class="fas fa-user"></i> {{ num.user_id }}</span>
                         {% endif %}
                         {% if num.price is not none %}
-                        <span class="meta-chip price">
-                            <i class="fas fa-dollar-sign"></i> {{ "%.2f"|format(num.price) }} USD
-                        </span>
-                        {% endif %}
-                        {% if num.login_date != 'N/A' %}
-                        <span class="meta-chip date">
-                            <i class="fas fa-calendar"></i> {{ num.login_date }}
-                        </span>
+                        <span class="meta-chip price"><i class="fas fa-dollar-sign"></i> {{ "%.2f"|format(num.price) }}</span>
                         {% endif %}
                         {% if num.duration != 'N/A' %}
-                        <span class="meta-chip dur">
-                            <i class="fas fa-clock"></i> {{ num.duration }} ago
-                        </span>
+                        <span class="meta-chip dur"><i class="fas fa-clock"></i> {{ num.duration }}</span>
                         {% endif %}
                     </div>
-                </a>
+                </div>
+                <div class="card-right" onclick="event.stopPropagation()">
+                    {% if num.country == 'N/A' %}
+                    <button class="btn-na-logout" id="logout-btn-{{ num.session_name }}"
+                        onclick="quickLogout(event, '{{ num.session_name }}')"
+                        title="Logout this number from the bot">
+                        <i class="fas fa-right-from-bracket"></i> Logout
+                    </button>
+                    {% else %}
+                    <div class="arrow-icon"><i class="fas fa-chevron-right"></i></div>
+                    {% endif %}
+                </div>
             </div>
             {% endfor %}
         </div>
@@ -385,13 +387,27 @@
         </div>
     </div>
 
+    <!-- Detail Drawer -->
+    <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+    <div class="drawer-panel" id="drawer-panel">
+        <div class="drawer-header">
+            <div class="drawer-title" id="drawer-title">
+                <i class="fas fa-sim-card" style="color:#818cf8"></i>
+                <span id="drawer-phone-label">Loading…</span>
+            </div>
+            <button class="drawer-close" onclick="closeDrawer()"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="drawer-loading" id="drawer-loading">
+            <i class="fas fa-spinner spin"></i>
+            <span>Loading number details…</span>
+        </div>
+        <iframe class="drawer-iframe" id="drawer-iframe" onload="onIframeLoad()"></iframe>
+    </div>
+
     <script>
         // ── Selection helpers ──────────────────────────────────────────────────
         function getChecked() {
             return [...document.querySelectorAll('.num-check:checked')].map(c => c.value);
-        }
-        function isCheckMode() {
-            return getChecked().length > 0;
         }
         function onCheckChange() {
             const checked = getChecked();
@@ -411,7 +427,6 @@
             selectAll.indeterminate = checked.length > 0 && checked.length < total;
             selectAll.checked = checked.length === total;
 
-            // Highlight selected cards
             document.querySelectorAll('.number-card').forEach(card => {
                 const cb = card.querySelector('.num-check');
                 if (cb && cb.checked) card.classList.add('selected');
@@ -422,6 +437,68 @@
             document.querySelectorAll('.num-check').forEach(c => c.checked = cb.checked);
             onCheckChange();
         }
+
+        // ── Detail Drawer ──────────────────────────────────────────────────────
+        function openDrawer(sessionName, displayPhone) {
+            // If any checkbox is checked, clicking a card toggles that checkbox instead
+            if (getChecked().length > 0) {
+                const cb = document.querySelector(`#card-${sessionName} .num-check`);
+                if (cb) { cb.checked = !cb.checked; onCheckChange(); }
+                return;
+            }
+            const panel = document.getElementById('drawer-panel');
+            const overlay = document.getElementById('drawer-overlay');
+            const iframe = document.getElementById('drawer-iframe');
+            const loading = document.getElementById('drawer-loading');
+
+            document.getElementById('drawer-phone-label').textContent = displayPhone;
+            iframe.style.display = 'none';
+            iframe.src = '';
+            loading.style.display = 'flex';
+
+            overlay.classList.add('open');
+            panel.classList.add('open');
+            document.body.style.overflow = 'hidden';
+
+            // Small delay so animation starts first
+            setTimeout(() => {
+                iframe.src = '/admin/number/' + sessionName;
+            }, 80);
+        }
+
+        function onIframeLoad() {
+            const iframe = document.getElementById('drawer-iframe');
+            const loading = document.getElementById('drawer-loading');
+            // Inject CSS to hide the nav back button and adjust iframe page
+            try {
+                const iDoc = iframe.contentDocument;
+                if (iDoc) {
+                    const style = iDoc.createElement('style');
+                    style.textContent = `
+                        .nav-links a[href*="active_numbers"] { display: none !important; }
+                        body { min-height: 100vh; }
+                    `;
+                    iDoc.head.appendChild(style);
+                }
+            } catch(e) { /* cross-origin guard */ }
+            loading.style.display = 'none';
+            iframe.style.display = 'block';
+        }
+
+        function closeDrawer() {
+            const panel = document.getElementById('drawer-panel');
+            const overlay = document.getElementById('drawer-overlay');
+            const iframe = document.getElementById('drawer-iframe');
+            panel.classList.remove('open');
+            overlay.classList.remove('open');
+            document.body.style.overflow = '';
+            setTimeout(() => { iframe.src = ''; iframe.style.display = 'none'; }, 300);
+        }
+
+        // Close drawer on Escape key
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') closeDrawer();
+        });
 
         // ── Bulk Email ─────────────────────────────────────────────────────────
         let bulkPollTimer = null;
@@ -462,7 +539,6 @@
                 document.getElementById('bulk-progress-label').textContent =
                     `${done} / ${total} accounts processed`;
 
-                // Render results
                 const list = document.getElementById('bulk-results-list');
                 list.innerHTML = '';
                 (d.results || []).forEach(r => {
@@ -482,7 +558,7 @@
                             ${iconHtml}
                             <div style="flex:1;min-width:0;">
                                 <div class="r-phone">${r.phone}</div>
-                                ${r.email ? `<div class="r-email"><i class="fas fa-envelope" style="font-size:0.7rem;"></i> ${r.email}</div>` : ''}
+                                ${r.email ? `<div class="r-email"><i class="fas fa-envelope" style="font-size:0.68rem;"></i> ${r.email}</div>` : ''}
                                 <div class="r-msg" style="color:${msgColor};">${r.msg || ''}</div>
                             </div>
                         </div>`;
@@ -516,7 +592,7 @@
             evt.stopPropagation();
             if (!confirm('Logout and remove this number from the bot?')) return;
             const btn = document.getElementById('logout-btn-' + sessionName);
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out…'; }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
             fetch('/admin/number/' + sessionName + '/quick_logout', { method: 'POST' })
                 .then(r => r.json())
                 .then(d => {
