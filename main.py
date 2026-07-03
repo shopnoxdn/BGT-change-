@@ -3412,11 +3412,14 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             if country_data.get('spam_off', False):
                 country_name = country_data.get('name', 'this country')
                 await anim_msg.edit_text(
-                    "🚫 <b>Spam Account Not Accepted</b>\n"
+                    "⚠️ <b>Spam Account Detected</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                     f"📞 <b>Number:</b> <code>{phone}</code>\n\n"
-                    f"❌ We are currently <b>not purchasing spam accounts</b> from <b>{country_name}</b>.\n\n"
-                    "Please try again later or use a non-spam number.",
+                    "🔴 This number has been <b>flagged as Spam</b> by Telegram.\n\n"
+                    f"😔 Unfortunately, we are <b>not accepting spam accounts</b> from "
+                    f"<b>{country_name}</b> at the moment.\n\n"
+                    "⏳ Please try again later with a clean, non-spam number.\n\n"
+                    "✖️ <i>Your sell request has been cancelled.</i>",
                     parse_mode='HTML'
                 )
                 if client.is_connected():
@@ -3673,11 +3676,14 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             if country_data.get('spam_off', False):
                 country_name = country_data.get('name', 'this country')
                 await anim_msg.edit_text(
-                    "🚫 <b>Spam Account Not Accepted</b>\n"
+                    "⚠️ <b>Spam Account Detected</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
                     f"📞 <b>Number:</b> <code>{phone}</code>\n\n"
-                    f"❌ We are currently <b>not purchasing spam accounts</b> from <b>{country_name}</b>.\n\n"
-                    "Please try again later or use a non-spam number.",
+                    "🔴 This number has been <b>flagged as Spam</b> by Telegram.\n\n"
+                    f"😔 Unfortunately, we are <b>not accepting spam accounts</b> from "
+                    f"<b>{country_name}</b> at the moment.\n\n"
+                    "⏳ Please try again later with a clean, non-spam number.\n\n"
+                    "✖️ <i>Your sell request has been cancelled.</i>",
                     parse_mode='HTML'
                 )
                 if client.is_connected():
