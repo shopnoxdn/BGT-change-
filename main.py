@@ -3408,6 +3408,22 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             return ConversationHandler.END
 
         if account_status == 'spam':
+            # ── Check if spam purchase is disabled for this country ──
+            if country_data.get('spam_off', False):
+                country_name = country_data.get('name', 'this country')
+                await anim_msg.edit_text(
+                    "🚫 <b>Spam Account Not Accepted</b>\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"📞 <b>Number:</b> <code>{phone}</code>\n\n"
+                    f"❌ We are currently <b>not purchasing spam accounts</b> from <b>{country_name}</b>.\n\n"
+                    "Please try again later or use a non-spam number.",
+                    parse_mode='HTML'
+                )
+                if client.is_connected():
+                    await client.disconnect()
+                context.user_data.clear()
+                await start(update, context)
+                return ConversationHandler.END
             # ── SPAM ACCOUNT: offer 40% price ──
             half_price = round(country_data['sell_price'] * 0.4, 2)
             context.user_data['spam_pending_phone'] = phone
@@ -3653,6 +3669,22 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             return ConversationHandler.END
 
         if account_status_2fa == 'spam':
+            # ── Check if spam purchase is disabled for this country ──
+            if country_data.get('spam_off', False):
+                country_name = country_data.get('name', 'this country')
+                await anim_msg.edit_text(
+                    "🚫 <b>Spam Account Not Accepted</b>\n"
+                    "━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                    f"📞 <b>Number:</b> <code>{phone}</code>\n\n"
+                    f"❌ We are currently <b>not purchasing spam accounts</b> from <b>{country_name}</b>.\n\n"
+                    "Please try again later or use a non-spam number.",
+                    parse_mode='HTML'
+                )
+                if client.is_connected():
+                    await client.disconnect()
+                context.user_data.clear()
+                await start(update, context)
+                return ConversationHandler.END
             half_price = round(country_data['sell_price'] * 0.4, 2)
             context.user_data['spam_pending_phone'] = phone
             context.user_data['spam_pending_country_data'] = country_data

@@ -182,6 +182,22 @@
         .icon-btn:hover { color: #fff; }
         .icon-btn.edit:hover { background: var(--primary); border-color: var(--primary); }
         .icon-btn.delete:hover { background: var(--danger); border-color: var(--danger); }
+        .spam-toggle {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700;
+            border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: all 0.18s; white-space: nowrap;
+        }
+        .spam-toggle.on {
+            background: rgba(16,185,129,0.12); color: #10b981;
+            border: 1px solid rgba(16,185,129,0.3);
+        }
+        .spam-toggle.on:hover { background: rgba(16,185,129,0.22); }
+        .spam-toggle.off {
+            background: rgba(239,68,68,0.12); color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+        .spam-toggle.off:hover { background: rgba(239,68,68,0.22); }
 
         .edit-panel {
             display: none;
@@ -294,6 +310,19 @@
                     <div class="row-name">
                         {{ item.name }}
                         {% if item.code %}<span class="row-code">{{ item.code }}</span>{% endif %}
+                        <form action="/admin/countries/toggle_spam" method="POST" style="display:inline;margin-left:4px;">
+                            <input type="hidden" name="key" value="{{ item.key }}">
+                            <input type="hidden" name="q" value="{{ query }}">
+                            {% if item.spam_off %}
+                            <button type="submit" class="spam-toggle off" title="Spam purchase is OFF — click to enable">
+                                <i class="fas fa-ban"></i> Spam OFF
+                            </button>
+                            {% else %}
+                            <button type="submit" class="spam-toggle on" title="Spam purchase is ON — click to disable">
+                                <i class="fas fa-check-circle"></i> Spam ON
+                            </button>
+                            {% endif %}
+                        </form>
                     </div>
                     <div class="row-prices">
                         <span class="sell">Sell <b>${{ '%.2f'|format(item.sell_price) }}</b></span>

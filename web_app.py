@@ -464,6 +464,7 @@ def admin_countries():
             'sell_price': info.get('sell_price', 0.0),
             'buy_price': info.get('buy_price', 0.0),
             'code': info.get('code', ''),
+            'spam_off': info.get('spam_off', False),
         })
     items.sort(key=lambda x: x['name'].lower())
 
@@ -553,6 +554,23 @@ def admin_countries_add():
     }
     save_countries(countries)
     return redirect(url_for('admin_countries', q=name, message=f'Added {name} ({code}). Restart the bot to apply.'))
+
+
+@app.route('/admin/countries/toggle_spam', methods=['POST'])
+def admin_countries_toggle_spam():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return redirect(url_for('index'))
+    key = request.form.get('key', '').strip()
+    query = request.form.get('q', '').strip()
+    countries = load_countries()
+    if key not in countries:
+        return redirect(url_for('admin_countries', q=query, message=f'Country not found.'))
+    current = countries[key].get('spam_off', False)
+    countries[key]['spam_off'] = not current
+    save_countries(countries)
+    name = countries[key].get('name', key)
+    status = 'OFF (spam blocked)' if countries[key]['spam_off'] else 'ON (spam allowed)'
+    return redirect(url_for('admin_countries', q=query, message=f'Spam purchase for {name} is now {status}.'))
 
 
 @app.route('/admin/countries/delete', methods=['POST'])
@@ -1207,6 +1225,43 @@ async def admin_toggle_2fa(phone):
     finally:
         if client.is_connected():
             await client.disconnect()
+
+
+@app.route('/admin/number/<path:phone>/quick_logout', methods=['POST'])
+async def admin_quick_logout(phone):
+    """Fully log out a session and remove it (used for N/A numbers from the list page)."""
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    session_path = os.path.join(SESSIONS_DIR, phone)
+    if not os.path.exists(session_path + '.session'):
+        return jsonify({'success': False, 'message': 'Session file not found'}), 404
+
+    client = TelegramClient(session_path, API_ID, API_HASH)
+    try:
+        await client.connect()
+        try:
+            await client.log_out()
+        except Exception:
+            pass
+    except Exception:
+        pass
+    finally:
+        try:
+            if client.is_connected():
+                await client.disconnect()
+        except Exception:
+            pass
+
+    for ext in ('.session', '.session-journal'):
+        fpath = session_path + ext
+        if os.path.exists(fpath):
+            try:
+                os.remove(fpath)
+            except Exception:
+                pass
+
+    return jsonify({'success': True, 'message': f'{phone} logged out and removed.'})
 
 
 @app.route('/admin/number/<path:phone>/auto_change_email', methods=['POST'])

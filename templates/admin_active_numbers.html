@@ -164,6 +164,29 @@
         }
         .email-badge i { font-size: 0.7rem; }
 
+        /* N/A Logout button */
+        .btn-na-logout {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 6px 12px; background: rgba(239,68,68,0.1);
+            color: #f87171; border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px; font-size: 0.76rem; font-weight: 600;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: all 0.18s; flex-shrink: 0;
+        }
+        .btn-na-logout:hover { background: rgba(239,68,68,0.22); color: #fff; border-color: #ef4444; }
+        .btn-na-logout:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Toast notification */
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: var(--surface); border: 1px solid var(--border);
+            color: var(--text); border-radius: 12px; padding: 12px 20px;
+            font-size: 0.88rem; font-weight: 600; z-index: 999;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            display: none; align-items: center; gap: 8px;
+        }
+        .toast.show { display: flex; }
+
         /* Empty */
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
         .empty-state i { font-size: 2.8rem; margin-bottom: 14px; display: block; opacity: 0.3; }
@@ -298,7 +321,15 @@
                             {% if num.email_changed %}
                             <span class="email-badge"><i class="fas fa-envelope-circle-check"></i> Email Changed</span>
                             {% endif %}
+                            {% if num.country == 'N/A' %}
+                            <button class="btn-na-logout" id="logout-btn-{{ num.session_name }}"
+                                onclick="quickLogout(event, '{{ num.session_name }}')"
+                                title="Logout this number from the bot">
+                                <i class="fas fa-right-from-bracket"></i> Logout
+                            </button>
+                            {% else %}
                             <div class="arrow-icon"><i class="fas fa-chevron-right"></i></div>
+                            {% endif %}
                         </div>
                     </div>
                     <div class="card-meta">
@@ -335,6 +366,9 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
 
     <!-- Bulk Email Progress Modal -->
     <div class="modal-overlay" id="bulk-modal">
@@ -466,6 +500,39 @@
         function closeBulkModal() {
             if (bulkPollTimer) clearInterval(bulkPollTimer);
             document.getElementById('bulk-modal').classList.remove('open');
+        }
+
+        // ── N/A Quick Logout ───────────────────────────────────────────────────
+        function showToast(msg, color) {
+            const t = document.getElementById('toast');
+            t.innerHTML = msg;
+            t.style.borderColor = color || 'var(--border)';
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3500);
+        }
+
+        function quickLogout(evt, sessionName) {
+            evt.preventDefault();
+            evt.stopPropagation();
+            if (!confirm('Logout and remove this number from the bot?')) return;
+            const btn = document.getElementById('logout-btn-' + sessionName);
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging out…'; }
+            fetch('/admin/number/' + sessionName + '/quick_logout', { method: 'POST' })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        showToast('<i class="fas fa-check-circle" style="color:#10b981"></i> ' + d.message, '#10b981');
+                        const card = document.getElementById('card-' + sessionName);
+                        if (card) { card.style.opacity = '0'; card.style.transition = 'opacity 0.5s'; setTimeout(() => card.remove(), 500); }
+                    } else {
+                        showToast('<i class="fas fa-times-circle" style="color:#ef4444"></i> ' + d.message, '#ef4444');
+                        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-right-from-bracket"></i> Logout'; }
+                    }
+                })
+                .catch(e => {
+                    showToast('<i class="fas fa-times-circle" style="color:#ef4444"></i> Error: ' + e, '#ef4444');
+                    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-right-from-bracket"></i> Logout'; }
+                });
         }
     </script>
 </body>
