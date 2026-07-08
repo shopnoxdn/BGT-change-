@@ -87,6 +87,14 @@
         }
         .btn-bulk-email:hover { background: #059669; }
         .btn-bulk-email:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-bulk-logout {
+            padding: 7px 14px; background: var(--danger); color: #fff;
+            border: none; border-radius: 8px; font-weight: 600; font-size: 0.8rem;
+            cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .btn-bulk-logout:hover { background: #dc2626; }
+        .btn-bulk-logout:disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* ── COMPACT NUMBER GRID ── */
         .numbers-list {
@@ -311,6 +319,9 @@
                 <button class="btn-bulk-email" id="bulk-email-btn" disabled onclick="startBulkEmail()">
                     <i class="fas fa-envelope"></i> Change Email (Selected)
                 </button>
+                <button class="btn-bulk-logout" id="bulk-logout-btn" disabled onclick="startBulkLogout()">
+                    <i class="fas fa-right-from-bracket"></i> Logout (Selected)
+                </button>
             </div>
         </div>
 
@@ -347,15 +358,11 @@
                     </div>
                 </div>
                 <div class="card-right" onclick="event.stopPropagation()">
-                    {% if num.country == 'N/A' %}
                     <button class="btn-na-logout" id="logout-btn-{{ num.session_name }}"
                         onclick="quickLogout(event, '{{ num.session_name }}')"
                         title="Logout this number from the bot">
                         <i class="fas fa-right-from-bracket"></i> Logout
                     </button>
-                    {% else %}
-                    <div class="arrow-icon"><i class="fas fa-chevron-right"></i></div>
-                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -382,6 +389,21 @@
             <div class="progress-label" id="bulk-progress-label">Starting…</div>
             <div id="bulk-results-list"></div>
             <button class="modal-close-btn" id="bulk-close-btn" onclick="closeBulkModal()" style="display:none;">
+                <i class="fas fa-check"></i> Done — Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Bulk Logout Progress Modal -->
+    <div class="modal-overlay" id="bulk-logout-modal">
+        <div class="modal-box">
+            <div class="modal-title"><i class="fas fa-right-from-bracket"></i> Bulk Logout</div>
+            <div class="progress-bar-wrap">
+                <div class="progress-bar-fill" id="bulk-logout-bar" style="width:0%"></div>
+            </div>
+            <div class="progress-label" id="bulk-logout-progress-label">Starting…</div>
+            <div id="bulk-logout-results-list"></div>
+            <button class="modal-close-btn" id="bulk-logout-close-btn" onclick="closeBulkLogoutModal()" style="display:none;">
                 <i class="fas fa-check"></i> Done — Close
             </button>
         </div>
@@ -416,12 +438,15 @@
             const countEl = document.getElementById('sel-count');
             const selectAll = document.getElementById('select-all');
 
+            const logoutBtn = document.getElementById('bulk-logout-btn');
             if (checked.length > 0) {
                 btn.disabled = false;
+                if (logoutBtn) logoutBtn.disabled = false;
                 countEl.style.display = 'inline';
                 countEl.textContent = checked.length + ' selected';
             } else {
                 btn.disabled = true;
+                if (logoutBtn) logoutBtn.disabled = true;
                 countEl.style.display = 'none';
             }
             selectAll.indeterminate = checked.length > 0 && checked.length < total;
@@ -576,6 +601,90 @@
         function closeBulkModal() {
             if (bulkPollTimer) clearInterval(bulkPollTimer);
             document.getElementById('bulk-modal').classList.remove('open');
+        }
+
+        // ── Bulk Logout ────────────────────────────────────────────────────────
+        let bulkLogoutPollTimer = null;
+
+        function startBulkLogout() {
+            const phones = getChecked();
+            if (!phones.length) return;
+            if (!confirm(`Logout and remove ${phones.length} account(s) from the bot? This cannot be undone.`)) return;
+
+            document.getElementById('bulk-logout-modal').classList.add('open');
+            document.getElementById('bulk-logout-results-list').innerHTML = '';
+            document.getElementById('bulk-logout-bar').style.width = '0%';
+            document.getElementById('bulk-logout-progress-label').textContent = 'Starting…';
+            document.getElementById('bulk-logout-close-btn').style.display = 'none';
+
+            fetch('/admin/bulk_logout', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({phones: phones})
+            })
+            .then(r => r.json())
+            .then(d => {
+                if (!d.success) { alert(d.message); closeBulkLogoutModal(); return; }
+                if (bulkLogoutPollTimer) clearInterval(bulkLogoutPollTimer);
+                bulkLogoutPollTimer = setInterval(() => pollBulkLogoutStatus(d.task_id), 1500);
+            })
+            .catch(e => { alert('Error: ' + e); closeBulkLogoutModal(); });
+        }
+
+        function pollBulkLogoutStatus(taskId) {
+            fetch('/admin/bulk_logout_status/' + taskId)
+            .then(r => r.json())
+            .then(d => {
+                const total = d.total || 0;
+                const done = d.done || 0;
+                const pct = total > 0 ? Math.round(done / total * 100) : 0;
+                document.getElementById('bulk-logout-bar').style.width = pct + '%';
+                document.getElementById('bulk-logout-progress-label').textContent =
+                    `${done} / ${total} accounts processed`;
+
+                const list = document.getElementById('bulk-logout-results-list');
+                list.innerHTML = '';
+                (d.results || []).forEach(r => {
+                    let iconHtml, msgColor;
+                    if (r.status === 'done') {
+                        iconHtml = '<i class="fas fa-check-circle r-icon" style="color:#10b981"></i>';
+                        msgColor = '#10b981';
+                    } else if (r.status === 'error') {
+                        iconHtml = '<i class="fas fa-times-circle r-icon" style="color:#ef4444"></i>';
+                        msgColor = '#ef4444';
+                    } else {
+                        iconHtml = '<i class="fas fa-spinner spin r-icon" style="color:#fbbf24"></i>';
+                        msgColor = '#fbbf24';
+                    }
+                    list.innerHTML += `
+                        <div class="result-row">
+                            ${iconHtml}
+                            <div style="flex:1;min-width:0;">
+                                <div class="r-phone">${r.phone}</div>
+                                <div class="r-msg" style="color:${msgColor};">${r.msg || ''}</div>
+                            </div>
+                        </div>`;
+                });
+
+                if (d.status === 'done') {
+                    clearInterval(bulkLogoutPollTimer);
+                    document.getElementById('bulk-logout-progress-label').textContent =
+                        `✅ All ${total} accounts processed!`;
+                    document.getElementById('bulk-logout-close-btn').style.display = 'block';
+                    // Remove logged-out cards from the grid
+                    (d.results || []).forEach(r => {
+                        if (r.status === 'done' && r.session_name) {
+                            const card = document.getElementById('card-' + r.session_name);
+                            if (card) { card.style.opacity = '0'; card.style.transition = 'opacity 0.5s'; setTimeout(() => card.remove(), 500); }
+                        }
+                    });
+                }
+            });
+        }
+
+        function closeBulkLogoutModal() {
+            if (bulkLogoutPollTimer) clearInterval(bulkLogoutPollTimer);
+            document.getElementById('bulk-logout-modal').classList.remove('open');
         }
 
         // ── N/A Quick Logout ───────────────────────────────────────────────────

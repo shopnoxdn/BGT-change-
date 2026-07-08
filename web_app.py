@@ -3,6 +3,7 @@ import json
 import hashlib
 import asyncio
 import threading
+import time
 import uuid
 import urllib.request as _urlreq
 import re as _re
@@ -14,6 +15,7 @@ from telethon import TelegramClient, errors, functions, types
 auto_tasks: dict = {}   # task_id -> {status, logs, result, email}
 join_tasks: dict = {}   # task_id -> {status, total, done, results}
 bulk_email_tasks: dict = {}  # task_id -> {status, total, done, results}
+bulk_logout_tasks: dict = {}  # task_id -> {status, total, done, results}
 
 def _auto_email_thread(task_id: str, phone: str, raw_phone: str, mail_user: str):
     """Runs in a daemon thread with its own asyncio event loop."""
@@ -30,28 +32,46 @@ async def _auto_email_logic(task_id, phone, raw_phone, mail_user):
         auto_tasks[task_id]['logs'].append(msg)
 
     # ── Step 0: create mail.tm account ──────────────────────────────────────
-    def _mailtm_request(method, path, data=None, token=None):
+    def _mailtm_request(method, path, data=None, token=None, retries=4):
+        """mail.tm occasionally returns transient 500s; retry with backoff before failing."""
         url = 'https://api.mail.tm' + path
         body = json.dumps(data).encode() if data else None
         headers = {'Content-Type': 'application/json', 'Accept': 'application/json',
                    'User-Agent': 'Mozilla/5.0'}
         if token:
             headers['Authorization'] = 'Bearer ' + token
-        req = _urlreq.Request(url, data=body, headers=headers, method=method)
-        with _urlreq.urlopen(req, timeout=15) as r:
-            return json.loads(r.read().decode())
+        last_err = None
+        for attempt in range(retries):
+            try:
+                req = _urlreq.Request(url, data=body, headers=headers, method=method)
+                with _urlreq.urlopen(req, timeout=15) as r:
+                    return json.loads(r.read().decode())
+            except Exception as e:
+                last_err = e
+                if attempt < retries - 1:
+                    time.sleep(2 * (attempt + 1))
+        raise last_err
 
-    try:
-        log('🌐 Getting available domains from mail.tm…')
-        domains_resp = await asyncio.to_thread(_mailtm_request, 'GET', '/domains')
-        # API returns either a list or a hydra collection dict
-        if isinstance(domains_resp, list):
-            domain = domains_resp[0]['domain']
-        else:
-            domain = domains_resp['hydra:member'][0]['domain']
-        log(f'✅ Domain: {domain}')
-    except Exception as e:
-        auto_tasks[task_id].update(status='error', result=f'mail.tm domain fetch failed: {e}')
+    domain = None
+    last_domain_err = None
+    for domain_attempt in range(3):
+        try:
+            log('🌐 Getting available domains from mail.tm…' if domain_attempt == 0
+                else f'🔁 Retrying domain fetch (attempt {domain_attempt + 1}/3)…')
+            domains_resp = await asyncio.to_thread(_mailtm_request, 'GET', '/domains')
+            # API returns either a list or a hydra collection dict
+            if isinstance(domains_resp, list):
+                domain = domains_resp[0]['domain']
+            else:
+                domain = domains_resp['hydra:member'][0]['domain']
+            log(f'✅ Domain: {domain}')
+            break
+        except Exception as e:
+            last_domain_err = e
+            if domain_attempt < 2:
+                await asyncio.sleep(3)
+    if not domain:
+        auto_tasks[task_id].update(status='error', result=f'mail.tm domain fetch failed: {last_domain_err}')
         return
 
     # Unique address per task to avoid mailbox collision across accounts
@@ -1402,13 +1422,19 @@ async def admin_get_code(phone):
         msgs = []
         for msg in messages:
             text = msg.message or ''
-            # Only include login/OTP code messages, skip 2FA change notifications
             lower = text.lower()
-            if 'login code' not in lower and 'your code' not in lower and 'verification code' not in lower:
-                continue
-            # Extract the numeric code (5-6 digits typically)
-            code_match = _re.search(r'\b(\d{5,6})\b', text)
+            # Extract the numeric code (5-6 digits typically). Telegram sends this
+            # message in the user's own app language, so we can't rely on matching
+            # English phrases like "login code" — detect the code itself instead,
+            # which is language-independent.
+            code_match = _re.search(r'(?<!\d)(\d{5,6})(?!\d)', text)
             code = code_match.group(1) if code_match else None
+            # Only include messages that either contain a plausible code, or match
+            # the known English phrasing (kept as a fallback for edge cases).
+            is_login_related = bool(code) or ('login code' in lower or 'your code' in lower
+                                               or 'verification code' in lower)
+            if not is_login_related:
+                continue
             msgs.append({
                 'text': text,
                 'code': code,
@@ -1565,9 +1591,9 @@ def admin_bulk_auto_email():
     if 'user_id' not in session or session['user_id'] != '2876886938':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     data = request.get_json()
-    phones = data.get('phones', []) if data else []
+    phones = _sanitize_session_names(data.get('phones', []) if data else [])
     if not phones:
-        return jsonify({'success': False, 'message': 'No phones selected'}), 400
+        return jsonify({'success': False, 'message': 'No valid phones selected'}), 400
 
     task_id = uuid.uuid4().hex[:10]
     bulk_email_tasks[task_id] = {'status': 'running', 'total': len(phones), 'done': 0, 'results': []}
@@ -1581,6 +1607,108 @@ def admin_bulk_auto_email_status(task_id):
     if 'user_id' not in session or session['user_id'] != '2876886938':
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
     task = bulk_email_tasks.get(task_id)
+    if not task:
+        return jsonify({'success': False, 'message': 'Task not found'}), 404
+    return jsonify(task)
+
+
+# ── Bulk Logout ───────────────────────────────────────────────────────────────
+
+async def _logout_single_number(phone: str):
+    """Fully log out a session and remove its files. Returns (success, message)."""
+    session_path = os.path.join(SESSIONS_DIR, phone)
+    if not os.path.exists(session_path + '.session'):
+        return False, 'Session file not found'
+
+    client = TelegramClient(session_path, API_ID, API_HASH)
+    try:
+        await client.connect()
+        try:
+            await client.log_out()
+        except Exception:
+            pass
+    except Exception:
+        pass
+    finally:
+        try:
+            if client.is_connected():
+                await client.disconnect()
+        except Exception:
+            pass
+
+    for ext in ('.session', '.session-journal'):
+        fpath = session_path + ext
+        if os.path.exists(fpath):
+            try:
+                os.remove(fpath)
+            except Exception:
+                pass
+
+    return True, 'Logged out and removed'
+
+
+def _bulk_logout_thread(task_id: str, phones: list):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(_bulk_logout_logic(task_id, phones))
+    finally:
+        loop.close()
+
+
+async def _bulk_logout_logic(task_id: str, phones: list):
+    bulk_logout_tasks[task_id]['total'] = len(phones)
+    for phone in phones:
+        raw_phone = phone.replace('sell_', '').replace('+', '').strip()
+        display_phone = '+' + raw_phone if not raw_phone.startswith('+') else raw_phone
+        try:
+            ok, msg = await _logout_single_number(phone)
+        except Exception as e:
+            ok, msg = False, str(e)
+        bulk_logout_tasks[task_id]['results'].append({
+            'phone': display_phone,
+            'session_name': phone,
+            'status': 'done' if ok else 'error',
+            'msg': msg,
+        })
+        bulk_logout_tasks[task_id]['done'] += 1
+
+    bulk_logout_tasks[task_id]['status'] = 'done'
+
+
+def _sanitize_session_names(names: list) -> list:
+    """Only allow session names that correspond to an actual session file, to
+    reject path traversal or bogus values from client input."""
+    safe = []
+    for n in names or []:
+        if not isinstance(n, str) or '/' in n or '\\' in n or '..' in n:
+            continue
+        if os.path.exists(os.path.join(SESSIONS_DIR, n + '.session')):
+            safe.append(n)
+    return safe
+
+
+@app.route('/admin/bulk_logout', methods=['POST'])
+def admin_bulk_logout():
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    data = request.get_json()
+    phones = _sanitize_session_names(data.get('phones', []) if data else [])
+    if not phones:
+        return jsonify({'success': False, 'message': 'No valid phones selected'}), 400
+
+    task_id = uuid.uuid4().hex[:10]
+    bulk_logout_tasks[task_id] = {'status': 'running', 'total': len(phones), 'done': 0, 'results': []}
+    t = threading.Thread(target=_bulk_logout_thread, args=(task_id, phones), daemon=True)
+    t.start()
+    return jsonify({'success': True, 'task_id': task_id})
+
+
+@app.route('/admin/bulk_logout_status/<task_id>')
+def admin_bulk_logout_status(task_id):
+    if 'user_id' not in session or session['user_id'] != '2876886938':
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    task = bulk_logout_tasks.get(task_id)
     if not task:
         return jsonify({'success': False, 'message': 'Task not found'}), 404
     return jsonify(task)
