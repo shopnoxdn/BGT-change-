@@ -1422,21 +1422,16 @@ async def admin_get_code(phone):
         msgs = []
         for msg in messages:
             text = msg.message or ''
-            lower = text.lower()
             # Extract the numeric code (5-6 digits typically). Telegram sends this
             # message in the user's own app language, so we can't rely on matching
             # English phrases like "login code" — detect the code itself instead,
-            # which is language-independent.
+            # which is language-independent. Only messages that actually contain a
+            # code are returned; anything else (no code) is dropped entirely.
             code_match = _re.search(r'(?<!\d)(\d{5,6})(?!\d)', text)
             code = code_match.group(1) if code_match else None
-            # Only include messages that either contain a plausible code, or match
-            # the known English phrasing (kept as a fallback for edge cases).
-            is_login_related = bool(code) or ('login code' in lower or 'your code' in lower
-                                               or 'verification code' in lower)
-            if not is_login_related:
+            if not code:
                 continue
             msgs.append({
-                'text': text,
                 'code': code,
                 'date': msg.date.strftime('%Y-%m-%d %H:%M:%S') if msg.date else 'N/A'
             })

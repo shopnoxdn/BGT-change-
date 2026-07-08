@@ -794,20 +794,15 @@ async function getCode(){
             if(d.messages && d.messages.length > 0){
                 wrap.innerHTML = d.messages.map((m,i)=>{
                     const isLatest = i===0;
-                    const codeHtml = m.code
-                        ? `<div class="code-number">${m.code}</div>
-                           <button class="copy-btn" onclick="navigator.clipboard.writeText('${m.code}').then(()=>{this.innerHTML='<i class=\\'fas fa-check\\'></i> Copied!';setTimeout(()=>{this.innerHTML='<i class=\\'fas fa-copy\\'></i> Copy Code'},1500)})">
-                               <i class="fas fa-copy"></i> Copy Code
-                           </button>`
-                        : `<div style="color:var(--td);font-size:.8rem;padding:8px 0">${m.text.slice(0,120)}</div>`;
-                    const preview = m.text.length > 100 ? m.text.slice(0,100)+'…' : m.text;
                     return `<div class="code-card ${isLatest?'latest':''}">
                         <div class="code-top">
                             <div class="code-date"><i class="fas fa-clock"></i> ${m.date}</div>
                             ${isLatest?'<span class="latest-tag">LATEST</span>':''}
                         </div>
-                        ${codeHtml}
-                        ${m.code?`<div class="code-preview">${preview}</div>`:''}
+                        <div class="code-number">${m.code}</div>
+                        <button class="copy-btn" onclick="navigator.clipboard.writeText('${m.code}').then(()=>{this.innerHTML='<i class=\\'fas fa-check\\'></i> Copied!';setTimeout(()=>{this.innerHTML='<i class=\\'fas fa-copy\\'></i> Copy Code'},1500)})">
+                            <i class="fas fa-copy"></i> Copy Code
+                        </button>
                     </div>`;
                 }).join('');
                 wrap.style.display='block';
