@@ -89526,14 +89526,15 @@
     },
     "1041119928": {
         "main_balance_usdt": 1.6700000000000004,
-        "hold_balance_usdt": 0.0,
+        "hold_balance_usdt": 0.51,
         "topup_balance_usdt": 0.0,
         "accounts_bought": 0,
-        "accounts_sold": 3,
+        "accounts_sold": 4,
         "sold_numbers": [
             "+880177 3294461",
             "+8801 825326324",
-            "+88017 65199578"
+            "+88017 65199578",
+            "+88019783 12870"
         ],
         "referrer_id": null,
         "referrals": [
@@ -89586,6 +89587,13 @@
                 "price": 0.51,
                 "status": "Successful",
                 "timestamp": "2026-07-03T06:06:11.786337",
+                "country": "Bangladesh \ud83c\udde7\ud83c\udde9"
+            },
+            {
+                "number": "+88019783 12870",
+                "price": 0.51,
+                "status": "Processing",
+                "timestamp": "2026-07-09T14:31:57.434978",
                 "country": "Bangladesh \ud83c\udde7\ud83c\udde9"
             }
         ],
