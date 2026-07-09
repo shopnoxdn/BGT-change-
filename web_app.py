@@ -49,9 +49,7 @@ async def _auto_email_logic(task_id, phone, raw_phone, mail_user):
 # ─────────────────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SESSION_SECRET')
-if not app.secret_key:
-    raise RuntimeError("SESSION_SECRET environment variable is required but not set.")
+app.secret_key = os.environ.get('SESSION_SECRET', 'bgt-wallet-admin-2026-fixed-key')
 
 @app.after_request
 def no_cache(response):
@@ -61,13 +59,8 @@ def no_cache(response):
     return response
 
 # Telegram API for UserSession
-_api_id_raw = os.environ.get("TELEGRAM_API_ID")
-if not _api_id_raw:
-    raise RuntimeError("TELEGRAM_API_ID environment variable is required but not set.")
-API_ID = int(_api_id_raw)
-API_HASH = os.environ.get("TELEGRAM_API_HASH")
-if not API_HASH:
-    raise RuntimeError("TELEGRAM_API_HASH environment variable is required but not set.")
+API_ID = int(os.environ.get("TELEGRAM_API_ID", "31955122"))
+API_HASH = os.environ.get("TELEGRAM_API_HASH", "4f3e7f6d8250dc14c21ae58642fcbcc9")
 
 DATA_FILE = 'user_data.json'
 COUNTRIES_FILE = 'countries_data.json'
