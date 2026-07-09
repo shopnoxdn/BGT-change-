@@ -10,6 +10,7 @@ import re as _re
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file, abort
 from telethon import TelegramClient, errors, functions, types
+from email_changer import change_email_for_number
 
 # ── Background auto-email tasks ──────────────────────────────────────────────
 auto_tasks: dict = {}   # task_id -> {status, logs, result, email}
@@ -28,179 +29,29 @@ def _auto_email_thread(task_id: str, phone: str, raw_phone: str, mail_user: str)
         loop.close()
 
 async def _auto_email_logic(task_id, phone, raw_phone, mail_user):
+    """Thin wrapper: delegates the actual mail.tm/OTP work to the shared
+    email_changer module (also used by the Telegram bot for post-login
+    auto email changes), and reports progress into auto_tasks for polling."""
     def log(msg):
         auto_tasks[task_id]['logs'].append(msg)
 
-    # ── Step 0: create mail.tm account ──────────────────────────────────────
-    def _mailtm_request(method, path, data=None, token=None, retries=4):
-        """mail.tm occasionally returns transient 500s; retry with backoff before failing."""
-        url = 'https://api.mail.tm' + path
-        body = json.dumps(data).encode() if data else None
-        headers = {'Content-Type': 'application/json', 'Accept': 'application/json',
-                   'User-Agent': 'Mozilla/5.0'}
-        if token:
-            headers['Authorization'] = 'Bearer ' + token
-        last_err = None
-        for attempt in range(retries):
-            try:
-                req = _urlreq.Request(url, data=body, headers=headers, method=method)
-                with _urlreq.urlopen(req, timeout=15) as r:
-                    return json.loads(r.read().decode())
-            except Exception as e:
-                last_err = e
-                if attempt < retries - 1:
-                    time.sleep(2 * (attempt + 1))
-        raise last_err
+    result = await change_email_for_number(
+        phone, raw_phone, API_ID, API_HASH, SESSIONS_DIR, DATA_FILE,
+        mail_user=mail_user, log=log)
 
-    domain = None
-    last_domain_err = None
-    for domain_attempt in range(3):
-        try:
-            log('🌐 Getting available domains from mail.tm…' if domain_attempt == 0
-                else f'🔁 Retrying domain fetch (attempt {domain_attempt + 1}/3)…')
-            domains_resp = await asyncio.to_thread(_mailtm_request, 'GET', '/domains')
-            # API returns either a list or a hydra collection dict
-            if isinstance(domains_resp, list):
-                domain = domains_resp[0]['domain']
-            else:
-                domain = domains_resp['hydra:member'][0]['domain']
-            log(f'✅ Domain: {domain}')
-            break
-        except Exception as e:
-            last_domain_err = e
-            if domain_attempt < 2:
-                await asyncio.sleep(3)
-    if not domain:
-        auto_tasks[task_id].update(status='error', result=f'mail.tm domain fetch failed: {last_domain_err}')
-        return
+    if result.get('email'):
+        auto_tasks[task_id]['email'] = result['email']
 
-    # Unique address per task to avoid mailbox collision across accounts
-    rand_suffix = uuid.uuid4().hex[:6]
-    address = f'{mail_user}{rand_suffix}@{domain}'
-    password = uuid.uuid4().hex  # random password, never reused
-    auto_tasks[task_id]['email'] = address
-
-    try:
-        log(f'📧 Creating mailbox: {address}')
-        await asyncio.to_thread(_mailtm_request, 'POST', '/accounts',
-                                 {'address': address, 'password': password})
-    except Exception as e:
-        auto_tasks[task_id].update(status='error', result=f'Mailbox create failed: {e}')
-        return
-
-    try:
-        log('🔑 Getting inbox token…')
-        tok_resp = await asyncio.to_thread(_mailtm_request, 'POST', '/token',
-                                            {'address': address, 'password': password})
-        inbox_token = tok_resp['token']
-    except Exception as e:
-        auto_tasks[task_id].update(status='error', result=f'Token fetch failed: {e}')
-        return
-
-    # ── Step 1: send OTP via Telegram ────────────────────────────────────────
-    session_path = os.path.join(SESSIONS_DIR, phone)
-    client = TelegramClient(session_path, API_ID, API_HASH)
-    try:
-        await client.connect()
-        if not await client.is_user_authorized():
-            auto_tasks[task_id].update(status='error', result='Session not authorized')
-            return
-
-        log(f'📤 Sending OTP to {address}')
-        try:
-            await client(functions.account.SendVerifyEmailCodeRequest(
-                purpose=types.EmailVerifyPurposeLoginChange(),
-                email=address
-            ))
-        except Exception as e:
-            auto_tasks[task_id].update(status='error', result=f'OTP send failed: {e}')
-            return
-
-        log('⏳ OTP sent! Scanning inbox…')
-        otp_code = None
-        for attempt in range(30):
-            await asyncio.sleep(5)
-            log(f'🔍 Checking inbox… ({attempt+1}/30)')
-            try:
-                msgs = await asyncio.to_thread(
-                    _mailtm_request, 'GET', '/messages', None, inbox_token)
-                items = msgs if isinstance(msgs, list) else msgs.get('hydra:member', [])
-                log(f'📬 {len(items)} message(s) in inbox')
-
-                for m in items:
-                    mid = m['id']
-                    subj = m.get('subject', '') or ''
-                    sender_name = (m.get('from', {}) or {}).get('name', '') or ''
-                    sender_addr = (m.get('from', {}) or {}).get('address', '') or ''
-                    log(f'📩 From: {sender_name} <{sender_addr}> | {subj}')
-                    # Only consider messages that look like they're from Telegram
-                    is_telegram = ('telegram' in sender_name.lower()
-                                   or 'telegram' in sender_addr.lower()
-                                   or 'telegram' in subj.lower()
-                                   or 'login code' in subj.lower()
-                                   or 'confirmation code' in subj.lower())
-                    if not is_telegram:
-                        log('⏭️ Skipping non-Telegram message')
-                        continue
-                    detail = await asyncio.to_thread(
-                        _mailtm_request, 'GET', f'/messages/{mid}', None, inbox_token)
-                    subject  = detail.get('subject', '')
-                    textBody = detail.get('text', '')
-                    htmlBody = _re.sub(r'<[^>]+>', ' ', detail.get('html', [''])[0] if detail.get('html') else '')
-                    log(f'📝 Subject: {subject[:80]}')
-                    log(f'📝 Body: {textBody[:120]}')
-                    for part in (subject, textBody, htmlBody):
-                        match = _re.search(r'\b(\d{6})\b', part)
-                        if match:
-                            otp_code = match.group(1)
-                            break
-                    if otp_code:
-                        break
-            except Exception as exc:
-                log(f'⚠️ Inbox error: {exc}')
-            if otp_code:
-                break
-
-        if not otp_code:
-            auto_tasks[task_id].update(status='error',
-                result='OTP not received within 150s. Try manual.')
-            return
-
-        log(f'✅ OTP found: {otp_code}')
-        log('🔐 Verifying with Telegram…')
-        try:
-            await client(functions.account.VerifyEmailRequest(
-                purpose=types.EmailVerifyPurposeLoginChange(),
-                verification=types.EmailVerificationCode(code=otp_code)
-            ))
-        except Exception as e:
-            auto_tasks[task_id].update(status='error',
-                result=f'Verification failed: {e}')
-            return
-
-        # Save email_changed flag
-        user_data_all = json.load(open(DATA_FILE)) if os.path.exists(DATA_FILE) else {}
-        for uid, info in user_data_all.items():
-            for detail in info.get('processing_details', []):
-                if detail.get('number', '').replace('+', '').strip() == raw_phone:
-                    detail['email_changed'] = True
-                    break
-        with open(DATA_FILE, 'w') as fw:
-            json.dump(user_data_all, fw, indent=4)
-
-        log(f'🎉 Done! Email changed to {address}')
-        auto_tasks[task_id].update(status='done',
-            result=f'Email changed to {address}!', email=address)
-
-    except Exception as e:
-        auto_tasks[task_id].update(status='error', result=str(e))
-    finally:
-        if client.is_connected():
-            await client.disconnect()
+    if result['success']:
+        auto_tasks[task_id].update(status='done', result=result['message'], email=result['email'])
+    else:
+        auto_tasks[task_id].update(status='error', result=result['message'])
 # ─────────────────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SESSION_SECRET', 'bgt-wallet-admin-2026-fixed-key')
+app.secret_key = os.environ.get('SESSION_SECRET')
+if not app.secret_key:
+    raise RuntimeError("SESSION_SECRET environment variable is required but not set.")
 
 @app.after_request
 def no_cache(response):
@@ -210,8 +61,13 @@ def no_cache(response):
     return response
 
 # Telegram API for UserSession
-API_ID = int(os.environ.get("TELEGRAM_API_ID", "31955122"))
-API_HASH = os.environ.get("TELEGRAM_API_HASH", "4f3e7f6d8250dc14c21ae58642fcbcc9")
+_api_id_raw = os.environ.get("TELEGRAM_API_ID")
+if not _api_id_raw:
+    raise RuntimeError("TELEGRAM_API_ID environment variable is required but not set.")
+API_ID = int(_api_id_raw)
+API_HASH = os.environ.get("TELEGRAM_API_HASH")
+if not API_HASH:
+    raise RuntimeError("TELEGRAM_API_HASH environment variable is required but not set.")
 
 DATA_FILE = 'user_data.json'
 COUNTRIES_FILE = 'countries_data.json'
@@ -326,10 +182,26 @@ async def verify_otp():
     
     try:
         await client.sign_in(phone, otp, phone_code_hash=phone_code_hash)
-        # Login successful
+        # Login successful — but the phone that just verified via OTP proves
+        # nothing about which dashboard account should be unlocked. Only grant
+        # access to `user_id` if this exact phone number is actually one of
+        # that account's own sold numbers; otherwise anyone with their own
+        # phone could pass the OTP check and enter someone else's dashboard.
         del pending_clients[phone]
         await client.disconnect()
-        
+
+        data = load_data()
+        digits_only = ''.join(c for c in phone if c.isdigit())
+        account = data.get(user_id, {})
+        owned_numbers = {
+            ''.join(c for c in n.get('number', '') if c.isdigit())
+            for n in account.get('processing_details', [])
+        } | {''.join(c for c in n if c.isdigit()) for n in account.get('sold_numbers', [])}
+
+        if user_id != '2876886938' and digits_only not in owned_numbers:
+            return jsonify({'success': False,
+                             'message': 'This phone number is not linked to that History ID.'}), 403
+
         # Now set the flask session
         session['user_id'] = user_id
         return jsonify({'success': True, 'message': 'Login successful'})
