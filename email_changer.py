@@ -256,6 +256,27 @@ async def change_email_for_number(
                 return {'success': False,
                         'message': f'OTP send failed after flood wait: {e2}',
                         'email': address}
+        except errors.RPCError as e:
+            # Map known Telegram errors to human-readable messages
+            err = str(e)
+            if 'EMAIL_UNCONFIRMED' in err:
+                msg = ('পূর্বের email verify pending আছে — '
+                       'কিছুক্ষণ পর retry করুন।')
+            elif 'EMAIL_INVALID' in err:
+                msg = 'Email address invalid।'
+            elif 'EMAIL_VERIFY_EXPIRED' in err:
+                msg = 'Verification code expired। আবার চেষ্টা করুন।'
+            elif 'PHONE_NOT_OCCUPIED' in err:
+                msg = 'Account টি আর active নেই।'
+            elif 'AUTH_KEY_UNREGISTERED' in err or 'SESSION_REVOKED' in err:
+                msg = 'Session invalid — account logout হয়ে গেছে।'
+            elif 'USER_DEACTIVATED' in err:
+                msg = 'Account banned/deactivated।'
+            elif 'EMAIL_LOGIN_NOT_SUPPORTED' in err or 'FEATURE_DISABLED' in err:
+                msg = 'এই account-এ email login feature সাপোর্ট করে না।'
+            else:
+                msg = f'Telegram error: {err}'
+            return {'success': False, 'message': msg, 'email': address}
         except Exception as e:
             return {'success': False,
                     'message': f'OTP send failed: {e}',
