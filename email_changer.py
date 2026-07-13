@@ -1,54 +1,144 @@
-"""Shared logic for auto-changing a Telegram account's login email via mail.tm.
+"""Shared logic for auto-changing a Telegram account's login email.
 
-Used by both the Flask admin dashboard (web_app.py) and the Telegram bot
-(main.py) so the OTP-detection logic only needs to be correct in one place.
+Uses a real mailbox (Zoho Mail / any IMAP provider on a custom domain)
+so that Telegram actually delivers the verification code — disposable
+mail services (mail.tm, Guerrilla Mail, etc.) are silently blocked by
+Telegram's delivery system.
+
+Strategy:
+  • For every number we generate a unique recipient alias:
+        inbox+<phone_digits>_<random>@yourdomain.com
+    All aliases land in the same inbox thanks to Zoho catch-all.
+  • We send SendVerifyEmailCodeRequest, then poll IMAP for a new
+    message addressed to that exact alias and extract the 6-digit code.
+  • The IMAP credentials are read from environment variables so they
+    never need to be hard-coded:
+        IMAP_HOST      e.g. imap.zoho.com
+        IMAP_PORT      e.g. 993  (SSL)
+        IMAP_USER      e.g. inbox@yourdomain.com
+        IMAP_PASS      your Zoho (or other provider) password / app-password
 """
+
 import os
-import json
-import time
+import re as _re
 import uuid
 import asyncio
-import re as _re
-import urllib.request as _urlreq
+import imaplib
+import email as _email
+from email.header import decode_header as _dh
 from telethon import TelegramClient, functions, types
 
-
-def _mailtm_request(method, path, data=None, token=None, retries=4):
-    """mail.tm occasionally returns transient 500s; retry with backoff before failing."""
-    url = 'https://api.mail.tm' + path
-    body = json.dumps(data).encode() if data else None
-    headers = {'Content-Type': 'application/json', 'Accept': 'application/json',
-               'User-Agent': 'Mozilla/5.0'}
-    if token:
-        headers['Authorization'] = 'Bearer ' + token
-    last_err = None
-    for attempt in range(retries):
-        try:
-            req = _urlreq.Request(url, data=body, headers=headers, method=method)
-            with _urlreq.urlopen(req, timeout=15) as r:
-                return json.loads(r.read().decode())
-        except Exception as e:
-            last_err = e
-            if attempt < retries - 1:
-                time.sleep(2 * (attempt + 1))
-    raise last_err
+# ── IMAP credentials (set these as environment variables) ────────────────────
+IMAP_HOST = os.environ.get("IMAP_HOST", "imap.zoho.com")
+IMAP_PORT = int(os.environ.get("IMAP_PORT", "993"))
+IMAP_USER = os.environ.get("IMAP_USER", "")   # e.g. inbox@yourdomain.com
+IMAP_PASS = os.environ.get("IMAP_PASS", "")   # Zoho password / app-password
+# ─────────────────────────────────────────────────────────────────────────────
 
 
-def _extract_code(text):
-    """Language-independent code extraction: a standalone 5-6 digit run."""
+def _extract_code(text: str) -> str | None:
+    """Return the first standalone 5-6 digit number found in text."""
     if not text:
         return None
-    match = _re.search(r'(?<!\d)(\d{5,6})(?!\d)', text)
-    return match.group(1) if match else None
+    m = _re.search(r'(?<!\d)(\d{5,6})(?!\d)', text)
+    return m.group(1) if m else None
+
+
+def _decode_header_value(raw) -> str:
+    """Safely decode an RFC-2047 encoded email header value."""
+    if raw is None:
+        return ""
+    parts = _dh(raw)
+    result = []
+    for part, enc in parts:
+        if isinstance(part, bytes):
+            result.append(part.decode(enc or "utf-8", errors="replace"))
+        else:
+            result.append(part)
+    return "".join(result)
+
+
+def _imap_search_for_alias(alias: str, log) -> str | None:
+    """
+    Open an IMAP connection, search INBOX for a message delivered TO
+    <alias>, and return the first 6-digit code found in subject+body.
+    Returns None if nothing found.
+    """
+    if not IMAP_USER or not IMAP_PASS:
+        log("⚠️ IMAP credentials not configured (IMAP_USER / IMAP_PASS)")
+        return None
+    try:
+        mail = imaplib.IMAP4_SSL(IMAP_HOST, IMAP_PORT)
+        mail.login(IMAP_USER, IMAP_PASS)
+        mail.select("INBOX")
+
+        # Search by TO header for this specific alias
+        status, data = mail.search(None, f'TO "{alias}"')
+        if status != "OK" or not data[0]:
+            mail.logout()
+            return None
+
+        # Check messages newest-first
+        ids = data[0].split()
+        for mid in reversed(ids):
+            _, msg_data = mail.fetch(mid, "(RFC822)")
+            if not msg_data or not msg_data[0]:
+                continue
+            raw = msg_data[0][1]
+            msg = _email.message_from_bytes(raw)
+
+            subject = _decode_header_value(msg.get("Subject", ""))
+            code = _extract_code(subject)
+            if code:
+                mail.logout()
+                return code
+
+            # Walk body parts
+            if msg.is_multipart():
+                for part in msg.walk():
+                    ct = part.get_content_type()
+                    if ct in ("text/plain", "text/html"):
+                        payload = part.get_payload(decode=True)
+                        if payload:
+                            text = payload.decode(
+                                part.get_content_charset() or "utf-8",
+                                errors="replace"
+                            )
+                            # Strip HTML tags for the html part
+                            if ct == "text/html":
+                                text = _re.sub(r'<[^>]+>', ' ', text)
+                            code = _extract_code(text)
+                            if code:
+                                mail.logout()
+                                return code
+            else:
+                payload = msg.get_payload(decode=True)
+                if payload:
+                    text = payload.decode(
+                        msg.get_content_charset() or "utf-8",
+                        errors="replace"
+                    )
+                    code = _extract_code(text)
+                    if code:
+                        mail.logout()
+                        return code
+
+        mail.logout()
+        return None
+    except Exception as exc:
+        log(f"⚠️ IMAP error: {exc}")
+        return None
 
 
 async def change_email_for_number(phone, raw_phone, api_id, api_hash,
-                                    sessions_dir, data_file, mail_user=None,
-                                    log=None, max_wait_attempts=36, sleep_secs=5):
-    """Auto-changes a Telegram account's login email using a fresh mail.tm mailbox.
+                                   sessions_dir, data_file, mail_user=None,
+                                   log=None, max_wait_attempts=36, sleep_secs=5):
+    """Auto-changes a Telegram account's login email via IMAP inbox.
 
     Returns a dict: {'success': bool, 'message': str, 'email': str|None}
     """
+    import json
+
     def _log(msg):
         if log:
             try:
@@ -56,48 +146,22 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
             except Exception:
                 pass
 
-    if mail_user is None:
-        digits_only = ''.join(c for c in raw_phone if c.isdigit())
-        mail_user = digits_only[-7:] if len(digits_only) >= 7 else digits_only
+    if not IMAP_USER or not IMAP_PASS:
+        return {
+            'success': False,
+            'message': (
+                'IMAP credentials not set. '
+                'Please set IMAP_USER and IMAP_PASS environment variables.'
+            ),
+            'email': None
+        }
 
-    domain = None
-    last_domain_err = None
-    for domain_attempt in range(3):
-        try:
-            _log('🌐 Getting available domains from mail.tm…' if domain_attempt == 0
-                 else f'🔁 Retrying domain fetch (attempt {domain_attempt + 1}/3)…')
-            domains_resp = await asyncio.to_thread(_mailtm_request, 'GET', '/domains')
-            if isinstance(domains_resp, list):
-                domain = domains_resp[0]['domain']
-            else:
-                domain = domains_resp['hydra:member'][0]['domain']
-            _log(f'✅ Domain: {domain}')
-            break
-        except Exception as e:
-            last_domain_err = e
-            if domain_attempt < 2:
-                await asyncio.sleep(3)
-    if not domain:
-        return {'success': False, 'message': f'mail.tm domain fetch failed: {last_domain_err}', 'email': None}
-
-    rand_suffix = uuid.uuid4().hex[:6]
-    address = f'{mail_user}{rand_suffix}@{domain}'
-    password = uuid.uuid4().hex
-
-    try:
-        _log(f'📧 Creating mailbox: {address}')
-        await asyncio.to_thread(_mailtm_request, 'POST', '/accounts',
-                                 {'address': address, 'password': password})
-    except Exception as e:
-        return {'success': False, 'message': f'Mailbox create failed: {e}', 'email': address}
-
-    try:
-        _log('🔑 Getting inbox token…')
-        tok_resp = await asyncio.to_thread(_mailtm_request, 'POST', '/token',
-                                            {'address': address, 'password': password})
-        inbox_token = tok_resp['token']
-    except Exception as e:
-        return {'success': False, 'message': f'Token fetch failed: {e}', 'email': address}
+    # Build a unique alias: inbox+<digits>_<random>@domain
+    digits = ''.join(c for c in raw_phone if c.isdigit())
+    rand   = uuid.uuid4().hex[:6]
+    base_user, domain_part = IMAP_USER.split('@', 1)
+    alias  = f"{base_user}+{digits}_{rand}@{domain_part}"
+    _log(f'📧 Using email alias: {alias}')
 
     session_path = os.path.join(sessions_dir, phone)
     client = TelegramClient(session_path, api_id, api_hash)
@@ -105,73 +169,51 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
     try:
         await client.connect()
         if not await client.is_user_authorized():
-            return {'success': False, 'message': 'Session not authorized', 'email': address}
+            return {'success': False, 'message': 'Session not authorized', 'email': alias}
 
         async def _send_code():
             await client(functions.account.SendVerifyEmailCodeRequest(
                 purpose=types.EmailVerifyPurposeLoginChange(),
-                email=address
+                email=alias
             ))
 
-        _log(f'📤 Sending OTP to {address}')
+        _log(f'📤 Sending OTP to {alias}')
         try:
             await _send_code()
         except Exception as e:
-            return {'success': False, 'message': f'OTP send failed: {e}', 'email': address}
+            return {'success': False, 'message': f'OTP send failed: {e}', 'email': alias}
 
         _log('⏳ OTP sent! Scanning inbox…')
         otp_code = None
         for attempt in range(max_wait_attempts):
             await asyncio.sleep(sleep_secs)
             _log(f'🔍 Checking inbox… ({attempt + 1}/{max_wait_attempts})')
-            try:
-                msgs = await asyncio.to_thread(
-                    _mailtm_request, 'GET', '/messages', None, inbox_token)
-                items = msgs if isinstance(msgs, list) else msgs.get('hydra:member', [])
-                _log(f'📬 {len(items)} message(s) in inbox')
 
-                # If nothing has arrived by the halfway point, the first email send
-                # sometimes gets silently dropped — resend once and keep waiting.
-                if not items and not resent_once and attempt >= max_wait_attempts // 2:
-                    resent_once = True
-                    _log('📭 No mail yet halfway through — resending verification email…')
-                    try:
-                        await _send_code()
-                    except Exception as e:
-                        _log(f'⚠️ Resend failed: {e}')
+            # Midway resend if still nothing
+            if not otp_code and not resent_once and attempt >= max_wait_attempts // 2:
+                resent_once = True
+                _log('📭 No code yet halfway through — resending verification email…')
+                try:
+                    await _send_code()
+                except Exception as e:
+                    _log(f'⚠️ Resend failed: {e}')
 
-                for m in items:
-                    mid = m['id']
-                    subj = m.get('subject', '') or ''
-                    sender_name = (m.get('from', {}) or {}).get('name', '') or ''
-                    sender_addr = (m.get('from', {}) or {}).get('address', '') or ''
-                    _log(f'📩 From: {sender_name} <{sender_addr}> | {subj}')
-                    detail = await asyncio.to_thread(
-                        _mailtm_request, 'GET', f'/messages/{mid}', None, inbox_token)
-                    subject = detail.get('subject', '')
-                    textBody = detail.get('text', '')
-                    htmlBody = _re.sub(r'<[^>]+>', ' ', detail.get('html', [''])[0] if detail.get('html') else '')
-                    _log(f'📝 Subject: {subject[:80]}')
-                    # This mailbox is created solely to receive this one OTP, so any
-                    # message that contains a standalone 5-6 digit code is a match —
-                    # regardless of language or exact sender wording.
-                    for part in (subject, textBody, htmlBody):
-                        otp_code = _extract_code(part)
-                        if otp_code:
-                            break
-                    if otp_code:
-                        break
-            except Exception as exc:
-                _log(f'⚠️ Inbox error: {exc}')
+            otp_code = await asyncio.to_thread(
+                _imap_search_for_alias, alias, _log)
+
             if otp_code:
+                _log(f'✅ OTP found: {otp_code}')
                 break
+            else:
+                _log(f'📬 No code yet…')
 
         if not otp_code:
-            return {'success': False,
-                    'message': f'OTP not received within {max_wait_attempts * sleep_secs}s. Try manual.',
-                    'email': address}
+            return {
+                'success': False,
+                'message': f'OTP not received within {max_wait_attempts * sleep_secs}s. Try manual.',
+                'email': alias
+            }
 
-        _log(f'✅ OTP found: {otp_code}')
         _log('🔐 Verifying with Telegram…')
         try:
             await client(functions.account.VerifyEmailRequest(
@@ -179,8 +221,9 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
                 verification=types.EmailVerificationCode(code=otp_code)
             ))
         except Exception as e:
-            return {'success': False, 'message': f'Verification failed: {e}', 'email': address}
+            return {'success': False, 'message': f'Verification failed: {e}', 'email': alias}
 
+        # Persist email_changed flag in user_data.json
         try:
             user_data_all = json.load(open(data_file)) if os.path.exists(data_file) else {}
             for uid, info in user_data_all.items():
@@ -193,11 +236,11 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
         except Exception as e:
             _log(f'⚠️ Could not persist email_changed flag: {e}')
 
-        _log(f'🎉 Done! Email changed to {address}')
-        return {'success': True, 'message': f'Email changed to {address}!', 'email': address}
+        _log(f'🎉 Done! Email changed to {alias}')
+        return {'success': True, 'message': f'Email changed to {alias}!', 'email': alias}
 
     except Exception as e:
-        return {'success': False, 'message': str(e), 'email': address}
+        return {'success': False, 'message': str(e), 'email': alias}
     finally:
         if client.is_connected():
             await client.disconnect()
