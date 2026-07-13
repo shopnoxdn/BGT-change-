@@ -1,10 +1,21 @@
 """Shared logic for auto-changing a Telegram account's login email.
 
-Uses tempmail.plus (mailto.plus domain) as primary provider — confirmed
-to receive Telegram verification emails. Falls back to grr.la (Guerrilla
-Mail) if the primary fails.
+Primary provider : tempmail.plus  (mailto.plus domain)
+Fallback provider: Guerrilla Mail (grr.la domain)
 
-Both providers are free, require no registration and no API key.
+Both confirmed to receive Telegram verification emails.
+No API key required. Completely free.
+
+Key design decisions
+────────────────────
+* Accepts an optional pre-connected `client` (Telethon).  When the bot
+  already has the account's session open it passes that client in; the
+  function uses it directly and does NOT disconnect it when done.
+  Without a client the function opens its own and does disconnect.
+* FloodWaitError from SendVerifyEmailCodeRequest is caught; the function
+  waits the required seconds (up to 10 min) then retries once.
+* The midway-resend is removed to avoid triggering a second FloodWait.
+  A single send + polling window is reliable enough with these providers.
 """
 
 import os
@@ -14,47 +25,33 @@ import asyncio
 import json
 import time
 import urllib.request as _urlreq
-from telethon import TelegramClient, functions, types
+from telethon import TelegramClient, functions, types, errors
 
 
-# ---------------------------------------------------------------------------
-# HTTP helpers
-# ---------------------------------------------------------------------------
+# ── HTTP helpers ─────────────────────────────────────────────────────────────
 
-def _get(url, headers=None, timeout=15):
-    h = {'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'}
-    if headers:
-        h.update(headers)
-    req = _urlreq.Request(url, headers=h)
+def _http_get(url, timeout=15):
+    req = _urlreq.Request(url, headers={
+        'User-Agent': 'Mozilla/5.0',
+        'Accept':     'application/json',
+    })
     with _urlreq.urlopen(req, timeout=timeout) as r:
         return json.loads(r.read().decode())
 
 
-def _post(url, data, timeout=15):
-    body = json.dumps(data).encode()
-    h = {'Content-Type': 'application/json', 'Accept': 'application/json',
-         'User-Agent': 'Mozilla/5.0'}
-    req = _urlreq.Request(url, data=body, headers=h, method='POST')
-    with _urlreq.urlopen(req, timeout=timeout) as r:
-        return json.loads(r.read().decode())
-
-
-def _retry(fn, retries=4, delay=3):
-    """Call fn(), retry on any exception with increasing delay."""
+def _retry_get(url, retries=3, delay=4, timeout=15):
     last = None
     for i in range(retries):
         try:
-            return fn()
+            return _http_get(url, timeout)
         except Exception as e:
             last = e
             if i < retries - 1:
-                time.sleep(delay * (i + 1))
+                time.sleep(delay)
     raise last
 
 
-# ---------------------------------------------------------------------------
-# Code extraction
-# ---------------------------------------------------------------------------
+# ── OTP extraction ───────────────────────────────────────────────────────────
 
 def _extract_code(text):
     """Return first standalone 5-6 digit number (the OTP)."""
@@ -64,96 +61,41 @@ def _extract_code(text):
     return m.group(1) if m else None
 
 
-# ---------------------------------------------------------------------------
-# Provider 1: tempmail.plus  (mailto.plus)
-# ---------------------------------------------------------------------------
+def _strip_html(html):
+    return _re.sub(r'<[^>]+>', ' ', html or '')
 
-class MailtoPlusInbox:
-    """No-registration temp inbox at mailto.plus."""
 
+# ── Provider 1: tempmail.plus (mailto.plus) ──────────────────────────────────
+
+class _MailtoPlusInbox:
     def __init__(self, name: str):
-        self.name = name
+        self.name    = name
         self.address = f'{name}@mailto.plus'
 
-    def check(self) -> str | None:
-        """Return OTP code if found in inbox, else None."""
-        data = _get(
-            f'https://tempmail.plus/api/mails'
-            f'?email={_urlreq.quote(self.address)}&limit=20&epin='
-        )
-        for m in data.get('mail_list', []):
-            subj = m.get('subject', '')
-            code = _extract_code(subj)
-            if code:
-                return code
-            # fetch full body
-            try:
-                mid = m['mail_id']
-                detail = _get(
-                    f'https://tempmail.plus/api/mails/{mid}'
-                    f'?email={_urlreq.quote(self.address)}&epin='
-                )
-                for part in (detail.get('subject', ''),
-                             detail.get('text', ''),
-                             _re.sub(r'<[^>]+>', ' ', detail.get('html', '') or '')):
-                    code = _extract_code(part)
-                    if code:
-                        return code
-            except Exception:
-                pass
-        return None
-
-
-# ---------------------------------------------------------------------------
-# Provider 2: Guerrilla Mail — grr.la (fallback)
-# ---------------------------------------------------------------------------
-
-class GrrlInbox:
-    """No-registration temp inbox at grr.la."""
-
-    def __init__(self, name: str):
-        self.name = name
-        self.address = f'{name}@grr.la'
-        self.sid = None
-        self._init()
-
-    def _init(self):
+    def check(self):
         try:
-            d = _get(
-                f'https://api.guerrillamail.com/ajax.php'
-                f'?f=set_email_user&email_user={self.name}&lang=en&site=grr.la'
+            data = _retry_get(
+                f'https://tempmail.plus/api/mails'
+                f'?email={_urlreq.quote(self.address)}&limit=20&epin=',
+                retries=3, delay=3
             )
-            self.sid = d.get('sid_token', '')
-        except Exception:
-            pass
-
-    def check(self) -> str | None:
-        if not self.sid:
-            return None
-        try:
-            data = _get(
-                f'https://api.guerrillamail.com/ajax.php'
-                f'?f=get_email_list&offset=0&sid_token={self.sid}&seq=0'
-            )
-            lst = data.get('list', [])
-            if not isinstance(lst, list):
-                return None
-            for m in lst:
-                subj = m.get('mail_subject', '')
-                code = _extract_code(subj)
+            for m in data.get('mail_list', []):
+                # Code often appears in subject alone — fast path
+                code = _extract_code(m.get('subject', ''))
                 if code:
                     return code
-                # fetch full body
+                # Fetch full body only if needed
                 try:
-                    mid = m.get('mail_id', '')
-                    detail = _get(
-                        f'https://api.guerrillamail.com/ajax.php'
-                        f'?f=fetch_email&email_id={mid}&sid_token={self.sid}'
+                    mid    = m['mail_id']
+                    detail = _retry_get(
+                        f'https://tempmail.plus/api/mails/{mid}'
+                        f'?email={_urlreq.quote(self.address)}&epin=',
+                        retries=2, delay=3
                     )
-                    for part in (detail.get('mail_subject', ''),
-                                 detail.get('mail_body', ''),
-                                 detail.get('mail_text_only', '')):
-                        code = _extract_code(_re.sub(r'<[^>]+>', ' ', part or ''))
+                    for part in (detail.get('subject', ''),
+                                 detail.get('text', ''),
+                                 _strip_html(detail.get('html', '') or '')):
+                        code = _extract_code(part)
                         if code:
                             return code
                 except Exception:
@@ -163,17 +105,80 @@ class GrrlInbox:
         return None
 
 
-# ---------------------------------------------------------------------------
-# Main function (called by web_app.py and main.py)
-# ---------------------------------------------------------------------------
+# ── Provider 2: Guerrilla Mail — grr.la (fallback) ──────────────────────────
 
-async def change_email_for_number(phone, raw_phone, api_id, api_hash,
-                                   sessions_dir, data_file, mail_user=None,
-                                   log=None, max_wait_attempts=36, sleep_secs=5):
+class _GrrlInbox:
+    def __init__(self, name: str):
+        self.name    = name
+        self.address = f'{name}@grr.la'
+        self.sid     = ''
+        try:
+            d = _http_get(
+                f'https://api.guerrillamail.com/ajax.php'
+                f'?f=set_email_user&email_user={name}&lang=en&site=grr.la'
+            )
+            self.sid = d.get('sid_token', '')
+        except Exception:
+            pass
+
+    def check(self):
+        if not self.sid:
+            return None
+        try:
+            data = _retry_get(
+                f'https://api.guerrillamail.com/ajax.php'
+                f'?f=get_email_list&offset=0&sid_token={self.sid}&seq=0',
+                retries=3, delay=3
+            )
+            lst = data.get('list', [])
+            if not isinstance(lst, list):
+                return None
+            for m in lst:
+                code = _extract_code(m.get('mail_subject', ''))
+                if code:
+                    return code
+                try:
+                    mid    = m.get('mail_id', '')
+                    detail = _retry_get(
+                        f'https://api.guerrillamail.com/ajax.php'
+                        f'?f=fetch_email&email_id={mid}&sid_token={self.sid}',
+                        retries=2, delay=3
+                    )
+                    for part in (detail.get('mail_subject', ''),
+                                 _strip_html(detail.get('mail_body', '')),
+                                 detail.get('mail_text_only', '')):
+                        code = _extract_code(part)
+                        if code:
+                            return code
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        return None
+
+
+# ── Main entry point ─────────────────────────────────────────────────────────
+
+async def change_email_for_number(
+        phone, raw_phone, api_id, api_hash,
+        sessions_dir, data_file,
+        mail_user=None,
+        log=None,
+        max_wait_attempts=36,
+        sleep_secs=5,
+        existing_client=None):
     """Auto-changes a Telegram account's login email.
 
-    Tries mailto.plus first, falls back to grr.la.
-    Returns: {'success': bool, 'message': str, 'email': str|None}
+    Parameters
+    ----------
+    existing_client : telethon.TelegramClient, optional
+        A pre-connected, authorised client for this account.  When supplied
+        the function uses it directly and NEVER disconnects it.
+        When None the function opens (and later closes) its own client.
+
+    Returns
+    -------
+    dict  {'success': bool, 'message': str, 'email': str | None}
     """
 
     def _log(msg):
@@ -183,22 +188,22 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
             except Exception:
                 pass
 
-    # Build email address: last-7-digits + random@mailto.plus
+    # ── Build a unique email name: last-7-digits + random ────────────────────
     digits = ''.join(c for c in raw_phone if c.isdigit())
     suffix = digits[-7:] if len(digits) >= 7 else digits
     rand   = uuid.uuid4().hex[:5]
     name   = f'{suffix}{rand}'
 
-    # Try provider 1, fall back to provider 2
-    inbox = None
+    # ── Try provider 1, fall back to provider 2 ──────────────────────────────
+    inbox   = None
     address = None
-    for provider_cls, label in [(MailtoPlusInbox, 'mailto.plus'),
-                                 (GrrlInbox,       'grr.la')]:
+    for cls, label in [(_MailtoPlusInbox, 'mailto.plus'),
+                       (_GrrlInbox,       'grr.la')]:
         try:
-            _log(f'🌐 Setting up inbox at {label}…')
-            obj = await asyncio.to_thread(provider_cls, name)
-            # quick sanity — address attribute must exist
-            _ = obj.address
+            _log(f'🌐 Setting up inbox ({label})…')
+            obj = await asyncio.to_thread(cls, name)
+            if not getattr(obj, 'address', None):
+                raise ValueError("no address")
             inbox   = obj
             address = obj.address
             _log(f'📧 Email: {address}')
@@ -211,44 +216,58 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
                 'message': 'Could not set up any temp inbox.',
                 'email': None}
 
-    session_path = os.path.join(sessions_dir, phone)
-    client = TelegramClient(session_path, api_id, api_hash)
-    resent_once = False
+    # ── Prepare Telethon client ───────────────────────────────────────────────
+    owns_client = existing_client is None
+    if owns_client:
+        session_path = os.path.join(sessions_dir, phone)
+        client = TelegramClient(session_path, api_id, api_hash)
+    else:
+        client = existing_client
 
     try:
-        await client.connect()
-        if not await client.is_user_authorized():
-            return {'success': False, 'message': 'Session not authorized',
-                    'email': address}
+        if owns_client:
+            await client.connect()
+            if not await client.is_user_authorized():
+                return {'success': False,
+                        'message': 'Session not authorized',
+                        'email': address}
 
+        # ── Send verification email (with FloodWait handling) ─────────────────
         async def _send_code():
             await client(functions.account.SendVerifyEmailCodeRequest(
                 purpose=types.EmailVerifyPurposeLoginChange(),
                 email=address
             ))
 
-        _log(f'📤 Sending OTP to {address}')
+        _log(f'📤 Sending OTP to {address}…')
         try:
             await _send_code()
+        except errors.FloodWaitError as e:
+            wait = e.seconds
+            if wait > 600:          # > 10 min — give up
+                return {'success': False,
+                        'message': f'Telegram rate limit: {wait}s wait required. Try later.',
+                        'email': address}
+            _log(f'⏱ Telegram rate limit — waiting {wait}s before retry…')
+            await asyncio.sleep(wait + 2)
+            try:
+                await _send_code()
+            except Exception as e2:
+                return {'success': False,
+                        'message': f'OTP send failed after flood wait: {e2}',
+                        'email': address}
         except Exception as e:
-            return {'success': False, 'message': f'OTP send failed: {e}',
+            return {'success': False,
+                    'message': f'OTP send failed: {e}',
                     'email': address}
 
+        # ── Poll inbox ────────────────────────────────────────────────────────
         _log('⏳ OTP sent! Scanning inbox…')
         otp_code = None
 
         for attempt in range(max_wait_attempts):
             await asyncio.sleep(sleep_secs)
             _log(f'🔍 Checking inbox… ({attempt + 1}/{max_wait_attempts})')
-
-            # Midway resend if still nothing
-            if not resent_once and attempt >= max_wait_attempts // 2:
-                resent_once = True
-                _log('📭 Halfway — resending verification email…')
-                try:
-                    await _send_code()
-                except Exception as e:
-                    _log(f'⚠️ Resend failed: {e}')
 
             try:
                 otp_code = await asyncio.to_thread(inbox.check)
@@ -258,8 +277,32 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
             if otp_code:
                 _log(f'✅ OTP found: {otp_code}')
                 break
-            else:
-                _log(f'📬 No code yet…')
+
+            # ── If primary inbox repeatedly empty, switch to fallback ─────────
+            if not otp_code and attempt == 10 and isinstance(inbox, _MailtoPlusInbox):
+                _log('🔄 mailto.plus: no messages after 50s — trying grr.la fallback…')
+                try:
+                    fb = await asyncio.to_thread(_GrrlInbox, name)
+                    if fb.sid:
+                        # Send OTP to grr.la address too
+                        fb_address = fb.address
+                        _log(f'📤 Sending OTP to fallback: {fb_address}')
+                        try:
+                            await client(functions.account.SendVerifyEmailCodeRequest(
+                                purpose=types.EmailVerifyPurposeLoginChange(),
+                                email=fb_address
+                            ))
+                            inbox   = fb
+                            address = fb_address
+                            _log(f'✅ Switched to grr.la: {fb_address}')
+                        except errors.FloodWaitError as fe:
+                            _log(f'⏱ Flood wait on fallback switch: {fe.seconds}s — staying on mailto.plus')
+                        except Exception as se:
+                            _log(f'⚠️ Fallback send failed: {se}')
+                except Exception as fe:
+                    _log(f'⚠️ Fallback setup failed: {fe}')
+
+            _log('📬 No code yet…')
 
         if not otp_code:
             return {
@@ -270,6 +313,7 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
                 'email': address
             }
 
+        # ── Verify with Telegram ──────────────────────────────────────────────
         _log('🔐 Verifying with Telegram…')
         try:
             await client(functions.account.VerifyEmailRequest(
@@ -277,10 +321,11 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
                 verification=types.EmailVerificationCode(code=otp_code)
             ))
         except Exception as e:
-            return {'success': False, 'message': f'Verification failed: {e}',
+            return {'success': False,
+                    'message': f'Verification failed: {e}',
                     'email': address}
 
-        # Persist email_changed flag
+        # ── Persist flag in user_data.json ────────────────────────────────────
         try:
             user_data_all = (json.load(open(data_file))
                              if os.path.exists(data_file) else {})
@@ -303,5 +348,6 @@ async def change_email_for_number(phone, raw_phone, api_id, api_hash,
     except Exception as e:
         return {'success': False, 'message': str(e), 'email': address}
     finally:
-        if client.is_connected():
+        # Only disconnect if we opened the client ourselves
+        if owns_client and client.is_connected():
             await client.disconnect()
